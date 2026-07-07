@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://naprolom-docs/schemas/frontmatter.schema.json",
+  "title": "Documentation Frontmatter — Canonical Schema v1",
+  "description": "Schema for the YAML frontmatter of every .md file under docs/. Validates Schema v1 base fields, per-type extensions, status enums, and forbidden legacy fields. Used by validators/validate-frontmatter.sh.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "type", "status", "date", "owners"],
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Constant 1 for Canonical Schema v1."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 2,
+      "description": "Stable kebab-case ID. Never changes."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["spec", "adr", "audit", "runbook", "guide", "api", "architecture", "backlog", "prompt"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Status per type. See allOf for per-type constraints."
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Creation date (per-type semantics, see playbook §Date semantics)."
+    },
+    "updated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "Last content change date. Optional."
+    },
+    "owners": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1
+    },
+    "entity_refs": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "minLength": 2},
+      "maxItems": 10,
+      "description": "Stable kebab-case domain-entity IDs. Min 1 for spec/audit."
+    },
+    "touches": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "code": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "docs": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "refs": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "implements": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"]
+    },
+    "kind": {
+      "type": "string",
+      "description": "Per-type discriminator. Required for runbook. Optional for guide. Allowed values: runbook (deploy|cicd|ops|troubleshoot|edge-hub|secrets|integration|legacy), guide (index|onboarding|legacy)."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Audit per-type extension: what was checked."
+    },
+    "trigger": {
+      "type": "string",
+      "description": "Audit per-type extension: why audit was conducted."
+    },
+    "version": {
+      "type": "string",
+      "description": "API per-type extension: semantic version."
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"type": {"const": "spec"}}},
+      "then": {
+        "properties": {"status": {"enum": ["draft", "review", "approved", "implemented", "superseded"]}},
+        "required": ["entity_refs"]
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "api"}}},
+      "then": {
+        "properties": {"status": {"enum": ["draft", "review", "approved", "implemented", "superseded"]}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "adr"}}},
+      "then": {
+        "properties": {"status": {"enum": ["proposed", "accepted", "deprecated", "superseded"]}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "audit"}}},
+      "then": {
+        "properties": {"status": {"enum": ["draft", "completed"]}},
+        "required": ["entity_refs"]
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "runbook"}}},
+      "then": {
+        "properties": {
+          "status": {"enum": ["active", "deprecated"]},
+          "kind": {"enum": ["deploy", "cicd", "ops", "troubleshoot", "edge-hub", "secrets", "integration", "legacy"]}
+        },
+        "required": ["kind"]
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "guide"}}},
+      "then": {
+        "properties": {
+          "status": {"enum": ["active", "deprecated"]},
+          "kind": {"enum": ["index", "onboarding", "legacy"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "architecture"}}},
+      "then": {
+        "properties": {"status": {"enum": ["active", "deprecated"]}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "backlog"}}},
+      "then": {
+        "properties": {"status": {"enum": ["active", "deprecated"]}}
+      }
+    },
+    {
+      "if": {"properties": {"type": {"const": "prompt"}}},
+      "then": {
+        "properties": {"status": {"enum": ["active", "deprecated"]}}
+      }
+    }
+  ],
+  "not": {
+    "anyOf": [
+      {"required": ["lifecycle"]},
+      {"required": ["author"]},
+      {"required": ["title"]},
+      {"required": ["created"]},
+      {"required": ["referenced_by"]},
+      {"required": ["supersedes_adr"]},
+      {"required": ["excludes-from-scope"]}
+    ],
+    "description": "Legacy fields forbidden in frontmatter. lifecycle is computed from path for specs/api (not stored in FM)."
+  },
+  "$comment": "When validating a spec or api, also enforce that frontmatter `status` matches the parent directory name (drafts|review|approved|implemented|superseded). This is enforced by the path-status check in validators/validate-frontmatter.sh, not by JSON Schema (JSON Schema sees only the FM, not the file path)."
+}

@@ -9,8 +9,8 @@ owners: [naprolom-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, agent-entry-protocol, lifecycle-spec, lifecycle-adr]
 touches: [docs, .context, .claude/rules, .github/workflows]
-code: [.github/workflows/docs-validate.yml]
-docs: []
+code: [.github/workflows/docs-validate.yml, bootstrap/bootstrap.sh, bootstrap/bootstrap.ps1, validators/validate-frontmatter.sh, scripts/migrate-legacy.mjs, schemas/frontmatter.schema.json, templates/architecture.md, templates/adr.md, templates/spec.md, templates/audit.md, templates/runbook.md, templates/backlog.md]
+docs: [migrate-legacy.md]
 refs: []
 depends_on: [adr-001-tech-stack, adr-002-three-schema-db, adr-003-arq-workers]
 implements: []
@@ -26,8 +26,8 @@ priority: P0
 > **Версия 2 greenfield — Canonical Schema v1 с первого дня.**
 >
 > Этот playbook описывает **целевую Greenfield-модель** Documentation System v2.
-> Если система внедряется в существующий репозиторий (brownfield), используйте отдельный
-> [Documentation System Adoption Guide](docs/guides/legacy-migration.md) — он описывает аудит, миграцию frontmatter и rollout CI, не меняя саму модель.
+> Если система внедряется в существующий репозиторий (brownfield), используйте
+> [Migration Prompt](migrate-legacy.md) — готовый агент-промпт для миграции legacy frontmatter в Canonical Schema v1.
 
 ---
 
@@ -37,318 +37,31 @@ priority: P0
 
 Цель системы: **документация = инфраструктура**, а не текстовые файлы на произвольную тему.
 
-**Greenfield-подход v2** означает: ни один .md файл в `docs/` не создаётся без canonical frontmatter Schema v1. Никаких legacy-полей (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`). Для нового репозитория migration script не нужен — bootstrap создаёт структуру сразу в canonical-виде. Для существующего репозитория см. [Adoption Guide](docs/guides/legacy-migration.md).
+**Greenfield-подход v2** означает: ни один .md файл в `docs/` не создаётся без canonical frontmatter Schema v1. Никаких legacy-полей (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`). Для нового репозитория migration script не нужен — bootstrap создаёт структуру сразу в canonical-виде. Для существующего репозитория см. [Migration Prompt](migrate-legacy.md).
 
 ---
 
-## Bootstrap Script (автоматическое создание структуры)
+## Bootstrap (создание структуры)
 
-Вместо ручного создания директорий — используйте bootstrap script:
+Bootstrap — единственный source of truth для создания структуры директорий. Скрипт живёт в репозитории Runtime, а не в самом playbook:
 
 ```bash
-#!/bin/bash
-# docs-bootstrap.sh — создание полной структуры документации за 30 секунд
-# Usage: ./docs-bootstrap.sh [project-name]
+# Linux / macOS / WSL
+bash bootstrap/bootstrap.sh [project-name]
 
-set -euo pipefail
-
-PROJECT_NAME="${1:-my-project}"
-
-echo "🚀 Bootstrapping documentation for: $PROJECT_NAME"
-
-# 1. Директории
-mkdir -p docs/{architecture,adr,specs/{drafts,review,approved,implemented,superseded},audits,backlog,prompts,api}
-mkdir -p .context
-mkdir -p .claude/rules
-mkdir -p .ai/{reports,memory}
-
-# 2. .gitkeep
-touch docs/adr/.gitkeep docs/architecture/.gitkeep docs/audits/.gitkeep
-
-# 3. .context/project.yml
-cat > .context/project.yml << EOF
-project:
-  name: $PROJECT_NAME
-  description: "TODO: описание проекта (1 предложение)"
-  domain: example.com
-  maintainer: team-name
-  repository: https://github.com/org/repo
-
-stack:
-  backend: [FastAPI, Python]
-  database: [PostgreSQL 17]
-  infrastructure: [Docker Compose, Traefik]
-
-directories:
-  key:
-    app/: "Основной код"
-    docs/: "Документация"
-EOF
-
-# 4. .context/boundaries.yml
-cat > .context/boundaries.yml << EOF
-boundaries:
-  pristine:
-    - path: vendor/
-      reason: "third-party, tracked upstream"
-
-  editable:
-    - path: app/
-      reason: "core application code"
-    - path: docs/
-      reason: "all documentation"
-
-  generated:
-    - path: .env
-      source: .env.example
-      reason: "created by bootstrap from template"
-
-  secret:
-    - path: .env
-      note: "passwords and tokens"
-    - path: "*.key"
-      note: "private keys"
-EOF
-
-# 5. .context/decisions.yml
-cat > .context/decisions.yml << EOF
-decisions:
-  - id: ADR-001
-    title: "TODO: описание первого решения"
-    file: docs/adr/
-    status: proposed
-    summary: "TODO: краткое описание"
-EOF
-
-# 6. .context/agent-entry.md
-cat > .context/agent-entry.md << EOF
-# Agent Entry Protocol
-
-## 1. Read First (in this order)
-1. \`.context/project.yml\` — what project this is
-2. \`.context/boundaries.yml\` — what you can/cannot edit
-3. \`docs/architecture/README.md\` — topology, data model, invariants
-4. \`CLAUDE.md\` (или аналог) — rules
-
-## 2. Before Editing Any File
-1. Check \`.context/boundaries.yml\`
-2. If pristine → STOP, ask human
-3. If generated → edit template, not output
-4. If editable → proceed with existing patterns
-
-## 3. Before Creating Any .md in docs/
-1. Identify \`type\` (adr | spec | audit | runbook | architecture | backlog | prompt | guide | api)
-2. \`cp docs/<type>/_template.md <target-path>\` (если template есть)
-3. Заполни **минимум** 6 mandatory полей: \`schema\`, \`id\`, \`type\`, \`status\`, \`date\`, \`owners\`
-4. Никогда не добавляй \`lifecycle:\` поле — оно computed from path
-5. Никогда не используй legacy поля: \`author\`, \`title\`, \`created\`, \`referenced_by\`, \`supersedes_adr\`
-EOF
-
-# 7. Canonical Templates
-cat > docs/specs/_template.md << 'TMPL'
----
-schema: 1
-id: <kebab-case-slug>
-type: spec
-status: draft
-date: YYYY-MM-DD
-owners: [team-name]
-
-entity_refs: []
-touches: []
-code: []
-docs: []
-depends_on: []
-implements: []
-supersedes: []
-tags: []
-priority: P0
----
-
-# Spec: <название>
-
-## Goal
-Одно предложение: что получаем в результате.
-
-## Context
-Почему сейчас? Что блокирует?
-
-## Scope
-### Included
-### Excluded
-
-## Technical approach
-Конкретные файлы, эндпоинты, таблицы.
-
-## Affected files (predicted)
-- path/to/file.py
-
-## Open questions
-- Вопрос 1
-
----
-
-## Result
-<!-- Заполняется после имплементации -->
-TMPL
-
-cat > docs/audits/_template.md << 'TMPL'
----
-schema: 1
-id: audit-<slug>
-type: audit
-status: draft
-date: YYYY-MM-DD
-owners: [team-name]
-
-scope: ""
-trigger: ""
-
-entity_refs: []
-touches: []
-code: []
-docs: []
-refs: []
-depends_on: []
-implements: []
-supersedes: []
-tags: [audit]
-priority: P2
----
-
-# Audit: <title>
-
-> Scope: <...>
-> Trigger: <...>
-
-## Summary
-<!-- 1-2 предложения: что проверялось, что нашли -->
-
-## Findings
-| # | Severity | Finding | Evidence | Recommendation |
-|---|----------|---------|----------|----------------|
-| F-01 | ... | ... | ... | ... |
-
-## Conflicts
-<!-- противоречия между находками (если есть) -->
-
-## Resolution
-<!-- как разрешили или plan разрешения -->
-
-## Delta
-<!-- что изменилось с прошлого аудита этой сущности -->
-TMPL
-
-cat > docs/adr/_template.md << 'TMPL'
----
-schema: 1
-id: adr-NNN-<slug>
-type: adr
-status: proposed
-date: YYYY-MM-DD
-owners: [team-name]
-
-supersedes: []
-depends_on: []
-tags: []
----
-
-# ADR-NNN: <Название решения>
-
-## Status
-[proposed | accepted | deprecated | superseded]
-
-## Context
-Почему это решение необходимо? Какие альтернативы рассматривались?
-
-## Decision
-Что именно решили и почему.
-
-## Consequences
-Позитивные и негативные последствия.
-
-## Related
-- ADR-XXX (связанное решение)
-- Spec: docs/specs/approved/YYYY-MM-DD-<slug>.md
-TMPL
-
-cat > docs/architecture/_template.md << 'TMPL'
----
-schema: 1
-id: architecture-<slug>
-type: architecture
-status: active
-date: YYYY-MM-DD
-owners: [team-name]
----
-
-# <Topic>
-
-[content]
-TMPL
-
-# 8. CI Guard
-mkdir -p .github/workflows
-
-cat > .github/workflows/docs-validate.yml << 'CI'
-name: docs-validate
-on:
-  pull_request:
-    paths:
-      - "docs/**"
-
-jobs:
-  schema-v1:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify all .md in docs/ have schema: 1
-        run: |
-          set -e
-          missing=$(git grep -L "^schema: 1$" -- 'docs/**/*.md' || true)
-          if [ -n "$missing" ]; then
-            echo "ERROR: .md files without schema: 1 frontmatter:"
-            echo "$missing"
-            exit 1
-          fi
-      - name: Verify no legacy fields
-        run: |
-          set -e
-          for field in "lifecycle:" "^author:" "^title:" "^created:" "supersedes_adr:" "referenced_by:"; do
-            matches=$(git grep -n "$field" -- 'docs/**/*.md' || true)
-            if [ -n "$matches" ]; then
-              echo "ERROR: legacy field '$field' found:"
-              echo "$matches"
-              exit 1
-            fi
-          done
-      - name: Verify spec path-status match
-        run: |
-          set -e
-          for dir in drafts review approved implemented superseded; do
-            for f in docs/specs/$dir/*.md; do
-              [ -f "$f" ] || continue
-              status=$(grep -m1 "^status:" "$f" | sed 's/status: //')
-              if [ "$status" != "$dir" ]; then
-                echo "ERROR: $f has status: $status but path expects $dir"
-                exit 1
-              fi
-            done
-          done
-CI
-
-echo "✅ Documentation structure bootstrapped!"
-echo "Next steps:"
-echo "  1. Edit .context/project.yml with your project details"
-echo "  2. Edit .context/boundaries.yml for your file structure"
-echo "  3. Create your first ADR: cp docs/adr/_template.md docs/adr/001-<slug>.md"
-echo "  4. Create your first spec: cp docs/specs/_template.md docs/specs/drafts/$(date +%Y-%m-%d)-<slug>.md"
+# Windows (PowerShell)
+powershell -File bootstrap/bootstrap.ps1
 ```
 
-**Установка:** `chmod +x docs-bootstrap.sh && ./docs-bootstrap.sh my-project`
+Bootstrap идемпотентен и минимален: создаёт `docs/` skeleton (5-слойная архитектура), `.context/` stubs (`project.yml`, `boundaries.yml`, `agent-entry.md`), `CLAUDE.md` snippet и `docs-validate.yml` workflow. Никакой магии модификации существующих файлов.
 
-**Время выполнения:** ~30 секунд vs 2-3 часа ручного создания.
+Полные шаблоны документов (`.md`) живут отдельно от bootstrap — см. `templates/`, не встраиваются в скрипт. Это устраняет дрейф между playbook и реальными артефактами.
 
+**Время выполнения:** ~5 секунд vs 2-3 часа ручного создания.
+
+---
+
+---
 ---
 
 ## Canonical Schema v1 (Reference)
@@ -796,7 +509,7 @@ owners: [naprolom-team]
 #### 3.1 Создание ADR
 
 ```bash
-cp docs/adr/_template.md docs/adr/NNN-<slug>.md
+cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/NNN-<slug>.md
 # NN — следующий свободный номер (zero-padded до 3 цифр)
 # slug — kebab-case, описывает решение (не реализацию)
 ```
@@ -829,7 +542,7 @@ cp docs/adr/_template.md docs/adr/NNN-<slug>.md
 #### 4.1 Создание спеки
 
 ```bash
-cp docs/specs/_template.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
+cp .context/runtime/naprolom-docs/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
 # fill frontmatter: status: draft (обязательно совпадает с директорией!)
 # fill body: Goal, Context, Scope, Technical approach, Affected files, Open questions
 ```
@@ -870,7 +583,7 @@ git mv docs/specs/approved/2026-07-06-feature.md docs/specs/superseded/
 
 #### 4.3 Правила
 
-- **Создание:** `cp docs/specs/_template.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+- **Создание:** `cp .context/runtime/naprolom-docs/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 - **Нельзя имплементировать** спеку не в `approved/` (CI FAIL на PR, меняющем код без соответствующей спеки в `approved/`)
 - **После имплементации:** заполнить `## Result`, переложить в `implemented/`, `status: implemented`
 - **Supersede:** если новая спека заменяет старую — переместить старую в `superseded/` с `status: superseded`, в новой указать `supersedes: [<old-id>]`
@@ -968,7 +681,7 @@ applies-to: path("docs/specs/**")
 
 Создание:
 
-1. `cp docs/specs/_template.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+1. `cp .context/runtime/naprolom-docs/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 2. fill FM:
    - `id`: `<slug>` (без даты, stable)
    - `status`: `draft` (обязательно — совпадает с drafts/ директорией)
@@ -1008,7 +721,7 @@ applies-to: path("docs/audits/**")
 
 Когда создаёшь новый audit:
 
-1. Скопируй `docs/audits/_template.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
+1. Скопируй `.context/runtime/naprolom-docs/templates/audit.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполни frontmatter:
    - `id`: `audit-<slug>` (slug без даты)
    - `status`: `draft` (если в работе) или `completed` (если завершён)
@@ -1141,7 +854,7 @@ Before adding a new service:
 
 ### Создание нового аудита
 
-1. `cp docs/audits/_template.md docs/audits/YYYY-MM-DD-<slug>.md`
+1. `cp .context/runtime/naprolom-docs/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполнить frontmatter: `id`, `status: draft`, `date`, `scope`, `trigger`, `entity_refs`, `touches`
 3. Заполнить body: `# Audit: <title>`, Summary, Findings, Conflicts (optional), Resolution, Delta
 4. Если audit завершён — `status: completed` (terminal)
@@ -1328,7 +1041,7 @@ done
 | Дублирование в .claude/rules/ | Выходят из синхронизации | Thin pointers → канонический источник в docs/ |
 | Runbooks без `kind:` | Нельзя отличить deploy от troubleshoot | `type: runbook` всегда с `kind:` |
 | Body ADR модифицирован при добавлении FM | Нарушение immutability | Carve-out rule: FM ≠ body. Body byte-for-byte не трогается, при необходимости update — FM only |
-| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp docs/audits/_template.md ...` |
+| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp .context/runtime/naprolom-docs/templates/audit.md ...` |
 | Создание .md без template | FM не canonical, нет `schema:`/`id` | Greenfield invariant: начинаем с `cp <type>/_template.md`, не с пустого файла |
 | Удаление выполненных спек | Потеря истории решений | Никогда не удалять, хранить в `implemented/` |
 | `supersedes_adr:` вместо `supersedes:` | Legacy field, breaks parser | `supersedes: [<id>]` — list (может быть несколько) |
@@ -1344,9 +1057,9 @@ done
 - [ ] `.context/project.yml` существует и содержит стек
 - [ ] `.context/boundaries.yml` классифицирует файлы
 - [ ] `docs/architecture/README.md` существует, canonical FM, содержит инварианты и индекс модулей
-- [ ] `docs/specs/_template.md` существует с Canonical Schema v1 Base
-- [ ] `docs/audits/_template.md` существует с audit extension (`scope`, `trigger`)
-- [ ] `docs/adr/_template.md` существует с canonical ADR FM
+- [ ] `.context/runtime/naprolom-docs/templates/spec.md` существует с Canonical Schema v1 Base
+- [ ] `.context/runtime/naprolom-docs/templates/audit.md` существует с audit extension (`scope`, `trigger`)
+- [ ] `.context/runtime/naprolom-docs/templates/adr.md` существует с canonical ADR FM
 - [ ] Хотя бы 1 ADR в `docs/adr/` со статусом `accepted` (или proposed)
 - [ ] `docs/README.md` существует, canonical FM (`type: guide, kind: index`), START HERE секция
 - [ ] `.claude/rules/doc-update.md` определяет протокол обновления доков
@@ -1386,7 +1099,7 @@ done
 
 ## CI Schema v1 Guard (включить с первого PR)
 
-> **Принцип без ложных срабатываний.** Guard проверяет **только frontmatter** (YAML между первым и вторым `---`), а не весь файл. Поэтому упоминания legacy-полей в прозе, таблицах и code-блоках (например, в этом playbook или в Adoption Guide) не ломают CI. Lifecycle и legacy-поля запрещены именно как **ключи frontmatter**, и проверяются только там, где они и могут быть — в FM.
+> **Принцип без ложных срабатываний.** Guard проверяет **только frontmatter** (YAML между первым и вторым `---`), а не весь файл. Поэтому упоминания legacy-полей в прозе, таблицах и code-блоках (например, в этом playbook или в Migration Prompt) не ломают CI. Lifecycle и legacy-поля запрещены именно как **ключи frontmatter**, и проверяются только там, где они и могут быть — в FM.
 
 `.github/workflows/docs-validate.yml`:
 
@@ -1394,86 +1107,30 @@ done
 name: docs-validate
 on:
   pull_request:
-    paths:
-      - "docs/**"
+    paths: ["docs/**"]
 
 jobs:
   schema-v1:
     runs-on: ubuntu-latest
     env:
-      # Brownfield rollout: поставить "true" на период warn-only (см. Adoption Guide).
-      # Greenfield: оставить пустым → strict с первого PR.
-      WARN_ONLY: ""
+      WARN_ONLY: ""   # brownfield: "true" на rollout период
     steps:
       - uses: actions/checkout@v4
-      - name: Install frontmatter checker
+        with:
+          submodules: true
+      - name: Validate Canonical Schema v1 frontmatter
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y python3-yaml
-      - name: Validate Schema v1 (frontmatter-only)
-        run: |
-          set -e
-          fail=0
-          warn() {
-            if [ -n "$WARN_ONLY" ]; then
-              echo "WARNING: $1"
-            else
-              echo "ERROR: $1"
-              fail=1
-            fi
-          }
-          check_file() {
-            f="$1"
-            # Извлечь только frontmatter: между первым и вторым '---'
-            fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
-            [ -n "$fm" ] || { warn "no frontmatter in $f"; return; }
-
-            # 1. schema: 1 обязательно
-            echo "$fm" | grep -q "^schema: *1 *$" || { warn "$f: schema != 1"; return; }
-
-            # 2. mandatory поля
-            for field in id type status date owners; do
-              echo "$fm" | grep -q "^$field:" || warn "$f: missing mandatory field '$field'"
-            done
-
-            # 3. legacy-поля ЗАПРЕЩЕНЫ ТОЛЬКО ВО FRONTMATTER
-            for field in "lifecycle:" "^author:" "^title:" "^created:" "supersedes_adr:" "referenced_by:" "excludes-from-scope:"; do
-              if echo "$fm" | grep -q "$field"; then
-                warn "$f: legacy field '$field' in frontmatter"
-              fi
-            done
-
-            # 4. spec path-status match (только для specs)
-            case "$f" in
-              docs/specs/*)
-                dir=$(echo "$f" | awk -F/ '{print $(NF-1)}')
-                status=$(echo "$fm" | grep -m1 "^status:" | sed 's/status: *//')
-                [ "$status" = "$dir" ] || warn "$f: status '$status' != path '$dir'"
-                ;;
-            esac
-          }
-          while IFS= read -r f; do
-            check_file "$f"
-          done < <(git grep -l "^schema:" -- 'docs/**/*.md' || true)
-          git ls-files 'docs/**/*.md' | while read -r f; do
-            awk 'NR==1 && $0=="---"' "$f" >/dev/null || warn "$f: no frontmatter at all"
-          done
-          if [ "$fail" -ne 0 ]; then
-            echo "::error::docs-validate failed"
-            exit 1
-          fi
-          echo "docs-validate: OK"
+          bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
 ```
+
 
 **Почему так:**
 - `awk` режет только блок FM → legacy-поля в теле документа (проза/таблицы/код) не вызывают false positive.
-- `WARN_ONLY=true` включает режим warn-only для brownfield rollout (Adoption Guide, §Warn-only CI). Greenfield оставляет переменную пустой → strict.
+- `WARN_ONLY=true` включает режим warn-only для brownfield rollout (Migration Prompt, §Warn-only CI). Greenfield оставляет переменную пустой → strict.
 - Проверка `schema: 1` и mandatory-полей идёт по FM, не по всему файлу.
 
 **Greenfield:** strict с первого PR (переменная `WARN_ONLY` пуста).
 **Brownfield:** на период rollout поставить `WARN_ONLY: "true"`, после cleanup переключить обратно в strict.
-            done
-          done
-```
 
 Этот guard **включается с первого PR** (greenfield). Никаких transition periods, никаких warn-only.
 
@@ -1483,22 +1140,22 @@ jobs:
 
 **status:** implemented
 
-**changed:**
-- `.temp/docs/documentation-system-playbook-v2-greenfield.md` — исходный черновик
-- `docs/specs/implemented/2026-07-07-documentation-system-playbook-v2.md` — canonical версия
+**changed (this Runtime refactor):**
+- `playbook/playbook-v2.md` — этот файл (ранее в корне репо, переименован и перенесён).
+- `playbook/migrate-legacy.md` — агент-промпт для brownfield миграции (ранее `docs/guides/legacy-migration.md`).
+- `templates/architecture.md`, `templates/adr.md`, `templates/spec.md`, `templates/audit.md`, `templates/runbook.md`, `templates/backlog.md` — canonical шаблоны, вынесенные из playbook как standalone файлы.
+- `schemas/frontmatter.schema.json` — JSON Schema для Canonical Schema v1 (base + per-type extensions + forbidden legacy fields).
+- `validators/validate-frontmatter.sh` — frontmatter-only валидатор (с `WARN_ONLY` switch, path-status match с `drafts→draft` нормализацией, проверкой `kind:` для runbook).
+- `bootstrap/bootstrap.sh`, `bootstrap/bootstrap.ps1` — минимальный идемпотентный bootstrap (создаёт `docs/` skeleton, `.context/` stubs, `CLAUDE.md` snippet, `docs-validate.yml` workflow).
+- `scripts/migrate-legacy.mjs` — runnable миграция brownfield (без внешних зависимостей).
+- `INSTALL.md` — consumer integration: submodule add, `.gitmodules` branch=master, CLAUDE.md snippet, manual update, Dependabot gitsubmodule.
+- `README.md` — переписан как Landing Page Runtime (не как canonical index репозитория).
+- `.github/workflows/docs-validate.yml` — workflow, вызывающий `validators/validate-frontmatter.sh` (локально; push ожидает нового PAT с `workflow` scope).
+- `agents/{claude-code,opencode}/` — роли `architecture-reviewer`, `documentation-reviewer` для обеих платформ.
 
-**docs-updated:**
-- `docs/specs/README.md` — добавлена ссылка на implemented spec
-- `.claude/rules/doc-update.md` — добавлен `updated:` field
-- `.claude/rules/spec-workflow.md` — добавлен `updated:` field
-- `.claude/rules/entity-workflow.md` — новый файл
-
-**deviations:**
-- Добавлен `updated:` optional field (пункт 2)
-- Добавлен entity_refs workflow section (пункт 3)
-- Добавлена семантика `date` field per-type (пункт 4)
-- Добавлен lightweight change path (пункт 5)
-- Добавлены метрики качества документации (пункт 6)
-- Удалён `excludes-from-scope:` field (пункт 7)
-- Добавлен bootstrap script (пункт 1)
-- CI guard расширен: добавлена проверка `excludes-from-scope:`
+**deviations (vs. исходный план v2):**
+- `templates/` вынесены из playbook как standalone canonical файлы — устраняет дрейф между документацией и реальными артефактами.
+- `bootstrap/` минимизирован: создаёт только `docs/` + `.context/` + `CLAUDE.md` snippet + workflow — никакой магии модификации существующих файлов.
+- Валидатор поддерживает нормализацию `drafts` → `draft` (директория plural, статус singular).
+- CI guard вызывает `validators/validate-frontmatter.sh`, не содержит inline-проверок — единый source of truth.
+- `docs/bootstrap script inline в playbook` удалён — playbook ссылается на `bootstrap/bootstrap.sh`.

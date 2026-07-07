@@ -1,127 +1,176 @@
 ---
 schema: 1
-id: readme
+id: readme-runtime
 type: guide
 kind: index
 status: active
-date: 2026-07-07
+date: 2026-07-08
 owners: [naprolom-team]
 
 entity_refs: [schema-v1, canonical-frontmatter]
-touches: [docs]
-docs: [docs/guides/legacy-migration.md, 2026-07-07-documentation-system-playbook-v2.md]
+touches: []
+docs: [INSTALL.md, playbook/playbook-v2.md, playbook/migrate-legacy.md]
 refs: []
-depends_on: [documentation-system-playbook-v2]
-tags: [documentation, index, start-here]
+depends_on: []
+tags: [runtime, index, landing]
 priority: P0
 ---
 
-# naprolom-docs
+# naprolom-docs — Documentation System Runtime
 
-Документационная система проекта **naprolom**, построенная на Canonical Schema v1 (Greenfield Playbook v2).
+**Превращает документацию в инфраструктуру**, а не в свалку `.md`-файлов. Каноническая Schema v1, lifecycle из path, 5-слойная архитектура, CI guard. Подключается как Git Submodule — один runtime на всю экосистему.
 
-> **START HERE** — если вы агент или новый участник, начните с `.context/agent-entry.md`, затем `docs/architecture/README.md`.
-
----
-
-## Что в этом репозитории
-
-| Документ | Назначение |
-|----------|-----------|
-| `2026-07-07-documentation-system-playbook-v2.md` | **Целевая модель** Documentation System v2 — Schema v1, bootstrap, workflow, CI, readiness. Greenfield-first. |
-| `docs/guides/legacy-migration.md` | **Adoption Guide** — как внедрить систему в существующий (brownfield) репозиторий: аудит legacy, migration script, warn-only → strict rollout. |
-| `docs/audits/2026-07-07-documentation-transformation-kordon.md` | **Value Proof** — кейс-стади трансформации Kordon/MegaDelta: 141 файл хаоса → 40 canonical за 30 мин / 1 промпт. |
-| `README.md` | Этот файл — индекс и точка входа. |
+> **Доказательство:** проект Kordon/MegaDelta — 141 хаотичный файл → 40 canonical за 30 минут и один промпт. Онбординг с 2–5 дней до 5 минут, контекст LLM легче на 73%, стоимость промпта — на 80%. См. `docs/audits/`.
 
 ---
 
-## Два режима внедрения
+## Что это
 
-```
-                 Documentation System v2 (целевая модель)
-                          ↑                  ↑
-        новый репо → Playbook (greenfield)   существующий репо → Adoption Guide (brownfield)
-                          │                  │
-                   Strict CI с 1-го PR   Warn-only → Strict CI
-```
+`naprolom-docs` — это **Documentation System Runtime**: не набор промптов и не шаблон README. Это версионированный движок, который любой ваш проект подключает как Git Submodule и получает:
 
-- **Greenfield** — новый проект без `docs/`. Bootstrap создаёт структуру сразу в canonical-виде. CI strict с первого PR.
-- **Brownfield** — существующий репо с `.md` файлами. Миграция frontmatter + warn-only период + cleanup + switch to strict.
+- **Canonical Schema v1** — единый frontmatter-формат для всех `.md` в `docs/` (6 обязательных полей, ноль legacy-полей).
+- **Lifecycle из path** — статус spec/api определяется директорией (`drafts/` → `draft`, `approved/` → `approved`), а не editable-полем. AI отличает актуальное от устаревшего программно.
+- **5-слойную архитектуру** — Entry (`.context/`) → Architecture → ADR → Spec → Operations. Навигация по структуре, а не по `grep`.
+- **CI guard** — ни один `.md` без canonical frontmatter не попадёт в репозиторий.
+- **Runnable migration** — для brownfield-репозиториев: `scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
 
 ---
 
-## Структура документации
-
-```
-docs/
-  guides/
-    legacy-migration.md     # Adoption Guide (brownfield)
-  architecture/             # живая архитектура (topology, data model, invariants)
-  adr/                      # Architecture Decision Records
-  specs/                    # drafts / review / approved / implemented / superseded
-  audits/                   # аудиты (append-only body)
-  backlog/                  # единый бэклог
-  prompts/                  # AI-контекстные промпты
-  api/                      # API specifications
-.context/                   # метаданные проекта для AI-агентов (project.yml, boundaries.yml, ...)
-.claude/rules/              # правила для AI-агента
-.github/workflows/          # docs-validate.yml (CI Schema v1 guard)
-```
-
-Полное описание схемы, типов, статусов и lifecycle — в Playbook v2, §«Canonical Schema v1».
-
----
-
-## Canonical Schema v1 (кратко)
-
-Каждый `.md` в `docs/` обязан иметь frontmatter:
-
-```yaml
----
-schema: 1            # mandatory
-id: <kebab-case>     # mandatory, stable
-type: <enum>         # mandatory (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-status: <per-type>   # mandatory
-date: YYYY-MM-DD     # mandatory
-owners: []           # mandatory
----
-```
-
-Обязательны 6 полей: `schema`, `id`, `type`, `status`, `date`, `owners`.
-Legacy поля запрещены: `author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`.
-`lifecycle` для spec/api **вычисляется из пути**, не хранится в frontmatter.
-
----
-
-## Быстрый старт
+## Как подключить
 
 ```bash
-# Greenfield: создать структуру с нуля
-./docs-bootstrap.sh <project-name>
+# 1. Подключить submodule
+mkdir -p .context/runtime
+git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
+git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
 
-# Brownfield: см. docs/guides/legacy-migration.md
+# 2. Запустить bootstrap (создаст docs/, .context/, CLAUDE.md snippet, CI workflow)
+bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+
+# 3. Заполнить .context/project.yml и .context/boundaries.yml под ваш проект
+
+# 4. Создать первый документ из template
+cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/001-orchestrator-choice.md
+```
+
+**Полная инструкция с troubleshooting и edge-cases** → [`INSTALL.md`](INSTALL.md).
+
+**Brownfield?** Если в репо уже есть `docs/` с `.md` — следуйте агент-промпту [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md), а не `bootstrap.sh`.
+
+---
+
+## Что входит (Runtime layout)
+
+```
+naprolom-docs/
+├── README.md                          ← этот файл (landing page)
+├── INSTALL.md                          ← consumer integration (submodule + bootstrap)
+├── playbook/
+│   ├── playbook-v2.md                  ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
+│   └── migrate-legacy.md               ← brownfield агент-промпт (7 шагов с checkpoint'ами)
+├── bootstrap/
+│   ├── bootstrap.sh                    ← POSIX, минимальный, идемпотентный
+│   └── bootstrap.ps1                   ← Windows / PowerShell
+├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
+│   ├── architecture.md  adr.md  spec.md
+│   └── audit.md  runbook.md  backlog.md
+├── schemas/
+│   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
+├── validators/
+│   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
+├── scripts/
+│   └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
+├── agents/                             ← роли AI-агентов (reviewer, architect) для claude-code и opencode
+├── docs/                               ← dogfood: собственная документация Runtime
+│   └── audits/                         ← value-proof кейсы (напр. Kordon/MegaDelta)
+└── .github/workflows/docs-validate.yml ← CI guard, вызывающий validators/validate-frontmatter.sh
 ```
 
 ---
 
-## Почему Naprolom-Docs?
+## Quick Start
 
-Потому что документация без системы **умирает за 2 недели**: нет lifecycle → никто не проверяет актуальность → автор не знает, куда писать обновление, и создаёт новый ad-hoc файл → ответственность размывается → проект превращается в цифровую свалку. AI-агенты в такой свалке находят по 2–3 версии одного документа и галлюцинируют.
+### Greenfield (новый репо)
 
-Naprolom-Docs превращает документацию в **инфраструктуру**, а не текст:
+```bash
+git clone your-new-repo && cd your-new-repo
+git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
+git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+# → docs/, .context/, CLAUDE.md, docs-validate.yml созданы
+# → заполните .context/project.yml, создайте первый ADR из template
+git add -A && git commit -m "chore: bootstrap documentation runtime"
+```
 
-- **Canonical Schema v1** — каждый `.md` в `docs/` самодокументирован (6 mandatory-полей). Никаких legacy-полей.
-- **Lifecycle из path** — статус документа определяется папкой (`specs/approved/` → approved), а не изменчивым полем. AI отличает актуальное от устаревшего программно, не читая содержимое.
-- **5-слойная архитектура** — Entry → Architecture → Decisions (ADR) → Specs → Operations. Навигация по структуре, а не по grep.
-- **CI guard** — ни один файл без canonical frontmatter не попадёт в репозиторий.
+### Brownfield (репо с существующей документацией)
 
-Доказательство на практике — кейс Kordon/MegaDelta: **141 хаотичный файл → 40 canonical за 30 минут и 1 промпт**. Онбординг сократился с 2–5 дней до 5 минут, объём LLM-контекста — на 73%, стоимость промпта — на 80% (`docs/audits/2026-07-07-documentation-transformation-kordon.md`).
+```bash
+git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
+git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+
+# Запустить миграцию (dry-run сначала!)
+node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --dry-run
+node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --owner your-team
+# → covered TODO_ENTITY_REF markers go to manual review
+
+# Включить warn-only CI на 3–7 дней → cleanup forgotten docs → strict
+```
+
+См. [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md) — 7 шагов с checkpoint'ами для агента.
 
 ---
 
-## Питч (для рабочего чата)
+## Обновление Runtime
 
-> Внедрили методологию Naprolom-Docs: документация теперь часть инфраструктуры, а не свалка `.md`-файлов. На проекте Kordon/MegaDelta за 30 минут и один промпт сожгли 141 хаотичный файл до 40 canonical (5 слоёв, Schema v1, lifecycle из пути). Итог: онбординг инженера — 5 минут вместо дней, контекст LLM легче на 73%, галлюцинации AI — минус 90%. Это не шаблон README, это Documentation-as-Code с CI-контролем.
+```bash
+# Вариант A — вручную (пять секунд, рекомендуется)
+git submodule update --remote --merge
+git add .context/runtime/naprolom-docs
+git commit -m "chore: update Documentation System Runtime"
+```
+
+```yaml
+# Вариант B — Dependabot gitsubmodule (авто-PR)
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: weekly
+```
+
+Подробно: [`INSTALL.md` → Обновление Runtime](INSTALL.md#обновление-runtime).
+
+---
+
+## Playbook
+
+Целевая модель (что означает «Documentation System внедрена»):
+- **[`playbook/playbook-v2.md`](playbook/playbook-v2.md)** — Greenfield-модель: Canonical Schema v1, 5-слойная архитектура, entity_refs workflow, lifecycle из path, CI guard, метрики готовности.
+- **[`playbook/migrate-legacy.md`](playbook/migrate-legacy.md)** — Brownfield агент-промпт: 7 шагов, runnable migration script, warn-only → strict rollout.
+- **[`INSTALL.md`](INSTALL.md)** — Подключение submodule, bootstrap, `.gitmodules`, CLAUDE.md snippet, troubleshooting.
+
+---
+
+## Почему Git Submodule, а не npm/pip/git-release
+
+- **Не требует Node.js/Python/Go toolchain** в проекте — работает для FastAPI, Go, Rust, Terraform, Ansible.
+- **Фиксируется commit SHA** — воспроизводимость, тривиальный откат.
+- **Обновляется по вашему решению** — нет автоматического registry pull, который сломает проект.
+- **Не засоряет основной репо** — Runtime живёт в `.context/runtime/`, не в `node_modules/` или `vendor/`.
+- **Соответствует вашему стеку** GitOps/IaC — единый источник истины, обновления через PR-review.
+
+Альтернативы (npm package, GitHub Releases + curl) рассмотрены и отклонены: завязка на toolchain либо нарушает portability, либо теряет воспроизводимость.
+
+---
+
+## Стратегия обновлений
+
+- **`naprolom-docs`** — единственный источник истины, развивается независимо в этом репозитории.
+- **Каждый consumer** подключает его как Git Submodule, закреплённый за `branch = master` в `.gitmodules`.
+- **Обновления распространяются только через PR:** новый SHA сабмодуля приезжает в dependent-репо (вручную или через Dependabot) → review → merge. Никаких direct commits в master consumer-проекта.
+- **Цель:** единая Documentation System во всей экосистеме без дрейфа версий.
 
 ---
 
@@ -129,15 +178,24 @@ Naprolom-Docs превращает документацию в **инфраст�
 
 | Этап | Состояние |
 |------|-----------|
-| Playbook v2 (greenfield модель) | ✅ implemented |
-| Adoption Guide (brownfield) | ✅ добавлен (`docs/guides/legacy-migration.md`) |
-| `.context/`, templates, CI | ⏳ bootstrap ещё не запускался в этом репо |
-| Architecture layer (ADR/specs/audits) | ⏳ предстоит наполнить |
+| Runtime layout (bootstrap/, templates/, schemas/, validators/, scripts/) | ✅ v1.0 |
+| Playbook v2 (greenfield-модель) | ✅ реализован |
+| Migration Prompt (brownfield агент-промпт) | ✅ реализован |
+| INSTALL.md (consumer integration) | ✅ реализован |
+| Bootstrap (.sh + .ps1, идемпотентный) | ✅ реализован, протестирован на POSIX и Windows |
+| agents/ (claude-code, opencode: reviewer, architect) | ⏳ Этап 2 (this session) |
+| examples/{fastapi,golang,terraform,ansible}/ | ⛔ Tier 2 — после dogfooding |
+| validate-links.sh, normalize-frontmatter.mjs | ⛔ Tier 2 |
+| repository_dispatch, Dependabot template | ⛔ Tier 2 |
+| prompts/ каталог | ⛔ заменено на `agents/` |
+| **Dogfooding на реальном проекте** | ⏳ Этап 3 — следующий шаг |
+
+> Runtime v1.0 **freeze** планируется после dogfooding на первом стратегическом проекте Naprolom. До этого момента новые функции не добавляются — только bugfixes на основе реального использования.
 
 ---
 
-## Чейнджлог (this repo)
+## Чейнджлог
 
-- **2026-07-07** — initial commit: README + Playbook v2 (greenfield).
-- **2026-07-07** — выделен отдельный **Adoption Guide** (`docs/guides/legacy-migration.md`) из временного `todos.md`; playbook очищен от категоричного «никакой migration», добавлена ссылка на guide. `todos.md` ликвидирован.
-- **2026-07-07** — добавлен **Value Proof** кейс (`docs/audits/2026-07-07-documentation-transformation-kordon.md`, тип `audit`): трансформация Kordon/MegaDelta 141→40 файлов. В README добавлены разделы «Почему Naprolom-Docs?» и питч для чата; в отчёт встроен блок про автоматизацию (оригинал промпта). Неканоничный `docs/reports/` удалён.
+- **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `validators/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.
+- **2026-07-07** — v2 split: пособие переписано как Greenfield Playbook; Adoption Guide выделен отдельно (brownfield); добавлен Value Proof case Kordon/MegaDelta; README переписан с индексом, Why-секцией и питчем. CI guard исправлен (frontmatter-only, без false positives); `WARN_ONLY` switch для brownfield rollout.
+- **2026-07-07** — initial commit: README + Playbook v2 (greenfield модель).
