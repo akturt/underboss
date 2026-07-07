@@ -182,19 +182,17 @@ for (const doc of glob("docs/**/*.md")) {
 
 ## Шаг 7: Включить CI в режиме warn-only
 
-Вместо `exit 1` в `docs-validate.yml` на период rollout — печатать WARNING и не падать:
+Guard из Playbook v2 поддерживает переключатель `WARN_ONLY`. На период rollout в `.github/workflows/docs-validate.yml` выставить:
 
 ```yaml
-# Временно (warn-only):
-- name: Verify all .md in docs/ have schema: 1
-  run: |
-    missing=$(git grep -L "^schema: 1$" -- 'docs/**/*.md' || true)
-    if [ -n "$missing" ]; then
-      echo "WARNING: .md files without schema: 1 frontmatter:"
-      echo "$missing"
-    fi
-# ...аналогично для legacy fields и spec path-status match
+jobs:
+  schema-v1:
+    runs-on: ubuntu-latest
+    env:
+      WARN_ONLY: "true"   # brownfield rollout — WARNING вместо FAIL
 ```
+
+При `WARN_ONLY=true` нарушения печатаются как `WARNING`, CI не падает. Guard всё так же проверяет **только frontmatter**, поэтому проза/таблицы/code-блоки с упоминанием legacy-полей не шумят.
 
 Держать warn-only несколько дней, пока не вычистятся забытые `docs/archive/`, `docs/old/`, `docs/wiki/`, `docs/tmp/`.
 
@@ -202,7 +200,7 @@ for (const doc of glob("docs/**/*.md")) {
 
 ## Шаг 8: Switch to strict CI
 
-Когда warn-only больше не выдаёт предупреждений — переключить guard обратно в `exit 1` (как в Greenfield Playbook). С этого момента brownfield репозиторий живёт по тем же strict-правилам, что и greenfield.
+Когда warn-only больше не выдаёт предупреждений — убрать `WARN_ONLY` (оставить пустым), вернув guard в strict-режим (как в Greenfield Playbook). С этого момента brownfield репозиторий живёт по тем же strict-правилам, что и greenfield.
 
 ---
 

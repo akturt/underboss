@@ -1386,6 +1386,8 @@ done
 
 ## CI Schema v1 Guard (включить с первого PR)
 
+> **Принцип без ложных срабатываний.** Guard проверяет **только frontmatter** (YAML между первым и вторым `---`), а не весь файл. Поэтому упоминания legacy-полей в прозе, таблицах и code-блоках (например, в этом playbook или в Adoption Guide) не ломают CI. Lifecycle и legacy-поля запрещены именно как **ключи frontmatter**, и проверяются только там, где они и могут быть — в FM.
+
 `.github/workflows/docs-validate.yml`:
 
 ```yaml
@@ -1398,39 +1400,77 @@ on:
 jobs:
   schema-v1:
     runs-on: ubuntu-latest
+    env:
+      # Brownfield rollout: поставить "true" на период warn-only (см. Adoption Guide).
+      # Greenfield: оставить пустым → strict с первого PR.
+      WARN_ONLY: ""
     steps:
       - uses: actions/checkout@v4
-      - name: Verify all .md in docs/ have schema: 1
+      - name: Install frontmatter checker
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y python3-yaml
+      - name: Validate Schema v1 (frontmatter-only)
         run: |
           set -e
-          missing=$(git grep -L "^schema: 1$" -- 'docs/**/*.md' || true)
-          if [ -n "$missing" ]; then
-            echo "ERROR: .md files without schema: 1 frontmatter:"
-            echo "$missing"
+          fail=0
+          warn() {
+            if [ -n "$WARN_ONLY" ]; then
+              echo "WARNING: $1"
+            else
+              echo "ERROR: $1"
+              fail=1
+            fi
+          }
+          check_file() {
+            f="$1"
+            # Извлечь только frontmatter: между первым и вторым '---'
+            fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
+            [ -n "$fm" ] || { warn "no frontmatter in $f"; return; }
+
+            # 1. schema: 1 обязательно
+            echo "$fm" | grep -q "^schema: *1 *$" || { warn "$f: schema != 1"; return; }
+
+            # 2. mandatory поля
+            for field in id type status date owners; do
+              echo "$fm" | grep -q "^$field:" || warn "$f: missing mandatory field '$field'"
+            done
+
+            # 3. legacy-поля ЗАПРЕЩЕНЫ ТОЛЬКО ВО FRONTMATTER
+            for field in "lifecycle:" "^author:" "^title:" "^created:" "supersedes_adr:" "referenced_by:" "excludes-from-scope:"; do
+              if echo "$fm" | grep -q "$field"; then
+                warn "$f: legacy field '$field' in frontmatter"
+              fi
+            done
+
+            # 4. spec path-status match (только для specs)
+            case "$f" in
+              docs/specs/*)
+                dir=$(echo "$f" | awk -F/ '{print $(NF-1)}')
+                status=$(echo "$fm" | grep -m1 "^status:" | sed 's/status: *//')
+                [ "$status" = "$dir" ] || warn "$f: status '$status' != path '$dir'"
+                ;;
+            esac
+          }
+          while IFS= read -r f; do
+            check_file "$f"
+          done < <(git grep -l "^schema:" -- 'docs/**/*.md' || true)
+          git ls-files 'docs/**/*.md' | while read -r f; do
+            awk 'NR==1 && $0=="---"' "$f" >/dev/null || warn "$f: no frontmatter at all"
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::docs-validate failed"
             exit 1
           fi
-      - name: Verify no legacy fields
-        run: |
-          set -e
-          for field in "lifecycle:" "^author:" "^title:" "^created:" "supersedes_adr:" "referenced_by:" "excludes-from-scope:"; do
-            matches=$(git grep -n "$field" -- 'docs/**/*.md' || true)
-            if [ -n "$matches" ]; then
-              echo "ERROR: legacy field '$field' found:"
-              echo "$matches"
-              exit 1
-            fi
-          done
-      - name: Verify spec path-status match
-        run: |
-          set -e
-          for dir in drafts review approved implemented superseded; do
-            for f in docs/specs/$dir/*.md; do
-              [ -f "$f" ] || continue
-              status=$(grep -m1 "^status:" "$f" | sed 's/status: //')
-              if [ "$status" != "$dir" ]; then
-                echo "ERROR: $f has status: $status but path expects $dir"
-                exit 1
-              fi
+          echo "docs-validate: OK"
+```
+
+**Почему так:**
+- `awk` режет только блок FM → legacy-поля в теле документа (проза/таблицы/код) не вызывают false positive.
+- `WARN_ONLY=true` включает режим warn-only для brownfield rollout (Adoption Guide, §Warn-only CI). Greenfield оставляет переменную пустой → strict.
+- Проверка `schema: 1` и mandatory-полей идёт по FM, не по всему файлу.
+
+**Greenfield:** strict с первого PR (переменная `WARN_ONLY` пуста).
+**Brownfield:** на период rollout поставить `WARN_ONLY: "true"`, после cleanup переключить обратно в strict.
             done
           done
 ```
