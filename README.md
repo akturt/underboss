@@ -32,7 +32,7 @@ priority: P0
 - **Lifecycle из path** — статус spec/api определяется директорией (`drafts/` → `draft`, `approved/` → `approved`), а не editable-полем. AI отличает актуальное от устаревшего программно.
 - **5-слойную архитектуру** — Entry (`.context/`) → Architecture → ADR → Spec → Operations. Навигация по структуре, а не по `grep`.
 - **CI guard** — ни один `.md` без canonical frontmatter не попадёт в репозиторий.
-- **Runnable migration** — для brownfield-репозиториев: `scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
+- **Runnable migration** — для brownfield-репозиториев: `engine/scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
 
 ---
 
@@ -50,7 +50,7 @@ bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
 # 3. Заполнить .context/project.yml и .context/boundaries.yml под ваш проект
 
 # 4. Создать первый документ из template
-cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/001-orchestrator-choice.md
+cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
 ```
 
 **Полная инструкция с troubleshooting и edge-cases** → [`INSTALL.md`](INSTALL.md).
@@ -63,27 +63,28 @@ cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/001-orchestrator-cho
 
 ```
 naprolom-docs/
-├── README.md                          ← этот файл (landing page)
-├── INSTALL.md                          ← consumer integration (submodule + bootstrap)
+├── README.md                              ← этот файл (landing page)
+├── INSTALL.md                             ← consumer integration (submodule + bootstrap)
 ├── playbook/
-│   ├── playbook-v2.md                  ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
-│   └── migrate-legacy.md               ← brownfield агент-промпт (7 шагов с checkpoint'ами)
+│   ├── playbook-v2.md                      ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
+│   └── migrate-legacy.md                   ← brownfield агент-промпт (7 шагов с checkpoint'ами)
+├── engine/
+│   ├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
+│   │   ├── architecture.md  adr.md  spec.md
+│   │   └── audit.md  runbook.md  backlog.md
+│   ├── schemas/
+│   │   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
+│   ├── validators/
+│   │   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
+│   └── scripts/
+│       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
 ├── bootstrap/
-│   ├── bootstrap.sh                    ← POSIX, минимальный, идемпотентный
-│   └── bootstrap.ps1                   ← Windows / PowerShell
-├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
-│   ├── architecture.md  adr.md  spec.md
-│   └── audit.md  runbook.md  backlog.md
-├── schemas/
-│   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
-├── validators/
-│   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
-├── scripts/
-│   └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
-├── agents/                             ← роли AI-агентов (reviewer, architect) для claude-code и opencode
-├── docs/                               ← dogfood: собственная документация Runtime
-│   └── audits/                         ← value-proof кейсы (напр. Kordon/MegaDelta)
-└── .github/workflows/docs-validate.yml ← CI guard, вызывающий validators/validate-frontmatter.sh
+│   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный
+│   └── bootstrap.ps1                       ← Windows / PowerShell
+├── agents/                                 ← роли AI-агентов (reviewer, architect) для claude-code и opencode
+├── docs/                                   ← dogfood: собственная документация Runtime
+│   └── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
+└── .github/workflows/docs-validate.yml     ← CI guard, вызывающий engine/validators/validate-frontmatter.sh
 ```
 
 ---
@@ -109,8 +110,8 @@ git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/n
 git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
 
 # Запустить миграцию (dry-run сначала!)
-node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --dry-run
-node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --owner your-team
+node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
+node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner your-team
 # → covered TODO_ENTITY_REF markers go to manual review
 
 # Включить warn-only CI на 3–7 дней → cleanup forgotten docs → strict
@@ -178,7 +179,7 @@ updates:
 
 | Этап | Состояние |
 |------|-----------|
-| Runtime layout (bootstrap/, templates/, schemas/, validators/, scripts/) | ✅ v1.0 |
+| Runtime layout (bootstrap/, engine/templates/, engine/schemas/, engine/validators/, engine/scripts/) | ✅ v1.0 |
 | Playbook v2 (greenfield-модель) | ✅ реализован |
 | Migration Prompt (brownfield агент-промпт) | ✅ реализован |
 | INSTALL.md (consumer integration) | ✅ реализован |
@@ -196,6 +197,7 @@ updates:
 
 ## Чейнджлог
 
+- **2026-07-08** — **Runtime engine/ layering**: `templates/`, `schemas/`, `validators/`, `scripts/` сгруппированы под `engine/` (Documentation Engine слой). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `engine/...` префикс. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Engine → AI Layer.
 - **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `validators/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.
 - **2026-07-07** — v2 split: пособие переписано как Greenfield Playbook; Adoption Guide выделен отдельно (brownfield); добавлен Value Proof case Kordon/MegaDelta; README переписан с индексом, Why-секцией и питчем. CI guard исправлен (frontmatter-only, без false positives); `WARN_ONLY` switch для brownfield rollout.
 - **2026-07-07** — initial commit: README + Playbook v2 (greenfield модель).

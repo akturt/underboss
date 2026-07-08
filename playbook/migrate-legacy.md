@@ -35,7 +35,7 @@ priority: P1
 
 - Submodule `naprolom-docs` уже подключён по адресу `.context/runtime/naprolom-docs/` (см. `../../INSTALL.md`).
 - В репозитории уже запущен `bootstrap/bootstrap.sh` (`.context/`, `docs/` skeleton, `CLAUDE.md` snippet созданы).
-- Node.js 18+ доступен для `scripts/migrate-legacy.mjs`.
+- Node.js 18+ доступен для `engine/scripts/migrate-legacy.mjs`.
 
 ## Стратегия rollout
 
@@ -105,13 +105,13 @@ find docs/ -type d -not -path "*/.context/runtime/*" \
 
 ```bash
 # Dry-run: покажет что было бы изменено, без записи
-node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --dry-run
+node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
 
 # Реальный прогон
-node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --owner <team-name>
+node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <team-name>
 
 # Тихий режим (только summary)
-node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --quiet --owner <team-name>
+node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
 ```
 
 **Что делает скрипт:**
@@ -180,7 +180,7 @@ jobs:
 
 ```bash
 # Что скажет polity CI в warn-only
-WARN_ONLY=true bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
+WARN_ONLY=true bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 Длительность warn-only: 3–7 дней или до тех пор, пока в нескольких PR подряд не будет ни одного warning'а.
@@ -194,7 +194,7 @@ WARN_ONLY=true bash .context/runtime/naprolom-docs/validators/validate-frontmatt
 За warn-only период вычисти нестандартные документы:
 
 - `docs/archive/` → либо дописать canonical FM, либо удалить (решает оператор).
-- `docs/old/` → мигрировать с `scripts/migrate-legacy.mjs` либо удалить.
+- `docs/old/` → мигрировать с `engine/scripts/migrate-legacy.mjs` либо удалить.
 - `docs/wiki/` → перенести релевантное в `docs/architecture/` / `docs/adr/`, остальное удалить.
 - `docs/tmp/` → удалить (это обычно сессионные файлы, не документация).
 - `*.log`, `PHASE_*_REPORT.md`, `*_verification_*.md` → удалить из `docs/`.

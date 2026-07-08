@@ -41,7 +41,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
 
 2. **Run Runtime validator** as the primary source of truth:
    ```bash
-   bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
+   bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
    ```
    - Exit code `0` → all green. Proceed to manual checks.
    - Non-zero → CI should already fail in strict mode. Surface the validator's specific output in your review, do not duplicate logic.
@@ -94,7 +94,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
    - Max 10 refs per doc.
 
 4. **For new documents check that author started from template:**
-   - Compare structure to corresponding `templates/<type>.md` in Runtime.
+   - Compare structure to corresponding `engine/templates/<type>.md` in Runtime.
    - Missing canonical sections (`# H1`, `## Goal`, body sections per-type) → flag.
 
 5. **For spec lifecycle transitions** (`git mv` between path-status dirs):
@@ -163,5 +163,5 @@ You do NOT rewrite body content unless explicitly instructed by author. Your pri
 - Don't review code quality, tests, or commit message conventions.
 - Don't enforce prose style or grammar.
 - Don't reformat unrelated files.
-- Don't run on files outside `docs/**/*.md` (templates/, schemas/, etc. live in Runtime submodule and are out of scope for consumer PR review).
+- Don't run on files outside `docs/**/*.md` (engine/templates/, engine/schemas/, etc. live in Runtime submodule and are out of scope for consumer PR review).
 - Don't over-block: low-severity findings do not warrant REQUEST_CHANGES.

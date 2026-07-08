@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// scripts/migrate-legacy.mjs
+// engine/scripts/migrate-legacy.mjs
 //
 // Migrate legacy .md frontmatter to Canonical Schema v1.
 // Implements playbook/migrate-legacy.md.
 //
 // Run from the ROOT of the consumer project:
-//   node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs
-//   node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --docs docs --dry-run
-//   node .context/runtime/naprolom-docs/scripts/migrate-legacy.mjs --owner team-x
+//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs
+//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --docs docs --dry-run
+//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner team-x
 //
 // What it does:
 //   - For every .md in docs/:

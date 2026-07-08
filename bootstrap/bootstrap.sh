@@ -4,7 +4,7 @@
 # Minimal Documentation System Runtime bootstrap.
 # Creates docs/ skeleton + .context/ stubs + drops a CLAUDE.md snippet into the
 # consumer repository. No magic, no templates written into the project — the
-# templates live inside the submodule (templates/) and are referenced by path.
+# templates live inside the engine/ subdirectory (engine/templates/) and are referenced by path.
 #
 # Run from the ROOT of the consumer project, not from inside the submodule.
 # It auto-detects the submodule path if invoked from inside it.
@@ -101,7 +101,7 @@ Read in order:
 
 Before creating any .md in docs/:
 1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-2. Copy template from runtime: `.context/runtime/naprolom-docs/templates/<type>.md`
+2. Copy template from runtime: `.context/runtime/naprolom-docs/engine/templates/<type>.md`
 3. Fill the 6 mandatory fields: schema, id, type, status, date, owners
 4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)
 5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope
@@ -119,9 +119,9 @@ Documentation System Runtime is connected as a Git Submodule:
 
 Before any change to `docs/`:
 1. Study `playbook/playbook-v2.md` (target model)
-2. Use `templates/` — do NOT copy templates into the project
-3. Follow `schemas/frontmatter.schema.json`
-4. Run `validators/validate-frontmatter.sh` before commit
+2. Use `engine/templates/` — do NOT copy templates into the project
+3. Follow `engine/schemas/frontmatter.schema.json`
+4. Run `engine/validators/validate-frontmatter.sh` before commit
 5. For brownfield migration, follow `playbook/migrate-legacy.md`
 MD
 )
@@ -158,7 +158,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
+          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 YML
   echo "→ Created .github/workflows/docs-validate.yml"
 else
@@ -171,6 +171,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Fill .context/project.yml with project-specific stack and metadata"
 echo "  2. Edit .context/boundaries.yml for pristine/secret paths of THIS project"
-echo "  3. Create your first ADR: cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/001-<slug>.md"
+echo "  3. Create your first ADR: cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-<slug>.md"
 echo "  4. Create docs/architecture/README.md (topology + invariants)"
 echo "  5. Commit the new structure"

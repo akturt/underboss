@@ -19,7 +19,7 @@ priority: P0
 # INSTALL — Подключение Documentation System Runtime
 
 > Этот документ открывает **пользователь naprolom-docs после `git submodule add`**.
-> Остальное (`playbook/`, `templates/`, `validators/`, `schemas/`, `scripts/`, `bootstrap/`) — содержимое Runtime, оно подъезжает автоматически вместе с submodule.
+> Остальное (`playbook/`, `engine/templates/`, `engine/validators/`, `engine/schemas/`, `engine/scripts/`, `bootstrap/`) — содержимое Runtime, оно подъезжает автоматически вместе с submodule.
 
 ---
 
@@ -51,6 +51,13 @@ priority: P0
 │   ├── context.md                 ← ваш контекст
 │   └── runtime/
 │       └── naprolom-docs/         ← Git Submodule (Documentation Runtime)
+│           ├── README.md          ← landing page
+│           ├── INSTALL.md         ← этот документ
+│           ├── playbook/          ← целевая модель + brownfield-промпт
+│           ├── engine/            ← Documentation Engine (validators, templates, schemas, scripts)
+│           ├── bootstrap/         ← создание структуры в вашем проекте
+│           ├── agents/            ← роли AI-агентов для claude-code и opencode
+│           └── docs/              ← dogfood: собственная документация Runtime
 └── .gitmodules                    ← конфиг submodule
 ```
 
@@ -114,7 +121,7 @@ powershell -File .context\runtime\naprolom-docs\bootstrap\bootstrap.ps1
 - `docs/{architecture,adr,specs/{drafts,review,approved,implemented,superseded},audits,backlog,api}/` — 5-слойная структура.
 - `.context/{project.yml,boundaries.yml,agent-entry.md}` — stubs для AI-агента (заполните под ваш проект).
 - `CLAUDE.md` (или `AGENTS.md`) — snippet с 5 правилами Documentation Runtime (см. ниже).
-- `.github/workflows/docs-validate.yml` — CI guard, вызывающий `validators/validate-frontmatter.sh` из submodule.
+- `.github/workflows/docs-validate.yml` — CI guard, вызывающий `engine/validators/validate-frontmatter.sh` из submodule.
 
 Если `docs/` уже существует, bootstrap НЕ перезаписывает существующие файлы — только создаёт недостающие. `.gitkeep` для пустых директорий.
 
@@ -133,9 +140,9 @@ Documentation System Runtime is connected as a Git Submodule:
 
 Before any change to `docs/`:
 1. Study `playbook/playbook-v2.md` (target model)
-2. Use `templates/` — do NOT copy templates into the project
-3. Follow `schemas/frontmatter.schema.json`
-4. Run `validators/validate-frontmatter.sh` before commit
+2. Use `engine/templates/` — do NOT copy templates into the project
+3. Follow `engine/schemas/frontmatter.schema.json`
+4. Run `engine/validators/validate-frontmatter.sh` before commit
 5. For brownfield migration, follow `playbook/migrate-legacy.md`
 ```
 
@@ -215,18 +222,18 @@ boundaries:
 
 ```bash
 # ADR (Architecture Decision Record)
-cp .context/runtime/naprolom-docs/templates/adr.md docs/adr/001-orchestrator-choice.md
+cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
 # Отредактируйте frontmatter (id, status, date, owners) и body
 
 # Spec (использует lifecycle из path)
-cp .context/runtime/naprolom-docs/templates/spec.md docs/specs/drafts/$(date +%Y-%m-%d)-new-api.md
+cp .context/runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/$(date +%Y-%m-%d)-new-api.md
 # status: draft → обязательно совпадает с директорией drafts/
 
 # Architecture
-cp .context/runtime/naprolom-docs/templates/architecture.md docs/architecture/README.md
+cp .context/runtime/naprolom-docs/engine/templates/architecture.md docs/architecture/README.md
 
 # Audit
-cp .context/runtime/naprolom-docs/templates/audit.md docs/audits/$(date +%Y-%m-%d)-initial.md
+cp .context/runtime/naprolom-docs/engine/templates/audit.md docs/audits/$(date +%Y-%m-%d)-initial.md
 ```
 
 Подробно о создании и lifecycle документов — в [`playbook/playbook-v2.md`](playbook/playbook-v2.md).
@@ -239,10 +246,10 @@ cp .context/runtime/naprolom-docs/templates/audit.md docs/audits/$(date +%Y-%m-%
 
 ```bash
 # Строгая проверка (как в CI)
-bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
+bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 
 # Warn-only (если brownfield, но strict-период ещё не наступил)
-WARN_ONLY=true bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh
+WARN_ONLY=true bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 CI (`docs-validate.yml`) делает то же самое автоматически — но локально быстрее Feedback loop.
@@ -305,7 +312,7 @@ git commit -m "chore: pin Documentation Runtime to <commit-sha>"
 
 Если в репозитории уже есть документация: не запускайте bootstrap (он не перезапишет существующие файлы, но и не мигрирует их). Вместо bootstrap следуйте [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md) — там пошаговый агент-промпт для brownfield миграции.
 
-Кратко: запустите `scripts/migrate-legacy.mjs`, затем включите `WARN_ONLY=true` на несколько дней, вычистите забытые `docs/archive/`, переключите на strict.
+Кратко: запустите `engine/scripts/migrate-legacy.mjs`, затем включите `WARN_ONLY=true` на несколько дней, вычистите забытые `docs/archive/`, переключите на strict.
 
 ---
 
@@ -313,11 +320,11 @@ git commit -m "chore: pin Documentation Runtime to <commit-sha>"
 
 | ❌ Не делайте | ✅ Что вместо этого |
 |---------------|----------------------|
-| Копировать templates в `docs/` и хранить дубли в репо | Используйте templates как source of truth: `cp <runtime>/templates/<type>.md docs/<type>/...` единожды |
+| Копировать templates в `docs/` и хранить дубли в репо | Используйте templates как source of truth: `cp <runtime>/engine/templates/<type>.md docs/<type>/...` единожды |
 | Редактировать файлы в `.context/runtime/naprolom-docs/` in-place | Обновляйте submodule целиком, не трогайте содержимое |
 | Изменять `WARN_ONLY=true` на `false` до cleanup в brownfield | Следуйте `[playbook/migrate-legacy.md:Step 5-7]` — warn-only → strict по чеклисту |
 | Зафиксировать submodule по detached HEAD без записи в `.gitmodules` | Всегда `branch = master` в `.gitmodules`, чтобы `--remote` работал |
-| Создавать `.md` без `cp templates/...` | Canonical frontmatter нельзя написать «из головы» — начни с template, заполни 6 полей |
+| Создавать `.md` без `cp engine/templates/...` | Canonical frontmatter нельзя написать «из головы» — начни с template, заполни 6 полей |
 | Использовать legacy-поля (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`) | Заменить: `author`→`owners`, `title`→body H1, `created`→`date`, `lifecycle`→computed from path |
 
 ---

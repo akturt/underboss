@@ -3,8 +3,8 @@ on:
   pull_request:
     paths:
       - "docs/**"
-      - "templates/**"
-      - "schemas/**"
+      - "engine/templates/**"
+      - "engine/schemas/**"
       - "playbook/**"
 
 jobs:
@@ -18,12 +18,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Canonical Schema v1 frontmatter (own docs/)
         run: |
-          bash validators/validate-frontmatter.sh
+          bash engine/validators/validate-frontmatter.sh
       - name: Validate templates (canonical Schema v1 placeholders)
         run: |
-          # templates/ лежат вне docs/ → CI их не проверяет автоматически.
+          # engine/templates/ лежат вне docs/ → CI их не проверяет автоматически.
           # Проверяем, что каждый template имеет schema: 1 и mandatory поля.
-          for f in templates/*.md; do
+          for f in engine/templates/*.md; do
             fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
             [ -n "$fm" ] || { echo "ERROR: $f: no frontmatter"; exit 1; }
             echo "$fm" | grep -qE "^schema:[[:space:]]*1[[:space:]]*$" || { echo "ERROR: $f: schema != 1"; exit 1; }

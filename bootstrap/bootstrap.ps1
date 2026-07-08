@@ -100,7 +100,7 @@ $agentEntry = @(
   '',
   'Before creating any .md in docs/:',
   '1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)',
-  '2. Copy template from runtime: `.context/runtime/naprolom-docs/templates/<type>.md`',
+  '2. Copy template from runtime: `.context/runtime/naprolom-docs/engine/templates/<type>.md`',
   '3. Fill the 6 mandatory fields: schema, id, type, status, date, owners',
   '4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)',
   '5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope'
@@ -116,9 +116,9 @@ $snippet = @(
   '',
   'Before any change to `docs/`:',
   '1. Study `playbook/playbook-v2.md` (target model)',
-  '2. Use `templates/` - do NOT copy templates into the project',
-  '3. Follow `schemas/frontmatter.schema.json`',
-  '4. Run `validators/validate-frontmatter.sh` before commit',
+  '2. Use `engine/templates/` - do NOT copy templates into the project',
+  '3. Follow `engine/schemas/frontmatter.schema.json`',
+  '4. Run `engine/validators/validate-frontmatter.sh` before commit',
   '5. For brownfield migration, follow `playbook/migrate-legacy.md`'
 )
 
@@ -158,7 +158,7 @@ if (-not (Test-Path $wf)) {
     "          submodules: true",
     "      - name: Validate Canonical Schema v1 frontmatter",
     "        run: |",
-    "          bash .context/runtime/naprolom-docs/validators/validate-frontmatter.sh"
+    "          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh"
   )
   $wfContent | Set-Content -Path $wf -Encoding utf8
   Write-Host "-> Created .github/workflows/docs-validate.yml"
@@ -172,6 +172,6 @@ Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  1. Fill .context/project.yml with project-specific stack and metadata"
 Write-Host "  2. Edit .context/boundaries.yml for pristine/secret paths of THIS project"
-Write-Host "  3. Copy template to create first ADR: copy .context/runtime/naprolom-docs/templates/adr.md to docs/adr/001-<slug>.md"
+Write-Host "  3. Copy template to create first ADR: copy .context/runtime/naprolom-docs/engine/templates/adr.md to docs/adr/001-<slug>.md"
 Write-Host "  4. Create docs/architecture/README.md (topology + invariants)"
 Write-Host "  5. Commit the new structure"
