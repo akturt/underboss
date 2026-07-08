@@ -1,106 +1,112 @@
 # sops/ — Standard Operating Procedures
 
-> Декларативные описания процессов разработки. Не исполнение — описание. Оркестратором (временами) выступает человек или простой planner-скрипт.
+> Декларативные описания процессов разработки. Не исполнение — описание. Оркестратором выступает человек или простой planner-скрипт.
 
 ## Что это
 
-SOP — YAML-описание типового процесса разработки (New Feature, Bugfix, Release...) в виде:
+SOP — YAML-описание типового процесса разработки (New Feature, Bugfix, Release, Architecture Review...) в виде:
 1. **Input** — какие документы/артефакты должны существовать до старта.
-2. **Steps** — последовательность шагов, каждому назначена роль из `agents/` либо `human` (ручной шаг).
+2. **Steps** — последовательность шагов, каждому назначена роль из `agents/` или `gate: manual`.
 3. **Output** — артефакты, которые должны появиться по завершении.
 
-SOP не запускает ничего сам по себе. Это **источник правды для процесса** — план, по которому разработчик или AI-агент ведёт задачу.
-
-## Зачем
-
-Без SOP порядок «Кто и когда запускает Architecture Reviewer / Documentation Reviewer / etc» держится в голове у одного человека и нигде не зафиксирован. Через месяц — разночтения. Через три — каждый делает по-своему. SOP таблетки:
--описание в репозитории → diff'ается,.review'ится, версионности
-- ссылки на роли по имени (а не на файлы в файловой системе) → тянутся из `agents/{platform}/`
-- шаги могут идти параллельно — DAG описывается через `depends_on`
-- запуск: пока руками, позже — простыми wrapper'ми или CI шагами
+SOP описывает **оркестрацию**, не validation logic. Validation — ответственность роли.
 
 ## Layout
 
 ```
 sops/
 ├── README.md              ← этот файл
-├── planner.mjs            ← по input типу печатает DAG выполнения (parallel groups)
-├── new-feature.yaml
-├── bugfix.yaml
-├── new-service.yaml
-├── architecture-change.yaml
-├── audit.yaml
-├── release.yaml
-└── incident.yaml
+├── planner.mjs            ← печатает DAG (parallel groups, capabilities, artifacts)
+├── new-feature.yaml       ← v1.0
+├── bugfix.yaml            ← v1.0
+├── new-service.yaml       ← v1.0
+├── architecture-change.yaml ← v1.0
+├── audit.yaml             ← v1.0
+├── release.yaml           ← v1.0
+├── incident.yaml          ← v1.0
+├── architecture-review.yaml ← v1.1: sequential review pipeline
+└── forensic-audit.yaml    ← v1.1: 8-step forensic pipeline
 ```
+
+## Available SOPs
+
+| SOP | Purpose | Steps |
+|-----|---------|-------|
+| `new-feature` | New feature lifecycle (spec → implementation → review) | 3 |
+| `bugfix` | Bug fix with documentation update | 3 |
+| `new-service` | New service with ADR + architecture docs | 4 |
+| `architecture-change` | Architecture change with ADR + review | 4 |
+| `audit` | Documentation audit | 2 |
+| `release` | Release with changelog + version bump | 3 |
+| `incident` | Incident response with post-mortem | 8 |
+| **`architecture-review`** | Sequential review: Reality → Arch → Doc → Adversary → Human | 5 |
+| **`forensic-audit`** | 8-step forensic audit pipeline | 8 |
+
+## Artifact Contracts (v1.1)
+
+SOP steps declare **data flow** via `consumes:` / `produces:` and **control flow** via `depends_on:`:
+
+```yaml
+- id: 2
+  name: Architecture review
+  capability: review-spec
+  role: architecture-reviewer
+  consumes: [reality-report, subject-spec]   # data flow: what we receive
+  produces: architecture-findings            # data flow: what we produce
+  depends_on: [1]                            # control flow: after which step
+```
+
+`consumes:` and `depends_on:` are usually isomorphic but represent different intents:
+- `depends_on:` = control flow (sequential execution order)
+- `consumes:` = data flow (which artifacts are consumed as input)
+
+## gate: manual (v1.1)
+
+Human steps use `gate: manual`, not `role: human`. Human is not a Runtime role:
+
+```yaml
+- id: 5
+  name: Human decision gate
+  gate: manual
+  consumes: [architecture-findings, documentation-report]
+  depends_on: [3]
+```
+
+**Backward compat:** existing v1.0 SOPs with `role: human` are treated as `gate: manual` alias by planner.
+
+## Parametrized Input (v1.1)
+
+Some SOPs accept parameterized input. Example — `forensic-audit.yaml`:
+
+```yaml
+input:
+  required:
+    - type: spec|adr|audit
+      path: <target subject document>
+      artifact: subject-document
+    - type: list
+      name: entities       # domain entities of consumer
+    - type: list
+      name: mechanisms     # control mechanisms for audit
+```
+
+The `entities` and `mechanisms` are NOT hardcoded in SOP — consumer provides them at invocation time.
 
 ## Использование
 
-### Ручной запуск (пока основной способ)
-
-Открываешь нужный YAML, читаешь `steps`, поочерёдно вызываешь роли (через slash command в Claude Code: `/agents architecture-reviewer`, или через `@architecture-reviewer` в opencode). Ручные шаги (`role: human`) делаешь сам.
-
-### Простой planner
-
 ```bash
-node sops/planner.mjs new-feature
-# печатает:
-#   Input required: docs/specs/drafts/YYYY-MM-DD-<slug>.md
-#   Group 1 (parallel):
-#     [1] Architecture Review       → role: architecture-reviewer (claude-code|opencode)
-#     [2] Documentation Review      → role: documentation-reviewer (claude-code|opencode)
-#   Group 2 (sequential):
-#     [3] Implementation            → role: human
-#   ...
-#   Output: implemented spec, accepted ADR, completed audit
+node sops/planner.mjs --list                    # list available SOPs
+node sops/planner.mjs architecture-review       # print DAG
+node sops/planner.mjs forensic-audit --platform opencode  # platform-specific
+node sops/planner.mjs incident --hide-human     # hide manual gates
 ```
-
-### Список доступных SOP
-
-```bash
-node sops/planner.mjs --list
-```
-
-## Формат YAML
-
-```yaml
-name: new-feature
-description: <one-line>
-triggers:        # optional: когда применять
-  - <условие>
-input:
-  required:
-    - type: spec
-      path_pattern: docs/specs/drafts/YYYY-MM-DD-<slug>.md
-      status: draft
-output:
-  - type: spec
-    status: implemented
-  - type: adr
-    status: accepted
-steps:
-  - id: 1
-    name: <human-readable step name>
-    role: <name-in-agents-without-extension> | human
-    platform: any | claude-code | opencode
-    produces: <one-line artifact description>
-    depends_on: [<step-id>, ...]   # empty → ready from start; non-empty → after listed
-```
-
-`platform: any` — роль существует в обоих платформах; планировщик подскажет пользователю вызвать в текущей платформе.
-`platform: claude-code` — только в Claude Code.
-`platform: opencode` — только в opencode.
 
 ## Расширение
 
-Добавить новый SOP — создать `sops/<name>.yaml`. Не нужно трогать planner; он подхватит автоматически. Удалить — `rm sops/<name>.yaml`. Никакой регистр.
-
-Добавить роль в существующий SOP — отредактировать `steps` в YAML. Planner пересчитает DAG.
+Добавить новый SOP — создать `sops/<name>.yaml`. Planner подхватит автоматически.
 
 ## Что НЕ входит (намеренно)
 
-- **Нет runtime state.** SOP не хранит прогресс между запусками. Кто запустил — тот и трекает в задаче/PR.
-- **Нет middleware execution engine.** Не Temporal, не Airflow, не LangGraph. Просто YAML + planner, который печатает план.
-- **Нет web UI.** CLI-only.
-- **Нет автоматического запуска агентов.** Planner печатает план, запуск — за человеком или CI step. (Future Tier 2 — slash-command bindings).
-- **Нет версионности процессов между проектами.** SOP лежат в submodule `naprolom-docs`; consumer использует те, что приезжают с обновлением submodule. Если проекту нужен кастомный SOP — создаёт локально в `.context/sops/` (вне submodule).
+- **Нет runtime state.** SOP не хранит прогресс между запусками.
+- **Нет execution engine.** Не Temporal, не Airflow. YAML + planner.
+- **Нет встроенных валидаторов.** Validation logic — ответственность роли (D-3).

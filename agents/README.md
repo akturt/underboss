@@ -5,60 +5,101 @@ type: guide
 kind: index
 status: active
 date: 2026-07-08
+updated: 2026-07-08
 owners: [naprolom-team]
 
-entity_refs: [schema-v1, canonical-frontmatter]
+entity_refs: [runtime-agentic-layer]
 touches: []
 docs: [../README.md, ../INSTALL.md, ../playbook/playbook-v2.md]
 refs: []
 depends_on: []
-tags: [agents, roles, index]
+tags: [agents, roles, index, v1.1, capabilities, knowledge]
 priority: P1
 ---
 
 # agents/ — Репозитарий ролей AI-агентов
 
-Runtime v1.0 содержит минимальный набор ролей, общих для большинства проектов. Каждая роль — это готовый промпт-конфигурация для конкретной платформы (Claude Code, opencode), которую потребительский проект подключает и сразу использует без необходимости писать с нуля.
+Runtime v1.1 содержит 4 роли, каждая — готовый промпт-конфигурация для конкретной платформы (Claude Code, opencode).
 
-## Роли в Runtime v1.0
+## Roles
 
-| Роль | Назначение | Платформы |
-|------|-----------|-----------|
-| **Architecture Reviewer** | Валидирует архитектурные изменения: ADR правильной формы, обновления `docs/architecture/`, инварианты. | claude-code, opencode |
-| **Documentation Reviewer** | Проверяет PR'ы на соответствие Canonical Schema v1: валидный frontmatter, path-status match, entity_refs, отсутствие legacy-полей. | claude-code, opencode |
+| Role | Purpose | Capabilities | Platforms |
+|------|---------|--------------|-----------|
+| **Architecture Reviewer** | Reviews architectural changes against real project state | `review-spec`, `review-adr`, `review-domain-model`, `review-security-model` | claude-code, opencode |
+| **Documentation Reviewer** | Validates Schema v1 compliance, entity_refs, path-status contract | `validate-frontmatter`, `validate-entity-refs` | claude-code, opencode |
+| **Reality Auditor** | Reconstructs current project state from code, config, docs (read-only) | `state-reconstruction`, `drift-analysis`, `architecture-extraction`, `attribution-analysis` | claude-code, opencode |
+| **Adversary Checker** | Validates architectural claims against evidence, assigns verdicts + confidence | `claim-validation`, `assumption-analysis` | claude-code, opencode |
 
-## Почему только две роли сейчас
+## Capabilities
 
-Architecture + Documentation Reviewer — это **универсальный минимум**, который работает в любом проекте независимо от стека. Дальнейшие роли (Canonical Transformer, Spec Reviewer, Auditor, Reviewer) — Tier 2, добавляются после dogfooding на первом проекте по реальным потребностям команды.
+Each role declares `capabilities:` in frontmatter (单向 Role→Capability). The **Capability Catalog** (`knowledge/capabilities.md`) contains the full contract per capability (description, consumes, produces) — without `provided by:` (D-CP).
+
+| Capability | Consumes | Produces |
+|------------|----------|----------|
+| `review-spec` | spec, reality-report | architecture-findings |
+| `review-adr` | adr | architecture-findings |
+| `review-domain-model` | domain-model, reality-report | architecture-findings |
+| `review-security-model` | security-model, reality-report | architecture-findings |
+| `validate-frontmatter` | changed-files | documentation-report |
+| `validate-entity-refs` | changed-files | documentation-report |
+| `state-reconstruction` | subject-document | reality-report |
+| `drift-analysis` | reality-report | reality-report |
+| `architecture-extraction` | reality-report | reality-report |
+| `attribution-analysis` | signal-inventory, control-objects-matrix | attribution-analysis |
+| `claim-validation` | architecture-findings | validated-findings |
+| `assumption-analysis` | architecture-findings | validated-findings |
+
+Full contracts: `knowledge/capabilities.md`
+
+## Knowledge Refs
+
+Each role declares `knowledge:` in frontmatter as **short-id list** (D-KR):
+
+```yaml
+knowledge: [architecture-principles, report-formats]
+```
+
+Runtime resolves `knowledge/<short-id>.md`. Roles never hardcode knowledge paths — they reference by short-id.
+
+| Role | Knowledge refs |
+|------|---------------|
+| architecture-reviewer | `architecture-principles`, `report-formats` |
+| documentation-reviewer | `report-formats` |
+| reality-auditor | `evidence-model`, `report-formats` |
+| adversary-checker | `audit-principles`, `report-formats` |
 
 ## Layout
 
 ```
 agents/
-├── README.md          ← этот файл
-├── claude-code/       ← конфиги для Claude Code
+├── README.md          ← this file
+├── claude-code/       ← Claude Code configs
 │   ├── architecture-reviewer.md
-│   └── documentation-reviewer.md
-└── opencode/          ← конфиги для opencode
+│   ├── documentation-reviewer.md
+│   ├── reality-auditor.md
+│   └── adversary-checker.md
+└── opencode/          ← opencode configs
     ├── architecture-reviewer.md
-    └── documentation-reviewer.md
+    ├── documentation-reviewer.md
+    ├── reality-auditor.md
+    └── adversary-checker.md
 ```
 
 ## Подключение
 
-Файлы ролей — это готовые дескрипторы агента. Скопируйте их в configuration directory вашей платформы:
+Файлы ролей — готовые дескрипторы агента. Скопируйте их в configuration directory вашей платформы:
 
-- **Claude Code**: `.claude/agents/<role>.md` (создаётся в consumer-репо).
-- **opencode**: `.opencode/agents/<role>.md` (создаётся в consumer-репо).
+- **Claude Code**: `.claude/agents/<role>.md`
+- **opencode**: `.opencode/agents/<role>.md`
 
-Или — alternative для минимального случая — используйте `CLAUDE.md` snippet из `INSTALL.md`, который не требует отдельных конфигов ролей, а явно указывает агенту следовать `playbook/playbook-v2.md` как протоколу review.
+Или используйте `CLAUDE.md` snippet из `INSTALL.md`.
 
 ## Использование через SOP
 
-Роли в этом каталоге вызываются **по имени** из декларативных SOP в `../sops/*.yaml`. Каждый YAML ссылается на роль через `role: <name>` (например, `role: architecture-reviewer`). Планировщик `../sops/planner.mjs` печатает DAG выполнения с указанием, какую роль вызывать на каждом шаге и в каком порядке (с параллельными группами). Запуск роли — через slash command вашей платформы (`/architecture-reviewer` для Claude Code, `@architecture-reviewer` для opencode).
+Роли вызываются **по имени** из декларативных SOP (`../sops/*.yaml`). Каждый YAML ссылается на роль через `role: <name>` или `capability: <name>` + `role: <name>`. Planner печатает DAG с указанием ролей и артефактов.
 
-Custom-роли (`role: human` в SOP) — это ручные шаги. executor = человек, не агент. Не нужно писать конфиг для `human` — это явно marker того, что шаг ручной.
+Human-шаги помечаются `gate: manual` (D-HG). Существующие SOP v1.0 с `role: human` backward-compatible — planner treat как alias для `gate: manual`.
 
 ## Расширение
 
-Runtime v1.0 не поддерживает кастомные роли в submodule. Если нужны дополнительные роли под ваш контекст (например, `tf-reviewer.md` для Terraform-heavy проектов) — создайте их в вашем consumer-репо в `.claude/agents/` или `.opencode/agents/`. Когда роль станет достаточно универсальной, чтобы быть полезной другим проектам в экосистеме — предложите её в `naprolom-docs` через PR (см. INSTALL → «Обновление Runtime»).
+Для кастомных ролей (например, `tf-reviewer.md`) — создайте в consumer-репо в `.claude/agents/` или `.opencode/agents/`. Когда роль станет универсальной — предложите в `naprolom-docs` через PR.
