@@ -4,7 +4,7 @@ id: bootstrap-deploy-prompt
 type: guide
 kind: onboarding
 status: active
-date: 2026-07-08
+date: 2026-07-09
 owners: [naprolom-team]
 
 entity_refs: [runtime-agentic-layer]
@@ -15,15 +15,15 @@ priority: P0
 # Deploy Prompt for AI Agent
 
 > Give this prompt to any AI agent (opencode, Claude Code, Cursor, etc.) to install
-> Documentation System Runtime v1.2 on any project. The agent auto-detects the project
-> context and handles both fresh install and v1.0→v1.2 migration.
+> Documentation System Runtime v1.2.1 on any project. The agent auto-detects the project
+> context and handles both fresh install, v1.0 migration, and v1.1→v1.2 auto-upgrade.
 
 ---
 
 ## Prompt
 
 ```
-You are deploying Documentation System Runtime (naprolom-docs v1.2) on the current project.
+You are deploying Documentation System Runtime (naprolom-docs v1.2.1) on the current project.
 
 ## Step 0 — Detect project context
 
@@ -53,7 +53,7 @@ echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" ||
 Report what you found:
 - Fresh project (no Runtime) → go to Step 1A
 - v1.0 installed (.context/runtime/) → go to Step 1B
-- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C
+- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (auto-upgrade will run)
 - v1.2+ already installed (docs/.runtime/naprolom-docs/runtime/registry.yaml exists) → skip to Step 3
 
 ## Step 1A — Fresh install
@@ -91,23 +91,24 @@ git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git commit -m "chore: migrate naprolom-docs v1.0→v1.2 (docs/.runtime/ path)"
 ```
 
-## Step 1C — Upgrade from v1.1 to v1.2
+## Step 1C — Upgrade from v1.1 to v1.2 (AUTO-UPGRADE)
 
-The old Runtime v1.1 is at `docs/.runtime/naprolom-docs/` but lacks v1.2 components (registry, state-machine, contracts, reality-engine).
+Bootstrap now auto-upgrades v1.1 to v1.2. Just run bootstrap and it will pull the latest submodule automatically.
 
 ```bash
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 cd "$PROJECT_ROOT"
 
-# Update submodule to latest (includes v1.2)
+# Run bootstrap — it detects v1.1 and auto-upgrades to v1.2
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+```
+
+If auto-upgrade fails, manual upgrade:
+
+```bash
+cd "$PROJECT_ROOT"
 git submodule update --remote --merge
-
-# Verify v1.2 components exist
-ls docs/.runtime/naprolom-docs/runtime/registry.yaml || { echo "FAIL: v1.2 not pulled"; exit 1; }
-ls docs/.runtime/naprolom-docs/runtime/state-machine.yaml || { echo "FAIL: v1.2 not pulled"; exit 1; }
-
-git add docs/.runtime/naprolom-docs
-git commit -m "chore: upgrade Documentation System Runtime v1.1→v1.2"
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
 ## Step 2 — Initialize submodule
@@ -196,7 +197,7 @@ git commit -m "docs: Documentation System Runtime v1.2 installed" || echo "nothi
 
 Do NOT push. Report to user:
 1. Project path and repo
-2. Install type (fresh / migrated from v1.0 / already installed)
+2. Install type (fresh / migrated from v1.0 / auto-upgraded from v1.1 / already installed)
 3. Verification results (structure, root check, validation)
 4. Next steps: fill `.context/project.yml`, create first ADR, create `docs/architecture/README.md`
 

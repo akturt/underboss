@@ -1,7 +1,7 @@
 #!/bin/bash
 # bootstrap/install.sh
 #
-# One-liner installer for Documentation System Runtime v1.2.
+# One-liner installer for Documentation System Runtime v1.2.1.
 # Usage: bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
 #
 # Or clone + run:

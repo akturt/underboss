@@ -4,10 +4,10 @@ id: readme-runtime
 type: guide
 kind: index
 status: active
-date: 2026-07-08
+date: 2026-07-09
 owners: [naprolom-team]
 
-entity_refs: [schema-v1, canonical-frontmatter]
+entity_refs: [runtime-agentic-layer, schema-v1, canonical-frontmatter]
 touches: []
 docs: [INSTALL.md, playbook/playbook-v2.md, playbook/migrate-legacy.md]
 refs: []
@@ -22,7 +22,7 @@ priority: P0
 
 > **Доказательство:** проект Kordon/MegaDelta — 141 хаотичный файл → 40 canonical за 30 минут и один промпт. Онбординг с 2–5 дней до 5 минут, контекст LLM легче на 73%, стоимость промпта — на 80%. См. `docs/audits/`.
 
-> **Установить на свой проект:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту (opencode, Claude Code, Cursor). Агент автоматически определит тип проекта, подключит submodule и развернёт систему.
+> **Установить на свой проект:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту (opencode, Claude Code, Cursor). Агент автоматически определит тип проекта, подключит submodule и развернёт систему. Или используй one-liner: `bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)`
 
 ---
 
@@ -36,12 +36,22 @@ priority: P0
 - **CI guard** — ни один `.md` без canonical frontmatter не попадёт в репозиторий.
 - **Runnable migration** — для brownfield-репозиториев: `engine/scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
 - **SOPs** — декларативное описание типовых процессов разработки в `sops/*.yaml` (New Feature, Bugfix, Release, Incident и др.). Планировщик `sops/planner.mjs` печатает DAG выполнения по типу входной сущности. Роли упоминаются по имени (из `agents/`) или `human`.
+- **Reality Engine** — движок реконструкции состояния проекта и обнаружения дрейфа (`engine/reality-engine/`). Используется SOP `reality-audit.yaml`.
+- **Registry** — единый источник истины для всех компонентов Runtime (`runtime/registry.yaml`).
 
 ---
 
 ## Как подключить
 
-> **v1.1 (D-BR):** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
+### Быстрый способ (one-liner)
+
+```bash
+bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
+```
+
+### Ручной способ
+
+> **v1.2:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
 
 ```bash
 # 1. Подключить submodule ВНУТРЬ docs/
@@ -58,7 +68,7 @@ bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
 ```
 
-**Полная инструкция с troubleshooting и edge-cases** → [`INSTALL.md`](INSTALL.md).
+**Полная инструкция с troubleshooting и edge-cases** → [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 **Brownfield?** Если в репо уже есть `docs/` с `.md` — следуйте агент-промпту [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md), а не `bootstrap.sh`.
 
@@ -73,6 +83,12 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 ├── playbook/
 │   ├── playbook-v2.md                      ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
 │   └── migrate-legacy.md                   ← brownfield агент-промпт (7 шагов с checkpoint'ами)
+├── runtime/
+│   ├── registry.yaml                       ← v1.2: единый источник истины для всех компонентов
+│   ├── state-machine.yaml                  ← v1.2: состояния установки и переходы
+│   └── contracts/                          ← v1.2: контракты (runtime/ + consumer/)
+│       ├── runtime/{installation,migration,validation}.yaml
+│       └── consumer/{boundaries,project-layout}.yaml
 ├── engine/
 │   ├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
 │   │   ├── architecture.md  adr.md  spec.md
@@ -80,14 +96,22 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   ├── schemas/
 │   │   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
 │   ├── validators/
-│   │   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match, ROOT= path override
+│   │   ├── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
+│   │   └── validate-runtime.sh             ← v1.2: валидация графа зависимостей Runtime
+│   ├── reality-engine/                     ← v1.2: движок реконструкции состояния
+│   │   ├── collectors/                     ← сбор данных (architecture, entity, module, dependency)
+│   │   ├── analyzers/                      ← анализ дрейфа (documentation, adr, spec)
+│   │   ├── reporters/                      ← генерация отчётов
+│   │   └── README.md
 │   └── scripts/
 │       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
 ├── bootstrap/
-│   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный (D-BR: advisory path-check)
-│   ├── bootstrap.ps1                       ← Windows / PowerShell
+│   ├── bootstrap.sh                        ← v1.2: registry-driven universal loader
+│   ├── install.sh                          ← v1.2: one-liner установщик
+│   ├── templates/
+│   │   └── entity-catalog.md               ← v1.2: шаблон каталога сущностей
 │   └── DEPLOY-PROMPT.md                    ← промпт для AI-агента: автоустановка на любой проект
-├── knowledge/                              ← v1.1 NEW: общий knowledge-слой (роли подключают по short-id)
+├── knowledge/                              ← общий knowledge-слой (роли подключают по short-id)
 │   ├── architecture-principles.md
 │   ├── evidence-model.md
 │   ├── audit-principles.md
@@ -97,12 +121,13 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   └── README.md                           ← overview capabilities, указатель на knowledge/capabilities.md
 ├── sops/                                   ← Standard Operating Procedures (YAML) + planner.mjs
 │   ├── planner.mjs                         ← печатает DAG (DAG-printer, не executor)
+│   ├── reality-audit.yaml                  ← v1.2: SOP использует Reality Engine
 │   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident / architecture-review / forensic-audit
 ├── docs/                                   ← dogfood: собственная документация Runtime
-│   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation)
+│   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation, 002-runtime-v1.2)
 │   ├── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
 │   └── specs/approved/                     ← спеки Runtime v1.x
-└── .github/workflows/docs-validate.yml     ← CI guard + knowledge/ validation step
+└── .github/workflows/docs-validate.yml     ← CI guard + validate-runtime + knowledge/ validation
 ```
 
 > **Внимание:** этот layout описывает репозиторий-продукт `naprolom-docs`. В consumer-репозитории (после `bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`) вы увидите только `docs/` в корне плюс `docs/.runtime/naprolom-docs/...` где лежит submodule со всем содержимым Runtime. См. §«Two-repo model» в INSTALL.md.
@@ -163,7 +188,9 @@ updates:
       interval: weekly
 ```
 
-Подробно: [`INSTALL.md` → Обновление Runtime](INSTALL.md#обновление-runtime).
+**Или через bootstrap** — запустите `bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh` и он автоматически определит версию и обновит компоненты.
+
+Подробно: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 ---
 
@@ -172,7 +199,7 @@ updates:
 Целевая модель (что означает «Documentation System внедрена»):
 - **[`playbook/playbook-v2.md`](playbook/playbook-v2.md)** — Greenfield-модель: Canonical Schema v1, 5-слойная архитектура, entity_refs workflow, lifecycle из path, CI guard, метрики готовности.
 - **[`playbook/migrate-legacy.md`](playbook/migrate-legacy.md)** — Brownfield агент-промпт: 7 шагов, runnable migration script, warn-only → strict rollout.
-- **[`INSTALL.md`](INSTALL.md)** — Подключение submodule, bootstrap, `.gitmodules`, CLAUDE.md snippet, troubleshooting.
+- **[`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md)** — Промпт для AI-агента: автоустановка на любой проект (fresh, v1.0 migration, v1.1 auto-upgrade).
 
 ---
 
@@ -180,6 +207,7 @@ updates:
 
 `sops/` — декларативные описания типовых процессов разработки в виде YAML. Не исполнение — описание:
 - `new-feature.yaml`, `bugfix.yaml`, `new-service.yaml`, `architecture-change.yaml`, `audit.yaml`, `release.yaml`, `incident.yaml`.
+- `reality-audit.yaml` — v1.2: SOP использует Reality Engine для реконструкции состояния проекта.
 - Каждый — DAG шагов с референсами на роли из `agents/{platform}/` либо `human`.
 - `sops/planner.mjs` — по input типу печатает последовательность шагов с параллельными группами.
 
@@ -223,24 +251,25 @@ node sops/planner.mjs new-feature --hide-human
 
 | Этап | Состояние |
 |------|-----------|
-| Runtime layout (bootstrap/, engine/templates/, engine/schemas/, engine/validators/, engine/scripts/) | ✅ v1.0 |
+| Runtime v1.0 (bootstrap, engine, templates, schemas, validators) | ✅ реализован |
 | Playbook v2 (greenfield-модель) | ✅ реализован |
 | Migration Prompt (brownfield агент-промпт) | ✅ реализован |
-| INSTALL.md (consumer integration) | ✅ реализован |
 | Bootstrap (.sh + .ps1, идемпотентный) | ✅ реализован, протестирован на POSIX и Windows |
-| agents/ (claude-code, opencode: reviewer, architect) | ⏳ Этап 2 (this session) |
-| examples/{fastapi,golang,terraform,ansible}/ | ⛔ Tier 2 — после dogfooding |
-| validate-links.sh, normalize-frontmatter.mjs | ⛔ Tier 2 |
-| repository_dispatch, Dependabot template | ⛔ Tier 2 |
-| prompts/ каталог | ⛔ заменено на `agents/` |
-| **Dogfooding на реальном проекте** | ⏳ Этап 3 — следующий шаг |
-
-> Runtime v1.0 **freeze** планируется после dogfooding на первом стратегическом проекте Naprolom. До этого момента новые функции не добавляются — только bugfixes на основе реального использования.
+| agents/ (claude-code, opencode: 4 roles) | ✅ реализован |
+| SOPs (8 протоколов + planner.mjs) | ✅ реализован |
+| knowledge/ (5 файлов, capability catalog) | ✅ реализован |
+| **Runtime v1.2 — Operating Platform** | ✅ реализован |
+| Reality Engine (collectors, analyzers, reporters) | ✅ stubs, architecture defined |
+| CI guard (validate-frontmatter + validate-runtime) | ✅ реализован |
+| install.sh (one-liner) | ✅ реализован |
+| **Dogfooding на реальном проекте** | ✅ первый consumer обновлён до v1.2 |
 
 ---
 
 ## Чейнджлог
 
+- **2026-07-09** — **v1.2.1 — Post-Deployment Fixes**. Исправлен subshell bug в validate-runtime.sh (fail flag терялся в pipe → CI всегда проходил). Исправлен CI: добавлен `submodules: true` в checkout, добавлены недостающие trigger paths (validators, bootstrap, sops, agents). Entity resolution расширен: registry компоненты + concept entities теперь resolve в entity_refs. Bootstrap: объединены detect_state + detect_version, добавлен auto-upgrade v1.1→v1.2. Добавлен install.sh one-liner. Registry: убрано дублирование из agents, добавлена engine секция. Удалён redundant state-machine contract. DEPLOY-PROMPT.md обновлён до v1.2.1.
+- **2026-07-08** — **v1.2 — Operating Platform**. Registry как единый источник истины (`runtime/registry.yaml`). State machine с 6 состояниями. Contracts разделены на runtime/ и consumer/. Reality Engine вынесен в standalone движок (`engine/reality-engine/`). Self-validation: `validate-runtime.sh` проверяет 10 категорий графа зависимостей. CI workflow обновлён: +runtime/** paths, +validate-runtime шаг. ADR 002 документирующий v1.2.
 - **2026-07-08** — **v1.1 — Agentic Layer Separation**. Пять сущностей первого класса: **Knowledge** (`knowledge/` — 4 файла принципов + capabilities.md), **Role** (slim-roles в `agents/`, +2 новые: `reality-auditor`, `adversary-checker`), **Capability** (что умеет; односторонняя Role→Capability, каталог в `knowledge/capabilities.md` без `provided by:`), **SOP** (декларативный DAG с artifact-contract'ами; gate:manual вместо role:human), **Artifact** (что путешествует между шагами — reality-report, architecture-findings, validated-findings, forensic-report). Два новых SOP: `architecture-review.yaml` (sequential Reality→Arch→Doc→Adversary-optional→human) и `forensic-audit.yaml` (8-step pipeline, замещает прежний forensic-orchestrator). `sops/planner.mjs` остаётся DAG-printer (НЕ executor), расширен чтением `capability:`/`consumes:`/`produces:`/`gate:`. **D-BR: bootstrap разворачивает Runtime в `docs/.runtime/naprolom-docs/`, НЕ в `.context/runtime/`** — корень consumer'а содержит только `docs/`. См. `docs/specs/approved/2026-07-08-agentic-layer.md` и `docs/adr/001-agentic-layer-separation.md` (dogfood).
 - **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Engine → AI Layer → SOP Layer.
 - **2026-07-08** — **Runtime engine/ layering**: `templates/`, `schemas/`, `validators/`, `scripts/` сгруппированы под `engine/` (Documentation Engine слой). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `engine/...` префикс. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Engine → AI Layer.

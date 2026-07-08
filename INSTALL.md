@@ -4,29 +4,29 @@ id: install-runtime
 type: guide
 kind: onboarding
 status: active
-date: 2026-07-08
-updated: 2026-07-08
+date: 2026-07-09
+updated: 2026-07-09
 owners: [naprolom-team]
 
-entity_refs: [schema-v1, canonical-frontmatter, runtime-agentic-layer]
+entity_refs: [runtime-agentic-layer, schema-v1, canonical-frontmatter]
 touches: [docs, .context, .gitmodules, CLAUDE.md, .github/workflows]
 docs: [playbook/playbook-v2.md, playbook/migrate-legacy.md]
 refs: []
 depends_on: []
 implements: []
 supersedes: []
-tags: [install, submodule, consumer, onboarding, v1.1]
+tags: [install, submodule, consumer, onboarding, v1.2]
 priority: P0
 ---
 
 # INSTALL — Подключение Documentation System Runtime
 
 > Этот документ открывает **пользователь naprolom-docs после `git submodule add`**.
-> Остальное (`playbook/`, `engine/templates/`, `engine/validators/`, `engine/schemas/`, `engine/scripts/`, `bootstrap/`, `agents/`, `knowledge/`, `sops/`) — содержимое Runtime, оно подъезжает автоматически вместе с submodule.
+> Остальное (`playbook/`, `engine/templates/`, `engine/validators/`, `engine/schemas/`, `engine/scripts/`, `engine/reality-engine/`, `bootstrap/`, `agents/`, `knowledge/`, `sops/`, `runtime/`) — содержимое Runtime, оно подъезжает автоматически вместе с submodule.
 >
-> **v1.1 (D-BR):** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов в корне. Внутри `docs/` появляются user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) И система ведёт себя локально под `docs/.runtime/naprolom-docs/`. См. §Two-repo model ниже.
+> **v1.2:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов в корне. Внутри `docs/` появляются user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) И система ведёт себя локально под `docs/.runtime/naprolom-docs/`. См. §Two-repo model ниже.
 
-> **Быстрый путь:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту — он выполнит все шаги ниже автоматически.
+> **Быстрый путь:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту — он выполнит все шаги ниже автоматически. Или используй one-liner: `bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)`
 
 ---
 
@@ -41,14 +41,14 @@ priority: P0
 ```
 naprolom-docs/
 ├── README.md  INSTALL.md
-├── playbook/  engine/  bootstrap/  agents/  knowledge/  sops/  docs/  .github/
+├── playbook/  engine/  bootstrap/  agents/  knowledge/  sops/  runtime/  docs/  .github/
 ```
 
-Внутри `docs/` лежит собственный dogfood (audits, specs, ADRs собсuanного проекта).
+Внутри `docs/` лежит собственный dogfood (audits, specs, ADRs собственного проекта).
 
 ### B. Consumer-репозиторий (пользователь Runtime)
 
-Вы подключаете Runtime как **Git Submodule внутрь `docs/`**. В корне consumer-репо остаётся только `docs/`. Никаких `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/` в корне — всё локализовано под `docs/.runtime/naprolom-docs/`:
+Вы подключаете Runtime как **Git Submodule внутрь `docs/`**. В корне consumer-репо остаётся только `docs/`. Никаких `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `runtime/` в корне — всё локализовано под `docs/.runtime/naprolom-docs/`:
 
 ```
 consumer-project/
@@ -58,7 +58,7 @@ consumer-project/
     ├── architecture/  adr/  specs/  audits/  backlog/  api/   ← ваше содержимое (user-owned)
     └── .runtime/                                              ← System-owned (управляется `git submodule update --remote`)
         └── naprolom-docs/                                     ← submodule mount point (D-BR)
-            ├── engine/  bootstrap/  agents/  knowledge/  sops/  playbook/  INSTALL.md  README.md
+            ├── runtime/  engine/  bootstrap/  agents/  knowledge/  sops/  playbook/  INSTALL.md  README.md
             └── ...
 ```
 
@@ -75,13 +75,33 @@ consumer-project/
 - **Lifecycle из path** для spec/api — статус документа определяется папкой, а не editable-полем.
 - **CI guard** — ни один `.md` без canonical frontmatter не попадёт в репозиторий.
 - **Bootstrap** — одна команда создаёт skeleton `docs/` + `.context/` + `CLAUDE.md` snippet.
+- **install.sh** — one-liner установщик: `bash <(curl -s ...)`
 - **Migration script** — для brownfield-репозиториев миграция legacy frontmatter в Schema v1.
-- **Validators** — `validate-frontmatter.sh` для local + CI проверки (поддерживает `ROOT=` override для выборочной валидации `docs/` или `knowledge/`).
+- **Validators** — `validate-frontmatter.sh` (local + CI) + `validate-runtime.sh` (валидация графа зависимостей Runtime).
 - **Templates** — canonical шаблоны всех типов документов (6 файлов в `engine/templates/`).
 - **Schema** — `frontmatter.schema.json` (JSON Schema для IDE/агентов).
-- **Agent roles** — готовые конфиги ролей в `agents/{claude-code,opencode}/`: `architecture-reviewer`, `documentation-reviewer`, `reality-auditor` (NEW v1.1), `adversary-checker` (NEW v1.1). Кладёте в `.claude/agents/` или `.opencode/agents/` (по желанию, опционально).
-- **Knowledge layer** (NEW v1.1) — `knowledge/` с общими принципами (architecture-principles, evidence-model, audit-principles, report-formats, capabilities). Роли подключают по short-id.
-- **SOPs** — 9 декларативных YAML-описаний типовых процессов (`new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`, `architecture-review` NEW v1.1, `forensic-audit` NEW v1.1). Планировщик `sops/planner.mjs` печатает DAG шагов с ролями и **artifact contracts** (consumes/produces).
+- **Agent roles** — готовые конфиги ролей в `agents/{claude-code,opencode}/`: `architecture-reviewer`, `documentation-reviewer`, `reality-auditor`, `adversary-checker`. Кладёте в `.claude/agents/` или `.opencode/agents/` (по желанию, опционально).
+- **Knowledge layer** — `knowledge/` с общими принципами (architecture-principles, evidence-model, audit-principles, report-formats, capabilities). Роли подключают по short-id.
+- **SOPs** — 10 декларативных YAML-описаний типовых процессов (`new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`, `architecture-review`, `forensic-audit`, `reality-audit`). Планировщик `sops/planner.mjs` печатает DAG шагов с ролями и **artifact contracts** (consumes/produces).
+- **Registry** (v1.2) — единый источник истины для всех компонентов Runtime (`runtime/registry.yaml`).
+- **State Machine** (v1.2) — явные состояния установки и переходы (`runtime/state-machine.yaml`).
+- **Contracts** (v1.2) — контракты runtime и consumer уровней (`runtime/contracts/`).
+- **Reality Engine** (v1.2) — движок реконструкции состояния проекта и обнаружения дрейфа (`engine/reality-engine/`).
+
+---
+
+## Быстрый старт (one-liner)
+
+```bash
+bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
+```
+
+Или склонируйте и запустите:
+
+```bash
+git clone --depth 1 https://github.com/akturt/naprolom-docs.git /tmp/naprolom-docs
+bash /tmp/naprolom-docs/bootstrap/install.sh
+```
 
 ---
 
@@ -90,7 +110,7 @@ consumer-project/
 Из корня вашего проекта:
 
 ```bash
-# v1.1: монтируем ВНУТРЬ docs/, а не в .context/runtime/
+# v1.2: монтируем ВНУТРЬ docs/, а не в .context/runtime/
 mkdir -p docs/.runtime
 
 git submodule add \
@@ -121,7 +141,21 @@ git submodule absorbgitdirs
 # (новый bootstrap при повторном запуске сделает это идемпотентно)
 ```
 
-Bootstrap v1.1 advisory-warn'ет, если в `.gitmodules` найдёт старый путь `.context/runtime/`.
+### Автообновление с v1.1 до v1.2
+
+Bootstrap автоматически определяет v1.1 и обновляет до v1.2:
+
+```bash
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+```
+
+Если автообновление не сработало:
+
+```bash
+cd docs/.runtime/naprolom-docs && git pull origin master
+cd ../..
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+```
 
 ---
 
@@ -151,13 +185,14 @@ powershell -File docs\.runtime\naprolom-docs\bootstrap\bootstrap.ps1
 
 Что создаст bootstrap:
 - `docs/{architecture,adr,specs/{drafts,review,approved,implemented,superseded},audits,backlog,api}/` — 5-слойная структура.
+- `docs/architecture/entity-catalog.md` — шаблон каталога сущностей (consumer заполняет).
 - `.context/{project.yml,boundaries.yml,agent-entry.md}` — stubs для AI-агента (заполните под ваш проект).
-- `CLAUDE.md` (или `AGENTS.md`) — snippet с 8 правилами Documentation Runtime (см. ниже).
-- `.github/workflows/docs-validate.yml` — CI guard для `docs/` + второго шага для `knowledge/`.
+- `CLAUDE.md` (или `AGENTS.md`) — snippet с правилами Documentation Runtime.
+- `.github/workflows/docs-validate.yml` — CI guard + validate-runtime.
 
 Если `docs/` уже существует, bootstrap НЕ перезаписывает существующие файлы — только создаёт недостающие. `.gitkeep` для пустых директорий.
 
-Bootstrap v1.1 также **advisory-check'ает** ваш `.gitmodules`: если он указывает на устаревший v1.0 path `.context/runtime/naprolom-docs` — выдаёт warning с инструкцией миграции, но не блокирует исполнения.
+Bootstrap v1.2 также **auto-upgrade'ит** v1.1 до v1.2: определяет версию, подтягивает submodule, проверяет наличие v1.2 компонентов.
 
 ---
 
@@ -219,7 +254,7 @@ directories:
 
 ## Шаг 6 — Заполнить `.context/boundaries.yml`
 
-Bootstrap v1.1 создаёт stub с `docs/.runtime/` как `pristine` и `docs/` (остальное) — `editable`. Расширьте под ваш проект:
+Bootstrap создаёт stub с `docs/.runtime/` как `pristine` и `docs/` (остальное) — `editable`. Расширьте под ваш проект:
 
 ```yaml
 boundaries:
@@ -273,7 +308,13 @@ cp docs/.runtime/naprolom-docs/engine/templates/architecture.md docs/architectur
 cp docs/.runtime/naprolom-docs/engine/templates/audit.md docs/audits/$(date +%Y-%m-%d)-initial.md
 ```
 
-Подробно о создании и lifecycle документов — в [`playbook/playbook-v2.md`](playbook/playbook-v2.md) (но учтите, что playbook упоминает пути вида `docs/.runtime/naprolom-docs/...` — это v1.1 form, после D-BR; старые paths `.context/runtime/...` в playbook уже обновлены).
+Подробно о создании и lifecycle документов — в [`playbook/playbook-v2.md`](playbook/playbook-v2.md).
+
+---
+
+## Шаг 8 — Заполнить `docs/architecture/entity-catalog.md`
+
+Bootstrap копирует шаблон каталога сущностей. Заполните его доменными сущностями вашего проекта — это нужно для работы entity_refs в spec/audit документах.
 
 ---
 
@@ -288,8 +329,11 @@ bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 # Warn-only (если brownfield, но strict-период ещё не наступил)
 WARN_ONLY=true bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 
-# v1.1: валидация knowledge/ (если используете кастомный knowledge)
+# Валидация knowledge/ (если используете кастомный knowledge)
 ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
+
+# v1.2: валидация графа зависимостей Runtime
+bash docs/.runtime/naprolom-docs/engine/validators/validate-runtime.sh
 ```
 
 CI (`docs-validate.yml`) делает то же самое автоматически — но локально быстрее Feedback loop.
@@ -311,7 +355,15 @@ git commit -m "chore: update Documentation System Runtime"
 
 Пять секунд. По умолчанию подтягивается ветка `master` (см. `branch = master` в `.gitmodules`).
 
-### Вариант B — Dependabot gitsubmodule (авто-PR)
+### Вариант B — через bootstrap
+
+```bash
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+```
+
+Bootstrap автоматически определит версию и обновит компоненты.
+
+### Вариант C — Dependabot gitsubmodule (авто-PR)
 
 GitHub умеет отслеживать обновления Git Submodules и создавать PR автоматически:
 
@@ -362,13 +414,13 @@ git commit -m "chore: pin Documentation Runtime to <commit-sha>"
 | Зафиксировать submodule по detached HEAD без записи в `.gitmodules` | Всегда `branch = master` в `.gitmodules`, чтобы `--remote` работал |
 | Создавать `.md` без `cp docs/.runtime/naprolom-docs/engine/templates/...` | Canonical frontmatter нельзя написать «из головы» — начни с template, заполни 6 полей |
 | Использовать legacy-поля (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`) | Заменить: `author`→`owners`, `title`→body H1, `created`→`date`, `lifecycle`→computed from path |
-| Монтировать submodule в `.context/runtime/` (v1.0 path) | v1.1: используйте `docs/.runtime/naprolom-docs/` (D-BR). При миграции — `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
+| Монтировать submodule в `.context/runtime/` (v1.0 path) | v1.2: используйте `docs/.runtime/naprolom-docs/` (D-BR). При миграции — `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
 
 ---
 
 ## SOP — Standard Operating Procedures (если используете процессы)
 
-Если вы хотите следовать типовым процессам развития (New Feature / Bugfix / Release / Incident), Runtime содержит декларативные описания в `sops/*.yaml`. Каждая SOP — это YAML, описывающий шаги в виде DAG с референсами на роли из `agents/` или `gate: manual` (human step; v1.1 — НЕ `role: human`, см. D-HG).
+Если вы хотите следовать типовым процессам развития (New Feature / Bugfix / Release / Incident), Runtime содержит декларативные описания в `sops/*.yaml`. Каждая SOP — это YAML, описывающий шаги в виде DAG с референсами на роли из `agents/` или `gate: manual` (human step).
 
 ```bash
 # Список доступных SOP
@@ -381,11 +433,20 @@ node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --platform claude-
 node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
 ```
 
-SOP — это чек-лист, не оркестратор. planner.mjs — DAG-printer (не executor; D-P). Вы читаете план, вручную вызываете роли через slash commands в агентах (например, `/architecture-reviewer` в Claude Code или `@architecture-reviewer` в opencode), выполняете manual-шаги сами. Никакого runtime scheduler.
+SOP — это чек-лист, не оркестратор. planner.mjs — DAG-printer (не executor). Вы читаете план, вручную вызываете роли через slash commands в агентах (например, `/architecture-reviewer` в Claude Code или `@architecture-reviewer` в opencode), выполняете manual-шаги сами. Никакого runtime scheduler.
 
-### v1.1: Artifact contracts
+### Artifact contracts
 
-SOP v1.1 использует явные `consumes:` и `produces:` поля — контроль data-flow между шагами DAG (не просто control-flow через `depends_on:`). Канонические artifact-имена: `reality-report`, `architecture-findings`, `documentation-report`, `validated-findings`, `forensic-report`. См. `knowledge/report-formats.md` и `sops/architecture-review.yaml` / `sops/forensic-audit.yaml`.
+SOP использует явные `consumes:` и `produces:` поля — контроль data-flow между шагами DAG (не просто control-flow через `depends_on:`). Канонические artifact-имена: `reality-report`, `architecture-findings`, `documentation-report`, `validated-findings`, `forensic-report`. См. `knowledge/report-formats.md` и `sops/architecture-review.yaml` / `sops/forensic-audit.yaml`.
+
+### Reality Audit (v1.2)
+
+SOP `reality-audit.yaml` использует Reality Engine для реконструкции состояния проекта и обнаружения дрейфа документации. Запуск:
+
+```bash
+# Вручную через агента
+# см. sops/reality-audit.yaml — 8 шагов с collector → analyzer → reporter pipeline
+```
 
 Кастомные SOP для специфичных процессов вашего проекта — кладите в `.context/sops/` вашего репозитория (вне submodule), Runtime их не переопределяет.
 
@@ -401,16 +462,16 @@ SOP v1.1 использует явные `consumes:` и `produces:` поля —
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 ```
 
-### Bootstrap v1.1 warning о v1.0 path
+### Bootstrap warning о v1.0 path
 
 Если увидели:
 ```
 ⚠ WARNING: .gitmodules references legacy v1.0 path '.context/runtime/naprolom-docs'.
-  v1.1 expects submodule mounted at 'docs/.runtime/naprolom-docs'.
+  v1.2 expects submodule mounted at 'docs/.runtime/naprolom-docs'.
   To migrate: git mv .context/runtime docs/.runtime && git submodule absorbgitdirs
 ```
 
-Это advisory warning (bootstrap продолжился). Чтобы переключиться на v1.1 layout — выполните указанную команду, затем update путей в `.github/workflows/docs-validate.yml`, `CLAUDE.md`, `.context/agent-entry.md`.
+Это advisory warning (bootstrap продолжился). Чтобы переключиться на v1.2 layout — выполните указанную команду, затем update путей в `.github/workflows/docs-validate.yml`, `CLAUDE.md`, `.context/agent-entry.md`.
 
 ### CI падает на legacy полях в прозе/код-блоке
 
@@ -436,17 +497,27 @@ jobs:
 
 Bootstrap создаёт `CLAUDE.md`. Для opencode symlink или скопируйте в `AGENTS.md`. Содержимое snippet идентично. Подробности про роли — в `agents/README.md`.
 
+### validate-runtime.sh падает с ошибками entity_ref
+
+Это ожидаемо для concept entities (`runtime-agentic-layer`, `schema-v1` и т.д.). Они резолвятся через registry компоненты и concept namespace. Если ошибка в другом — проверьте что entity-catalog.md заполнен.
+
+### v1.1 → v1.2 автообновление не работает
+
+Bootstrap пытяется `git pull origin master` в submodule. Если не работает:
+1. `cd docs/.runtime/naprolom-docs && git pull origin master`
+2. `cd ../.. && bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`
+
 ---
 
-## Что НЕ вошло в Runtime v1.1 (запланировано на v1.2+)
+## Что реализовано в Runtime v1.2
 
-- **`runtime/` wrapper** внутри самого naprolom-docs (продукт-only polish — не влияет на consumer).
-- Группировка `knowledge/` по домену (`knowledge/architecture/`, `knowledge/documentation/`, ...).
-- Knowledge loading из SOP, не из Role (`knowledge_refs:` на уровне шага).
-- Capability-only SOP шаги (option 3 в `sops/planner.mjs` — пока planner warning'ает; v1.2 резолв capability→role автоматически).
-- SOP `forensic-audit.yaml` фазы (Control Objects, Signal Inventory и т.д.) вынести в `knowledge/forensic-audit-protocol.md`.
-- Slash-command bindings для ролей в CI.
-- `examples/{fastapi,golang,terraform,ansible}/` — готовые стек-специфичные примеры.
-- `validate-links.sh`, `normalize-frontmatter.mjs`, `repository_dispatch`.
+- **Registry** — единый источник истины (`runtime/registry.yaml`).
+- **State Machine** — явные состояния установки (`runtime/state-machine.yaml`).
+- **Contracts** — контракты runtime и consumer уровней (`runtime/contracts/`).
+- **Reality Engine** — движок реконструкции состояния (`engine/reality-engine/`).
+- **validate-runtime.sh** — валидация графа зависимостей Runtime (10 категорий).
+- **entity-catalog.md** — шаблон каталога сущностей для consumer.
+- **install.sh** — one-liner установщик.
+- **Auto-upgrade** v1.1→v1.2 в bootstrap.
 
-См. README → Status и changelog. Полный v1.2 roadmap — в `docs/specs/approved/2026-07-08-agentic-layer.md` §Out-of-scope follow-up.
+См. README → Status и changelog.
