@@ -14,7 +14,7 @@ priority: P1
 
 # Capability Catalog
 
-Контракт capabilities. Содержит **только Contract** (description / consumes / produces / artifacts), **без `provided by:`** (D-CP —单向 Role→Capability в Role FM).
+Контракт capabilities. Содержит **только Contract** (description / consumes / produces / artifacts), **без `provided by:`** (D-CP — односторонняя Role→Capability в Role FM).
 
 ## review-spec
 Description: Architecture review of specification documents against real project state.

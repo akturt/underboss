@@ -24,7 +24,7 @@ priority: P0
 > Доработанная редакция. Учтены замечания ревизора в 5 проходов:
 > v1: удалены output templates (слиты в `knowledge/report-formats.md`), `planner.mjs` зафиксирован как DAG-printer (не executor), YAML SOP упрощён (без `constraints:`), введён слой Capabilities.
 > v2: **Artifact — сущность первого класса** (`artifact:` поле с каноническими именами, см. §Artifact model), **Capability Catalog вынесен в `knowledge/capabilities.md`** (не в `agents/README.md`).
-> v3: Capability Catalog без providers (单向 Role→Capability). Knowledge refs через short-id (`knowledge: [architecture-principles]`). planner не читает knowledge (D-PL). `gate: manual` вместо `role: human` (D-HG).
+> v3: Capability Catalog без providers (односторонняя Role→Capability). Knowledge refs через short-id (`knowledge: [architecture-principles]`). planner не читает knowledge (D-PL). `gate: manual` вместо `role: human` (D-HG).
 > v4 (текущая): **Bootstrap разворачивает Runtime в `docs/.runtime/`, а НЕ в корень consumer-репо** (D-BR). Явное разделение: (a) репо `naprolom-docs` = продукт (каталоги в корне ОК); (b) consumer-репо = использует только `docs/`, всё остальное — в `docs/.runtime/`. Submodule монтируется в `docs/.runtime/naprolom-docs/`, НЕ в `.context/runtime/`. Затрагивает: bootstrap-скрипты, INSTALL, playbook, CLAUDE.md snippet, пути во всех SOP/ролях.
 > Прочие улучшения (группировка knowledge по домену, загрузка knowledge из SOP не из роли) — отложены в **v1.2 roadmap** (§Out-of-scope follow-up).
 
@@ -129,9 +129,9 @@ consumer-project/
    - `agents/{claude-code,opencode}/adversary-checker.md` — Claim Validation Agent. Slim role + ссылка на `knowledge/audit-principles.md`, `knowledge/report-formats.md`. Permissions: `read: allow`, `edit: deny`, `bash: deny`, `webfetch: allow`.
 
 4. **Концепция Capabilities** — явно введена в спецификацию, реализована минимально:
-   - Каждая роль декларирует `capabilities:` (list) в frontmatter (单向 Role→Capability).
+   - Каждая роль декларирует `capabilities:` (list) в frontmatter (односторонняя Role→Capability).
    - SOP-шаг может ссылаться либо `role: <name>` (как раньше), либо `capability: <name>` + `role: <name>` (более абстрактно).
-   - **Capability Catalog** живёт в **`knowledge/capabilities.md`** (D-CC) — отдельный документ-контракт. Содержит **только Contract** (description / consumes / produces / artifacts), **без `provided by:`** (D-CP) — чтобы не создавать двустороннюю зависимость Role↔Capability. «Role provides capability» декларируется单向 в самой Role FM (`capabilities: [...]`), а в `agents/README.md` даётся overview-таблица 4-role × capability-list.
+   - **Capability Catalog** живёт в **`knowledge/capabilities.md`** (D-CC) — отдельный документ-контракт. Содержит **только Contract** (description / consumes / produces / artifacts), **без `provided by:`** (D-CP) — чтобы не создавать двустороннюю зависимость Role↔Capability. «Role provides capability» декларируется односторонне в самой Role FM (`capabilities: [...]`), а в `agents/README.md` даётся overview-таблица 4-role × capability-list.
    
    Канонический список capabilities на v1.1 (краткое repeat — определение в `knowledge/capabilities.md`, providers déclarées в `agents/README.md`):
    | Role | Capability |
@@ -184,7 +184,7 @@ consumer-project/
 3. **`constraints:` блоки в SOP YAML** — не вводим (см. §Decisions D-3). Validation logic — ответственность роли.
 4. **Slash-command bindings** для новых ролей — Tier 2, после dogfooding.
 5. **Генерика parametrized roles** (роли с параметрами как в coding-orch frameworks) — out of scope.
-6. **`runtime/` wrapper для `engine/` + `bootstrap/`** — см. §Out-of-scope follow-up. Не входит в v1.1, отдельная可能的 v1.2 рефакторинг.
+6. **`runtime/` wrapper для `engine/` + `bootstrap/`** — см. §Out-of-scope follow-up. Не входит в v1.1, отдельная возможная v1.2 рефакторинг.
 7. **Дополнительные knowledge-файлы** (32-файловый разобьётся в зло) — правило: «knowledge = устойчивые знания». 4 содержательных файла на v1.1 — это ceiling.
 8. **Дополнительные роли** (canonical-transformer, spec-reviewer, auditor) — Tier 2.
 
@@ -206,7 +206,7 @@ consumer-project/
 | D-9 | `audit.yaml` vs `architecture-review.yaml` пересечение | **Оставить оба** | Audit = post-incident/scheduled; arch-review = pre-merge. Разные purposes. |
 | D-A | Artifact как сущность первого класса | **Ввести v1.1** | DAG соединяется через артефакты (Data Flow), не через «роль→роль». Поднимает выразительность модели почти бесплатно. |
 | D-CC | Capability Catalog location | **`knowledge/capabilities.md`** (не `agents/README.md`) | README остаётся обзором, Capability становится самостоятельным контрактом системы. |
-| D-CP | Capability Catalog: providers field | **Нет `provided by:`** в каталоге | Разорвать двустороннюю зависимость Role↔Capability. Каталог содержит seulement **Contract** (description / consumes / produces / artifacts). «Role provides capability» —单向 declared в самой Role (в `agents/**/*.md` FM `capabilities:` list). |
+| D-CP | Capability Catalog: providers field | **Нет `provided by:`** в каталоге | Разорвать двустороннюю зависимость Role↔Capability. Каталог содержит seulement **Contract** (description / consumes / produces / artifacts). «Role provides capability» — односторонне declared в самой Role (в `agents/**/*.md` FM `capabilities:` list). |
 | D-KR | Knowledge refs format | **Short-id*, не hardcoded path | В Role FM: `knowledge: [architecture-principles, report-formats]`. Путь резолвит Runtime (соглашение: `knowledge/<id>.md`). Позволяет менять структуру `knowledge/` без переписывания ролей. |
 | D-PL | planner.mjs scope | **Только roles + capabilities + SOP** (НЕ knowledge) | Иначе planner постепенно станет Runtime. Knowledge подгрузка — ответственность SOP/Role при исполнении шага, не planner'а. |
 | D-HG | Human steps in SOP | **`gate: manual`** (не `role: human`) | Human — не роль Runtime. planner печатает `gate: manual` явно. Для backend-compat с v1.0 SOP planner принимает `role: human` как alias и визуализирует как `gate: manual`. Существующие 7 SOP v1.0 не трогаем. |
@@ -346,7 +346,7 @@ Frontmatter Schema v1, `type: guide`, `kind: index`, `status: active`. Соде�
 capabilities: [review-spec, review-adr, review-domain-model, review-security-model]
 ```
 
-**Capability catalog** — отдельный документ **`knowledge/capabilities.md`** (D-CC). Содержит **только Contract** per-capability (description, consumes, produces, artifacts), **без `provided by:`** (D-CP) —单向 Role→Capability, объявлен в Role FM. `agents/README.md` даёт overview-таблицу (Role → capability list) + указатель на `knowledge/capabilities.md`. ** planner.mjs не читает содержимое `knowledge/`** (D-PL) — только roles (`agents/{platform}/`), capabilities (per-role FM `capabilities:` field), SOP (`sops/*.yaml`).
+**Capability catalog** — отдельный документ **`knowledge/capabilities.md`** (D-CC). Содержит **только Contract** per-capability (description, consumes, produces, artifacts), **без `provided by:`** (D-CP) — односторонняя Role→Capability, объявлен в Role FM. `agents/README.md` даёт overview-таблицу (Role → capability list) + указатель на `knowledge/capabilities.md`. ** planner.mjs не читает содержимое `knowledge/`** (D-PL) — только roles (`agents/{platform}/`), capabilities (per-role FM `capabilities:` field), SOP (`sops/*.yaml`).
 
 **Knобledge refs** — Role декларирует в FM:
 ```yaml
@@ -614,7 +614,7 @@ A2. `knowledge/architecture-principles.md` — извлечь из Appendix A `a
 A3. `knowledge/evidence-model.md` — из Appendix A `reality-auditor.md` §«Trust Hierarchy» + §«Evidence Classification» + §«Behavioral Rules». FM аналогично.
 A4. `knowledge/audit-principles.md` — из Appendix A `adversary-checker.md` §«5-Stage Validation Protocol» + §«Verdict System» + §«Confidence Model» + §«Behavioral Constraints».
 A5. `knowledge/report-formats.md` — нормализованное описание выходных форматов 4 ревьюеров (architecture-review / reality-audit / adversary-report / forensic-report) из их inline-блоков в Appendix A. Один файл.
-A6. `knowledge/capabilities.md` — NEW (D-CC): capability catalog. Содержание per-capability entry: description, consumes, produces, **WITHOUT `provided by:`** (D-CP —单向 Role→Capability в Role FM, не в каталоге). Формат:
+A6. `knowledge/capabilities.md` — NEW (D-CC): capability catalog. Содержание per-capability entry: description, consumes, produces, **WITHOUT `provided by:`** (D-CP — односторонняя Role→Capability в Role FM, не в каталоге). Формат:
    ```
    ## capability: review-spec
    Description: <one-line>
@@ -670,7 +670,7 @@ D1. `sops/planner.mjs` — добавить в парсер шагов чтен�
 E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision описывает **5-слойную модель** (Knowledge / Role / Capability / SOP / Artifact), rationale, почему не переименовали `agents/` → `roles/`, почему output templates влит в knowledge, почему capability каталог живёт в `knowledge/capabilities.md`.
 E2. `README.md` — обновить layout diagram (+ `knowledge/`, включая `capabilities.md`), What you get расширить до 4 ролей + 6 knowledge + 9 SOPs, Changelog добавить `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
 E3. `INSTALL.md` — architecture diagram с `knowledge/`.
-E4. `agents/README.md` — extended таблица roles (4) с колонкой capabilities (Role→Capability单向, это и есть providers mapping — см. D-CP); раздел «Capabilities» (overview + указатель на `knowledge/capabilities.md`, **БЕЗ inline capability definitions** — каталог живёт там); раздел «Knowledge refs» (короткий: объясняет short-id формат в Role FM `knowledge: [...]` и что путь резолвит Runtime); обновить layout.
+E4. `agents/README.md` — extended таблица roles (4) с колонкой capabilities (Role→Capability односторонне, это и есть providers mapping — см. D-CP); раздел «Capabilities» (overview + указатель на `knowledge/capabilities.md`, **БЕЗ inline capability definitions** — каталог живёт там); раздел «Knowledge refs» (короткий: объясняет short-id формат в Role FM `knowledge: [...]` и что путь резолвит Runtime); обновить layout.
 E5. `sops/README.md` — добавить 2 новых SOP; раздел про parametrized input (`entities`/`mechanisms` в forensic-audit) с примером; clarifier «SOP описывает **оркестрацию**, не validation logic»; новый раздел «Artifact contracts» с пояснением `consumes:`/`produces:` и разницей data-flow vs control-flow (`depends_on:`); заметка про `gate: manual` для human steps (D-HG, с backend-compat note про `role: human` в существующих 7 SOP v1.0).
 E6. `bootstrap/bootstrap.sh` — CLAUDE.md snippet +2 строки (идемпотентно, через `grep -q`).
 E7. `bootstrap/bootstrap.ps1` — mirror E6 PS-синтаксис.
@@ -724,7 +724,7 @@ Q-2. В `knowledge/capabilities.md` на v1.1 — публиковать per-cap
   ```
   Почему отложено: на v1.1 knowledge-файлов всего 5 (4 содержательных + README), группировка преждевременна и усложнит пути. Когда files > 10 — пересмотреть.
 
-### SOP/Role契约
+### SOP/Role контракт
 - **Knowledge loading из SOP, не из Role.** v1.1 уже ввёл **short-id knowledge refs** в Role FM (D-KR): `knowledge: [architecture-principles]` — путь резолвит Runtime. Следующий шаг v1.2: декларировать `knowledge_refs:` на уровне SOP-шага, чтобы Role был полностью переносимым (без знания о knowledge paths в FM). Инвазивно (требует переписать Roles + расширить planner), отложено.
 - **Capability-only SOP шаги (option 3).** Пока planner warning'ает; в v1.2 — резолв capability → role через `knowledge/capabilities.md` automatically, с platform preference. На v1.1 каталог capabilities полностью decoupled от providers (D-CP), что уже подготовило почву.
 - **SOP `forensic-audit.yaml` фазы (Control Objects, Signal Inventory и т.д.) вынести в knowledge.** Сейчас 8 фаз описаны как `name:`+`note:` в самом SOP; их содержательное описание (что именно искать, какие hypotheses проверять) может жить в `knowledge/forensic-audit-protocol.md` и подгружаться шагом. Отложено: на v1.1 `note:` поля достаточно для executor'a; если SOP разрастётся — вынесем.

@@ -19,10 +19,10 @@ priority: P1
 ## Basic Principles (7)
 
 1. **Single Source of Truth** — каждый архитектурный факт имеет ровно одно место хранения. Дублирование = drift risk.
-2. **Explicit Dependencies** — зависимости между модулями декларируются явно (imports, APIs, events), не隐式 через shared state.
+2. **Explicit Dependencies** — зависимости между модулями декларируются явно (imports, APIs, events), неявно через shared state.
 3. **Invariants Over Implementation** — критические инварианты системы фиксируются в `docs/architecture/README.md` и проверяются при каждом review. Реализация может меняться; инварианты — нет.
 4. **ADR Before Code** — архитектурное решение оформляется как ADR (`docs/adr/`) до merge кода, реализующего это решение.
-5. **Path-Status Contract** — lifecycle-позиция документа (draft/review/approved/implemented) определяется目录位置 + `status:` FM. Несоответствие = ошибка.
+5. **Path-Status Contract** — lifecycle-позиция документа (draft/review/approved/implemented) определяется директорией + `status:` FM. Несоответствие = ошибка.
 6. **Immutability After Acceptance** — тело ADR с `status: accepted` неизменяемо. Только FM-транзиции (`status:` переход). Нарушение = REJECT.
 7. **Entity Refs Integrity** — `entity_refs` в spec/audit указывают на реально существующие `id:` в `docs/architecture/`. Broken ref = warning.
 
@@ -33,7 +33,7 @@ priority: P1
 10. **Append-Only Audits** — тело audit с `status: completed` неизменяемо. Новый аудит того же объекта = новый файл с новой датой.
 11. **Separation of Concerns** — Role = идентичность (кто я), Knowledge = знания (что знаю), SOP = процесс (когда применяю), Capability = навык (что умею). Не смешивать.
 12. **DRY Knowledge** — общие знания живут в `knowledge/`, не дублируются inline в Roles. Roles ссылаются по short-id.
-13. **Artifact Contracts** — DAG соединяется через артефакты (`consumes:`/`produces:`), не через隐式depends_on. Data flow ≠ control flow.
+13. **Artifact Contracts** — DAG соединяется через артефакты (`consumes:`/`produces:`), не через неявный depends_on. Data flow ≠ control flow.
 14. **Gate: Manual** — human-шаги в SOP помечаются `gate: manual`, не `role: human`. Human — не роль Runtime.
 
 ## Meta-Patterns (3)

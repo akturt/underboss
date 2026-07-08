@@ -457,7 +457,7 @@ git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git add .gitmodules && git commit -m "chore: pin submodule to master branch"
 ```
 
-### `WARN_ONLY=true`伤心 workflow fail
+### `WARN_ONLY=true` — workflow fail
 
 `WARN_ONLY` должен быть в `env:` секции job, не в `steps:`. Проверь:
 ```yaml

@@ -32,7 +32,7 @@ Runtime v1.1 содержит 4 роли, каждая — готовый про
 
 ## Capabilities
 
-Each role declares `capabilities:` in frontmatter (单向 Role→Capability). The **Capability Catalog** (`knowledge/capabilities.md`) contains the full contract per capability (description, consumes, produces) — without `provided by:` (D-CP).
+Each role declares `capabilities:` in frontmatter (unidirectional Role→Capability). The **Capability Catalog** (`knowledge/capabilities.md`) contains the full contract per capability (description, consumes, produces) — without `provided by:` (D-CP).
 
 | Capability | Consumes | Produces |
 |------------|----------|----------|

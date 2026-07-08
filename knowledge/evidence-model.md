@@ -28,7 +28,7 @@ Trust Hierarchy, Evidence Classification и Behavioral Rules для `reality-aud
 | 4. **Reported State** | Файлы в репо (config, docs) | `docs/architecture/README.md` |
 | 5. **Inferred State** | Логический вывод из Level 1-4 | "Module X depends on Y because..."
 | 6. **Stakeholder Claim** | Утверждение человека без данных | "We use microservices" |
-| 7. **No Evidence** | Отсутствие какого-либо信号а | No docs found = unknown |
+| 7. **No Evidence** | Отсутствие какого-либо сигнала | No docs found = unknown |
 
 ### Правила
 - Никогда не понижай уровень источника ниже его реального уровня.

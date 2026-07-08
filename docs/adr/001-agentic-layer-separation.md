@@ -44,7 +44,7 @@ Introduce **5 first-class entities** — Knowledge / Role / Capability / SOP / A
 Key decisions:
 - **No output templates** — merged into `knowledge/report-formats.md`
 - **Capability Catalog** in `knowledge/capabilities.md` (not `agents/README.md`) — single source of truth
-- **No `provided by:`** in catalog —单向 Role→Capability, declared in Role FM
+- **No `provided by:`** in catalog — unidirectional Role→Capability, declared in Role FM
 - **`gate: manual`** instead of `role: human` — human is not a Runtime role
 - **planner stays DAG-printer** — no executor (avoids small-Airflow syndrome)
 - **`agents/` not renamed to `roles/`** — avoids breaking v1.0 contracts
@@ -53,7 +53,7 @@ Key decisions:
 
 ### Positive
 - Knowledge reusable across all roles (DRY)
-- New roles只需要 slim identity + knowledge refs (faster to create)
+- New roles only need slim identity + knowledge refs (faster to create)
 - SOPs decoupled from specific roles (can swap reality-auditor → another model)
 - Artifacts make data flow explicit (reviewable, testable)
 - Capability-only SOP steps enable future agent resolution (v1.2)

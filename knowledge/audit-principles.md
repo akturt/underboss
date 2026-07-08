@@ -70,7 +70,7 @@ priority: P1
 ### Aggregate Verdict
 Общий результат adversary-check:
 - **All SUSTAINED** → findings validated, proceed
-- **Mixed** → report具体情况, human decides
+- **Mixed** → report конкретную ситуацию, human decides
 - **Any REFUTED** → findings need revision
 - **Any INSUFFICIENT** → more data needed
 
