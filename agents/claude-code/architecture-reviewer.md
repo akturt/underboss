@@ -8,7 +8,7 @@ owners: [naprolom-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, lifecycle-adr, lifecycle-spec]
 touches: [docs/architecture, docs/adr]
-docs: [../playbook/playbook-v2.md]
+docs: [../../playbook/playbook-v2.md]
 refs: []
 depends_on: []
 capabilities: [review-spec, review-adr, review-domain-model, review-security-model]

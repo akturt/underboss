@@ -123,7 +123,7 @@ Before creating any .md in docs/:
 MD
 fi
 
-# 3. CLAUDE.md snippet — minimal pointer to the runtime (append if exists).
+# 3. CLAUDE.md snippet — minimal pointer to the runtime (PREPEND to existing file).
 CLAUDE="$TARGET/CLAUDE.md"
 SNIPPET=$(cat << 'MD'
 ## Documentation Runtime
@@ -133,21 +133,22 @@ Documentation System Runtime is connected as a Git Submodule:
     docs/.runtime/naprolom-docs/
 
 Before any change to `docs/`:
-1. Study `playbook/playbook-v2.md` (target model)
-2. Use `engine/templates/` — do NOT copy templates into the project
-3. Follow `engine/schemas/frontmatter.schema.json`
-4. Run `engine/validators/validate-frontmatter.sh` before commit
-5. For brownfield migration, follow `playbook/migrate-legacy.md`
-6. For typical processes, pick a SOP in `sops/` and run `sops/planner.mjs <name>` — call roles by name
-7. If task involves architectural review — see `sops/architecture-review.yaml`; foundation is `reality-auditor` BEFORE `architecture-reviewer`.
-8. Common knowledge bases live in `knowledge/` (`architecture-principles`, `evidence-model`, `audit-principles`, `report-formats`, `capabilities`) — roles reference them by short-id, not inline.
+1. Study `docs/.runtime/naprolom-docs/playbook/playbook-v2.md` (target model)
+2. Use `docs/.runtime/naprolom-docs/engine/templates/` — do NOT copy templates into the project
+3. Follow `docs/.runtime/naprolom-docs/engine/schemas/frontmatter.schema.json`
+4. Run `docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh` before commit
+5. For brownfield migration, follow `docs/.runtime/naprolom-docs/playbook/migrate-legacy.md`
+6. For typical processes, pick a SOP in `docs/.runtime/naprolom-docs/sops/` and run `node docs/.runtime/naprolom-docs/sops/planner.mjs <name>` — call roles by name
+7. If task involves architectural review — see `docs/.runtime/naprolom-docs/sops/architecture-review.yaml`; foundation is `reality-auditor` BEFORE `architecture-reviewer`.
+8. Common knowledge bases live in `docs/.runtime/naprolom-docs/knowledge/` (`architecture-principles`, `evidence-model`, `audit-principles`, `report-formats`, `capabilities`) — roles reference them by short-id, not inline.
 MD
 )
 
 if [ -f "$CLAUDE" ]; then
   if ! grep -q "## Documentation Runtime" "$CLAUDE"; then
-    printf "\n\n%s\n" "$SNIPPET" >> "$CLAUDE"
-    echo "→ Appended 'Documentation Runtime' section to CLAUDE.md"
+    EXISTING=$(cat "$CLAUDE")
+    { printf "%s\n\n" "$SNIPPET"; printf "%s\n" "$EXISTING"; } > "$CLAUDE"
+    echo "→ Prepended 'Documentation Runtime' section to existing CLAUDE.md"
   else
     echo "→ CLAUDE.md already has 'Documentation Runtime' section, skipped"
   fi
