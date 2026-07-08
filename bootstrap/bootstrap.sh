@@ -12,6 +12,7 @@
 # v1.1 (D-BR): submodule resides inside docs/.runtime/naprolom-docs/, not .context/runtime/.
 # v1.2: registry-driven universal loader. Reads runtime/registry.yaml for component discovery.
 #       State detection via runtime/state-machine.yaml states (filesystem-based).
+# v1.2.1: fixed GLOBAL_VERSION subshell bug, auto-upgrade v1.1→v1.2.
 #
 # Usage:
 #   bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
