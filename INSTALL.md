@@ -26,6 +26,8 @@ priority: P0
 >
 > **v1.1 (D-BR):** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов в корне. Внутри `docs/` появляются user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) И система ведёт себя локально под `docs/.runtime/naprolom-docs/`. См. §Two-repo model ниже.
 
+> **Быстрый путь:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту — он выполнит все шаги ниже автоматически.
+
 ---
 
 ## Two-repo model

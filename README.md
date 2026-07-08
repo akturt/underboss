@@ -22,6 +22,8 @@ priority: P0
 
 > **Доказательство:** проект Kordon/MegaDelta — 141 хаотичный файл → 40 canonical за 30 минут и один промпт. Онбординг с 2–5 дней до 5 минут, контекст LLM легче на 73%, стоимость промпта — на 80%. См. `docs/audits/`.
 
+> **Установить на свой проект:** скопируй промпт из [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) и дай AI-агенту (opencode, Claude Code, Cursor). Агент автоматически определит тип проекта, подключит submodule и развернёт систему.
+
 ---
 
 ## Что это
@@ -83,7 +85,8 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
 ├── bootstrap/
 │   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный (D-BR: advisory path-check)
-│   └── bootstrap.ps1                       ← Windows / PowerShell
+│   ├── bootstrap.ps1                       ← Windows / PowerShell
+│   └── DEPLOY-PROMPT.md                    ← промпт для AI-агента: автоустановка на любой проект
 ├── knowledge/                              ← v1.1 NEW: общий knowledge-слой (роли подключают по short-id)
 │   ├── architecture-principles.md
 │   ├── evidence-model.md
