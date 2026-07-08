@@ -4,11 +4,14 @@
 // Reads YAML SOPs from sops/*.yaml, prints execution plan for a given SOP.
 // Computes parallel groups automatically based on `depends_on` field.
 //
-// Usage (from runtime root, i.e. .context/runtime/naprolom-docs/):
+// Usage (from runtime root, i.e. docs/.runtime/naprolom-docs/):
 //   node sops/planner.mjs                       # list available SOPs
 //   node sops/planner.mjs new-feature           # print plan for new-feature SOP
 //   node sops/planner.mjs new-feature --platform claude-code
-//   node sops/planner.mjs incident --hide-human # hide steps where role: human
+//   node sops/planner.mjs incident --hide-human # hide steps where gate: manual or role: human
+//
+// v1.1: reads capability:, consumes:, produces:, gate: from steps.
+// D-HG: `gate: manual` = human step; v1.0 `role: human` = alias for `gate: manual`.
 //
 // No external deps. Simple YAML reader tailored to SOP format (flat key/value,
 // nested lists of objects with flat keys, no flow-style nesting).
@@ -190,20 +193,32 @@ function printPlan(sopName) {
   const groups = computeParallelGroups(steps);
 
   // Optional: hide human-only steps from output (but keep their dependencies in DAG computation).
+  // D-HG: `gate: manual` = human step; v1.0 compat: `role: human` → treated as `gate: manual`.
   let groupIdx = 0;
   for (const group of groups) {
-    const visibleGroup = HIDE_HUMAN ? group.filter(s => s.role !== 'human') : group;
+    const visibleGroup = HIDE_HUMAN
+      ? group.filter(s => !s.gate && s.role !== 'human')
+      : group;
     if (visibleGroup.length === 0) continue;
     groupIdx++;
     const label = visibleGroup.length > 1 ? `Group ${groupIdx} (parallel)` : `Group ${groupIdx} (sequential or solo)`;
     console.log(label + ':');
     for (const s of visibleGroup) {
-      const roleInfo = s.role === 'human'
-        ? 'role: human'
-        : `role: ${s.role} [${pickPlatform(s.platform)}]`;
-      const cond = s.condition ? '  (if ' + s.condition + ')' : '';
-      console.log(`  [${s.id}] ${s.name}   →   ${roleInfo}${cond}`);
-      if (s.produces) console.log(`        produces: ${s.produces}`);
+      const isGate = s.gate === 'manual' || s.role === 'human';
+      if (isGate) {
+        console.log(`  [${s.id}] ${s.name}   →   gate: manual`);
+      } else {
+        if (!s.role && s.capability) {
+          console.log(`  ⚠ WARNING: step ${s.id} declares capability without role — planner cannot resolve provider`);
+        }
+        const roleInfo = s.role ? `role: ${s.role} [${pickPlatform(s.platform)}]` : 'role: (unresolved)';
+        const capInfo = s.capability ? `  cap: ${s.capability}` : '';
+        const cond = s.condition ? '  (if ' + s.condition + ')' : '';
+        console.log(`  [${s.id}] ${s.name}   →   ${roleInfo}${capInfo}${cond}`);
+      }
+      const consumeStr = Array.isArray(s.consumes) && s.consumes.length ? `consumes: [${s.consumes.join(', ')}]` : '';
+      const produceStr = s.produces ? `produces: ${s.produces}` : '';
+      if (consumeStr || produceStr) console.log(`        ${consumeStr}${consumeStr && produceStr ? ' → ' : ''}${produceStr}`);
     }
     console.log('');
   }

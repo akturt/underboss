@@ -1,0 +1,92 @@
+name: forensic-audit
+description: 8-step multi-pass forensic audit pipeline (replaces ad-hoc forensic agent)
+triggers:
+  - manual invocation for deep architectural forensic
+  - после инцидента с архитектурной причиной
+input:
+  required:
+    - type: spec|adr|audit
+      path: <target subject document>
+      artifact: subject-document
+    - type: list
+      name: entities
+      note: "domain entities of consumer (e.g., DomainAsset, UserAccount — NOT hardcoded in SOP)"
+    - type: list
+      name: mechanisms
+      note: "control mechanisms for audit"
+output:
+  - artifact: forensic-report
+    final_path: docs/audits/YYYY-MM-DD-forensic-<topic>.md
+    type: audit
+    status: completed
+steps:
+  - id: 1
+    name: Control Objects Identification
+    capability: state-reconstruction
+    role: reality-auditor
+    platform: any
+    consumes: [subject-document]
+    produces: control-objects-matrix
+    note: "ownership_matrix (entities × is_resource/is_route/is_reputation/is_execution/is_observation/is_decision) + evidence"
+    depends_on: []
+  - id: 2
+    name: Actual Control Plane Entity
+    capability: state-reconstruction
+    role: reality-auditor
+    platform: any
+    consumes: [control-objects-matrix]
+    produces: control-plane-answer
+    note: "answer (A-E) + mechanisms + code_refs + confidence"
+    depends_on: [1]
+  - id: 3
+    name: Signal Inventory
+    capability: state-reconstruction
+    role: reality-auditor
+    platform: any
+    consumes: [subject-document]
+    produces: signal-inventory
+    note: "external/internal signals × granularity/attribution"
+    depends_on: [1]
+  - id: 4
+    name: Attribution Analysis
+    capability: attribution-analysis
+    role: reality-auditor
+    platform: any
+    consumes: [signal-inventory, control-objects-matrix]
+    produces: attribution-analysis
+    note: "per-source attribution (hard/probabilistic/impossible) + reasoning"
+    depends_on: [3]
+  - id: 5
+    name: Multi-Binding Reality Check
+    capability: state-reconstruction
+    role: reality-auditor
+    platform: any
+    consumes: [control-plane-answer, attribution-analysis]
+    produces: multi-binding-verdict
+    note: "verdict + evidence + contradictions"
+    depends_on: [2]
+  - id: 6
+    name: Runtime Ownership Analysis
+    capability: architecture-extraction
+    role: reality-auditor
+    platform: any
+    consumes: [control-objects-matrix, multi-binding-verdict]
+    produces: runtime-ownership-report
+    note: "runtime_owner + per-attribute owner + conflict_behavior"
+    depends_on: [5]
+  - id: 7
+    name: Reputation Layer Design (architecture recommendation)
+    capability: review-domain-model
+    role: architecture-reviewer
+    platform: any
+    consumes: [attribution-analysis, runtime-ownership-report]
+    produces: reputation-layer-design
+    note: "layer_responsibilities + unified_reputation_identity_exists?"
+    depends_on: [4, 6]
+  - id: 8
+    name: Final Recommendation (ADR-precursor, human merge)
+    gate: manual
+    consumes: [reputation-layer-design, runtime-ownership-report, attribution-analysis]
+    produces: forensic-report
+    note: "adr_recommendation + risk_register + open_questions → docs/audits/YYYY-MM-DD-forensic-<topic>.md (terminal artifact)"
+    depends_on: [7]

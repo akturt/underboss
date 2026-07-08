@@ -1,0 +1,60 @@
+name: architecture-review
+description: Formal review-pipeline DAG (reality → arch review → doc review → adversary optional → human)
+triggers:
+  - PR touching docs/specs/drafts/ or docs/specs/review/
+  - PR flagged with [architecture-review] label
+input:
+  required:
+    - type: spec
+      path_pattern: docs/specs/{drafts,review}/*.md
+      artifact: subject-spec
+output:
+  - artifact: arch-review-report
+    path: docs/audits/YYYY-MM-DD-arch-review-<slug>.md
+    type: audit
+    status: draft
+steps:
+  - id: 1
+    name: Reality reconstruction
+    capability: state-reconstruction
+    role: reality-auditor
+    platform: any
+    consumes: [subject-spec]
+    produces: reality-report
+    note: "current state report — feature inventory, drift, architectural reality"
+    depends_on: []
+  - id: 2
+    name: Architecture review against REAL state
+    capability: review-spec
+    role: architecture-reviewer
+    platform: any
+    consumes: [reality-report, subject-spec]
+    produces: architecture-findings
+    note: "findings: invariants, drift, missing ADRs, security"
+    depends_on: [1]
+  - id: 3
+    name: Documentation review
+    capability: validate-frontmatter
+    role: documentation-reviewer
+    platform: any
+    consumes: [subject-spec]
+    produces: documentation-report
+    note: "Schema v1 compliance + entity_refs validity"
+    depends_on: [2]
+  - id: 4
+    name: Adversary validation (optional, decision gate human)
+    capability: claim-validation
+    role: adversary-checker
+    platform: any
+    consumes: [architecture-findings]
+    produces: validated-findings
+    note: "per-finding verdicts (SUSTAINED/WEAKENED/REFUTED) + confidence matrix"
+    depends_on: [1, 2]
+    condition: manual
+  - id: 5
+    name: Human decision gate
+    gate: manual
+    consumes: [architecture-findings, documentation-report, validated-findings]
+    produces: decision-gate-result
+    note: "approve / request-changes / reject + trigger step 4 if needed"
+    depends_on: [3]
