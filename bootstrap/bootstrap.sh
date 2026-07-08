@@ -73,20 +73,26 @@ extract_registry_nested() {
   awk "/^  ${section}:/,/^  [a-z]/" "$REGISTRY" | awk "/^    ${subsection}:/,/^    [a-z]/" | grep "^      - " | sed 's/^      - //'
 }
 
-# ─── v1.2: State detection (filesystem-based, mirrors state-machine.yaml) ────
+# ─── v1.2: State + version detection (unified) ─────────────────────────────
 
-detect_state() {
+# detect_install_state
+# Returns: "fresh", "legacy", "partial", "installed"
+# Side effect: sets GLOBAL_VERSION to "none", "1.0", "1.1", "1.2"
+detect_install_state() {
   local state="fresh"
+  GLOBAL_VERSION="none"
 
   # Check for legacy v1.0 layout
   if [ -d "$TARGET/.context/runtime/naprolom-docs" ] || [ -d "$TARGET/.context/runtime" ]; then
     state="legacy"
+    GLOBAL_VERSION="1.0"
   # Check for v1.1+ layout
   elif [ -d "$TARGET/docs/.runtime/naprolom-docs" ]; then
+    local runtime_dir="$TARGET/docs/.runtime/naprolom-docs"
     # Check if all expected components exist
     local missing=0
     for dir in engine bootstrap agents knowledge sops; do
-      if [ ! -d "$TARGET/docs/.runtime/naprolom-docs/$dir" ]; then
+      if [ ! -d "$runtime_dir/$dir" ]; then
         missing=1
         break
       fi
@@ -96,13 +102,21 @@ detect_state() {
     else
       state="installed"
     fi
+    # Detect version
+    if [ -f "$runtime_dir/runtime/registry.yaml" ]; then
+      GLOBAL_VERSION="1.2"
+    else
+      GLOBAL_VERSION="1.1"
+    fi
   fi
 
   echo "$state"
 }
 
-CURRENT_STATE=$(detect_state)
+CURRENT_STATE=$(detect_install_state)
+CURRENT_VERSION="$GLOBAL_VERSION"
 echo "→ Current state:  $CURRENT_STATE"
+echo "→ Current version: $CURRENT_VERSION"
 
 # State machine transitions (from runtime/state-machine.yaml):
 #   fresh     → bootstrap → installed
@@ -112,24 +126,36 @@ echo "→ Current state:  $CURRENT_STATE"
 #   legacy    → migration → installed
 #   broken    → re-bootstrap → installed
 
-# ─── v1.2: Detect if this is a v1.1 installation needing upgrade ─────────────
+# ─── v1.2: Auto-upgrade v1.1 → v1.2 ──────────────────────────────────────
 
-detect_version() {
-  local runtime_dir="$TARGET/docs/.runtime/naprolom-docs"
-  if [ ! -d "$runtime_dir" ]; then
-    echo "none"
-    return
-  fi
-  # v1.2 has runtime/ directory with registry.yaml
-  if [ -f "$runtime_dir/runtime/registry.yaml" ]; then
-    echo "1.2"
+if [ "$CURRENT_STATE" = "installed" ] && [ "$CURRENT_VERSION" = "1.1" ]; then
+  echo "→ v1.1 detected. Attempting auto-upgrade to v1.2..." >&2
+
+  RUNTIME_DIR="$TARGET/docs/.runtime/naprolom-docs"
+  if [ -d "$RUNTIME_DIR/.git" ] || [ -f "$RUNTIME_DIR/.git" ]; then
+    # Submodule exists — pull latest
+    echo "  Pulling latest submodule..." >&2
+    (
+      cd "$RUNTIME_DIR" && git pull origin master 2>/dev/null
+    )
+    # Verify v1.2 components exist after pull
+    if [ -f "$RUNTIME_DIR/runtime/registry.yaml" ]; then
+      echo "  v1.2 components found. Upgrade complete." >&2
+      CURRENT_VERSION="1.2"
+      GLOBAL_VERSION="1.2"
+    else
+      echo "  WARNING: Submodule updated but v1.2 components still missing." >&2
+      echo "  Manual intervention may be required:" >&2
+      echo "    cd $TARGET" >&2
+      echo "    git submodule update --remote --merge" >&2
+      echo "    bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh" >&2
+    fi
   else
-    echo "1.1"
+    echo "  Submodule directory exists but is not a git repo." >&2
+    echo "  To upgrade: re-add submodule at v1.2" >&2
   fi
-}
-
-CURRENT_VERSION=$(detect_version)
-echo "→ Current version: $CURRENT_VERSION"
+  echo ""
+fi
 
 case "$CURRENT_STATE" in
   legacy)
@@ -147,25 +173,9 @@ case "$CURRENT_STATE" in
     echo ""
     ;;
   installed)
-    if [ "$CURRENT_VERSION" = "1.1" ]; then
-      echo "→ v1.1 detected. Checking for v1.2 upgrade..." >&2
-      echo "" >&2
-
-      # Check if submodule already has v1.2 files (just not pulled yet)
-      RUNTIME_DIR="$TARGET/docs/.runtime/naprolom-docs"
-      if [ -d "$RUNTIME_DIR/.git" ] || [ -f "$RUNTIME_DIR/.git" ]; then
-        # Submodule exists — check if remote has v1.2
-        echo "  Submodule is at v1.1. To upgrade to v1.2:" >&2
-        echo "    1. cd $TARGET" >&2
-        echo "    2. git submodule update --remote --merge" >&2
-        echo "    3. git add docs/.runtime/naprolom-docs" >&2
-        echo "    4. git commit -m 'chore: update Runtime to v1.2'" >&2
-        echo "    5. Re-run bootstrap" >&2
-        echo "" >&2
-        echo "  Bootstrap will continue with v1.1 compatibility mode." >&2
-        echo "  New v1.2 components (registry, state-machine, contracts) will be created." >&2
-        echo "" >&2
-      fi
+    if [ "$CURRENT_VERSION" = "1.2" ]; then
+      echo "→ Runtime v1.2 already installed. Running idempotent re-bootstrap." >&2
+      echo ""
     fi
     ;;
 esac
@@ -319,7 +329,18 @@ if [ ! -f "$WF" ]; then
 name: docs-validate
 on:
   pull_request:
-    paths: ["docs/**"]
+    paths:
+      - "docs/**"
+      - "knowledge/**"
+      - "engine/templates/**"
+      - "engine/schemas/**"
+      - "engine/validators/**"
+      - "engine/reality-engine/**"
+      - "runtime/**"
+      - "sops/**"
+      - "agents/**"
+      - "bootstrap/**"
+      - "playbook/**"
 jobs:
   schema-v1:
     runs-on: ubuntu-latest
@@ -335,6 +356,9 @@ jobs:
       - name: Validate knowledge/ frontmatter
         run: |
           ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
+      - name: Validate Runtime dependency graph
+        run: |
+          bash docs/.runtime/naprolom-docs/engine/validators/validate-runtime.sh
 YML
   echo "→ Created .github/workflows/docs-validate.yml"
 else

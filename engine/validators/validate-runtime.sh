@@ -109,6 +109,16 @@ while IFS= read -r val; do
 done < <(extract_section "validators")
 ok
 
+# Check engine components (collectors, analyzers, reporters)
+for component_type in collectors analyzers reporters; do
+  while IFS= read -r comp; do
+    if [ ! -f "$RUNTIME_ROOT/engine/reality-engine/$component_type/$comp.sh" ]; then
+      error "Registry engine $component_type '$comp' has no matching file engine/reality-engine/$component_type/$comp.sh"
+    fi
+  done < <(extract_section "$component_type")
+done
+ok
+
 # ─── 3. Role → Capability: every capabilities: entry exists in capabilities.md ─
 
 CAPABILITIES_FILE="$RUNTIME_ROOT/knowledge/capabilities.md"
@@ -231,13 +241,54 @@ ok
 
 # ─── 8. Internal links: entity_refs resolve to existing id: fields ───────────
 
-# Collect all id: fields from FM
-all_ids=$(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" -name "*.md" -type f 2>/dev/null | while read -r f; do
+# Collect all id: fields from FM (also collect registry component names, knowledge short-ids,
+# agent names, validator names — these are implicit entities in the Runtime graph).
+# Initialize with concept entities to avoid empty variable with set -u.
+all_ids=$(printf '%s\n' "runtime-agentic-layer" "agent-role-separation" "sop-dag" "schema-v1" "canonical-frontmatter" "lifecycle-spec" "lifecycle-adr" "capabilities" "runtime" "registry" "state-machine" "reality-engine")
+
+# a) Explicit id: fields from docs/ and knowledge/
+all_ids="$all_ids
+$(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" -name "*.md" -type f 2>/dev/null | while read -r f; do
   awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f && /^id:/{gsub(/^id:[[:space:]]*/, ""); print}' "$f"
-done | sort -u)
+done)"
+
+# b) Registry component names (agents, knowledge, sops, templates, validators, contracts)
+if [ -f "$REGISTRY" ]; then
+  # agent names
+  all_ids="$all_ids
+$(awk '
+    $0 == "  agents:" { found=1; next }
+    found && /^  [a-zA-Z]/ { exit }
+    found && /^    - name: / { sub(/^    - name: /, ""); print }
+  ' "$REGISTRY")"
+  # knowledge, sops, templates, validators (flat lists)
+  for key in knowledge sops templates validators; do
+    all_ids="$all_ids
+$(extract_section "$key")"
+  done
+  # contract names (runtime + consumer)
+  for level in runtime consumer; do
+    all_ids="$all_ids
+$(awk -v lvl="      $level:" '
+      $0 == "  contracts:" { in_contracts=1; next }
+      in_contracts && /^  [a-zA-Z]/ { exit }
+      in_contracts && $0 == lvl { in_level=1; next }
+      in_level && /^    [a-zA-Z]/ { exit }
+      in_level && /^      - / { sub(/^      - /, "", $0); print }
+    ' "$REGISTRY")"
+  done
+  # engine component names (collectors, analyzers, reporters)
+  for component_type in collectors analyzers reporters; do
+    all_ids="$all_ids
+$(awk "/^  ${component_type}:/,/^[^ ]/" "$REGISTRY" | grep "^    - " | sed 's/^    - //')"
+  done
+fi
+
+all_ids=$(echo "$all_ids" | sort -u)
 
 # Check entity_refs against collected ids
-find "$RUNTIME_ROOT/docs" -name "*.md" -type f 2>/dev/null | while read -r f; do
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
   fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
   refs=$(echo "$fm" | grep -E "^entity_refs:" | sed -E 's/^entity_refs:[[:space:]]*\[//' | sed -E 's/\].*//' | tr ',' '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
@@ -245,10 +296,10 @@ find "$RUNTIME_ROOT/docs" -name "*.md" -type f 2>/dev/null | while read -r f; do
     [ -z "$ref" ] && continue
     if ! echo "$all_ids" | grep -qFx "$ref"; then
       rel_path="${f#$RUNTIME_ROOT/}"
-      error "$rel_path: entity_ref '$ref' does not resolve to any id: field"
+      error "$rel_path: entity_ref '$ref' does not resolve to any id: field or registry component"
     fi
   done
-done
+done < <(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" -name "*.md" -type f 2>/dev/null)
 ok
 
 # ─── 9. Engine components: collectors/analyzers/reporters referenced by SOP exist ─

@@ -22,21 +22,9 @@ compatibility:
 components:
   agents:
     - name: architecture-reviewer
-      platforms: [claude-code, opencode]
-      capabilities: [review-spec, review-adr, review-domain-model, review-security-model]
-      knowledge: [architecture-principles, report-formats]
     - name: documentation-reviewer
-      platforms: [claude-code, opencode]
-      capabilities: [validate-frontmatter, validate-entity-refs]
-      knowledge: [report-formats]
     - name: reality-auditor
-      platforms: [claude-code, opencode]
-      capabilities: [state-reconstruction, drift-analysis, architecture-extraction, attribution-analysis]
-      knowledge: [evidence-model, report-formats]
     - name: adversary-checker
-      platforms: [claude-code, opencode]
-      capabilities: [claim-validation, assumption-analysis]
-      knowledge: [audit-principles, report-formats]
 
   knowledge:
     - architecture-principles
@@ -62,7 +50,6 @@ components:
       - installation
       - migration
       - validation
-      - state-machine
     consumer:
       - boundaries
       - project-layout
@@ -70,6 +57,19 @@ components:
   validators:
     - validate-frontmatter
     - validate-runtime
+
+  engine:
+    collectors:
+      - architecture-inventory
+      - entity-inventory
+      - module-inventory
+      - dependency-graph
+    analyzers:
+      - documentation-drift
+      - adr-drift
+      - spec-drift
+    reporters:
+      - reality-report
 
   templates:
     - architecture

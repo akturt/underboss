@@ -6,8 +6,12 @@ on:
       - "knowledge/**"
       - "engine/templates/**"
       - "engine/schemas/**"
+      - "engine/validators/**"
       - "engine/reality-engine/**"
       - "runtime/**"
+      - "sops/**"
+      - "agents/**"
+      - "bootstrap/**"
       - "playbook/**"
 
 jobs:
@@ -19,6 +23,8 @@ jobs:
       WARN_ONLY: ""
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Validate Canonical Schema v1 frontmatter (own docs/)
         run: |
           bash engine/validators/validate-frontmatter.sh
