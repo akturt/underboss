@@ -157,6 +157,18 @@ else
   echo "→ Created CLAUDE.md with Documentation Runtime snippet"
 fi
 
+# 3b. AGENTS.md snippet — same content, only if file already exists (Cursor, Windsurf, etc.)
+AGENTS="$TARGET/AGENTS.md"
+if [ -f "$AGENTS" ]; then
+  if ! grep -q "## Documentation Runtime" "$AGENTS"; then
+    EXISTING=$(cat "$AGENTS")
+    { printf "%s\n\n" "$SNIPPET"; printf "%s\n" "$EXISTING"; } > "$AGENTS"
+    echo "→ Prepended 'Documentation Runtime' section to existing AGENTS.md"
+  else
+    echo "→ AGENTS.md already has 'Documentation Runtime' section, skipped"
+  fi
+fi
+
 # 4. GitHub Actions guard — copy the canonical workflow if missing.
 mkdir -p "$TARGET/.github/workflows"
 WF="$TARGET/.github/workflows/docs-validate.yml"

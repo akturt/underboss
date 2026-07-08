@@ -156,9 +156,18 @@ if (Test-Path $claude) {
   $snippet | Set-Content -Path $claude -Encoding utf8
   Write-Host "-> Created CLAUDE.md with Documentation Runtime snippet"
 }
-} else {
-  $snippet | Set-Content -Path $claude -Encoding utf8
-  Write-Host "-> Created CLAUDE.md with Documentation Runtime snippet"
+
+# AGENTS.md — same content, only if file already exists (Cursor, Windsurf, etc.)
+$agents = Join-Path $ProjectPath "AGENTS.md"
+if (Test-Path $agents) {
+  $existing = Get-Content -Path $agents -Raw -ErrorAction SilentlyContinue
+  if ($existing -notmatch "## Documentation Runtime") {
+    $newContent = ($snippet -join "`n") + "`n`n" + $existing
+    $newContent | Set-Content -Path $agents -Encoding utf8
+    Write-Host "-> Prepended 'Documentation Runtime' section to existing AGENTS.md"
+  } else {
+    Write-Host "-> AGENTS.md already has 'Documentation Runtime' section, skipped"
+  }
 }
 
 $wfDir = Join-Path $ProjectPath ".github\workflows"
