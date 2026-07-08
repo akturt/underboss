@@ -3,7 +3,7 @@ schema: 1
 id: entity-catalog
 type: architecture
 status: active
-date: 2026-07-08
+date: 2026-07-09
 owners: [TODO-team-name]
 
 entity_refs: []
@@ -14,35 +14,41 @@ priority: P1
 # Entity Catalog
 
 > **Consumer must complete this catalog.** Runtime cannot know your domain entities.
-> This template is copied by bootstrap. Fill in your domain entities below.
+> Bootstrap auto-generates sections from project structure. Fill in the details.
 
-## Domain Entities
+## Core Entities
 
-<!-- TODO: Add your domain entities below. Each entity should have: -->
-<!-- - name: kebab-case identifier -->
-<!-- - description: what the entity represents -->
-<!-- - code_location: where it lives in code -->
-<!-- - doc_location: where it's documented -->
+<!-- Domain objects: User, Order, Product, etc. -->
+<!-- Format: - **Name**: description (code: path, docs: path) -->
 
-### Example entities (delete and replace with your own)
+## Services
 
-- **TODO-entity-1**: TODO description (code: `src/...`, docs: `docs/architecture/...`)
-- **TODO-entity-2**: TODO description (code: `src/...`, docs: `docs/architecture/...`)
+<!-- Application services, workers, daemons -->
+<!-- Format: - **ServiceName**: description (code: path) -->
+
+## External Systems
+
+<!-- Third-party APIs, databases, message queues -->
+<!-- Format: - **SystemName**: description (integration: path) -->
+
+## Data
+
+<!-- Data models, schemas, migrations -->
+<!-- Format: - **SchemaName**: description (location: path) -->
+
+## Runtime Components
+
+<!-- Internal infrastructure: configs, deploy scripts, CI -->
+<!-- Format: - **ComponentName**: description (location: path) -->
 
 ## Entity Relationships
 
-<!-- TODO: Describe relationships between your domain entities -->
-<!-- Example: -->
-<!-- - DomainAsset HAS UserAccount (1:many) -->
-<!-- - UserAccount USES AuthenticationProvider -->
+<!-- Format: - EntityA RELATIONSHIP EntityB (cardinality) -->
 
 ## Invariants
 
-<!-- TODO: List critical invariants for your domain entities -->
-<!-- Example: -->
-<!-- - INV-1: DomainAsset must always have an owner -->
-<!-- - INV-2: UserAccount email must be unique -->
+<!-- Format: - INV-1: invariant description -->
 
 ---
 
-**Status:** incomplete — fill in your domain entities before using `entity_refs` in specs/audits.
+**Status:** sections pre-filled — add your domain entities before using `entity_refs` in specs/audits.
