@@ -123,6 +123,7 @@ Before any change to `docs/`:
 3. Follow `engine/schemas/frontmatter.schema.json`
 4. Run `engine/validators/validate-frontmatter.sh` before commit
 5. For brownfield migration, follow `playbook/migrate-legacy.md`
+6. For typical processes, pick a SOP in `sops/` and run `sops/planner.mjs <name>` — call roles by name
 MD
 )
 

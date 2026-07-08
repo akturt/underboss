@@ -33,6 +33,7 @@ priority: P0
 - **5-слойную архитектуру** — Entry (`.context/`) → Architecture → ADR → Spec → Operations. Навигация по структуре, а не по `grep`.
 - **CI guard** — ни один `.md` без canonical frontmatter не попадёт в репозиторий.
 - **Runnable migration** — для brownfield-репозиториев: `engine/scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
+- **SOPs** — декларативное описание типовых процессов разработки в `sops/*.yaml` (New Feature, Bugfix, Release, Incident и др.). Планировщик `sops/planner.mjs` печатает DAG выполнения по типу входной сущности. Роли упоминаются по имени (из `agents/`) или `human`.
 
 ---
 
@@ -82,6 +83,9 @@ naprolom-docs/
 │   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный
 │   └── bootstrap.ps1                       ← Windows / PowerShell
 ├── agents/                                 ← роли AI-агентов (reviewer, architect) для claude-code и opencode
+├── sops/                                   ← Standard Operating Procedures (YAML) + planner.mjs
+│   ├── planner.mjs                         ← печатает DAG выполнения по input типу
+│   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident
 ├── docs/                                   ← dogfood: собственная документация Runtime
 │   └── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
 └── .github/workflows/docs-validate.yml     ← CI guard, вызывающий engine/validators/validate-frontmatter.sh
@@ -154,6 +158,28 @@ updates:
 
 ---
 
+## SOP (Standard Operating Procedures)
+
+`sops/` — декларативные описания типовых процессов разработки в виде YAML. Не исполнение — описание:
+- `new-feature.yaml`, `bugfix.yaml`, `new-service.yaml`, `architecture-change.yaml`, `audit.yaml`, `release.yaml`, `incident.yaml`.
+- Каждый — DAG шагов с референсами на роли из `agents/{platform}/` либо `human`.
+- `sops/planner.mjs` — по input типу печатает последовательность шагов с параллельными группами.
+
+```bash
+# Список доступных SOP
+node sops/planner.mjs
+
+# План выполнения для new-feature (показывает роль + параллельность)
+node sops/planner.mjs new-feature --platform claude-code
+
+# Только роли AI-агентов (без human-шагов) — чтобы понять, что запускать
+node sops/planner.mjs new-feature --hide-human
+```
+
+Пока запуск — ручной через slash commands (`/architecture-reviewer`, `/documentation-reviewer` в Claude Code; `@architecture-reviewer`, `@documentation-reviewer` в opencode). SOP работает как чек-лист «что и в каком порядке вызвать на конкретный тип работы». Future Tier 2 — slash-command bindings, CI step интеграция.
+
+---
+
 ## Почему Git Submodule, а не npm/pip/git-release
 
 - **Не требует Node.js/Python/Go toolchain** в проекте — работает для FastAPI, Go, Rust, Terraform, Ansible.
@@ -197,6 +223,7 @@ updates:
 
 ## Чейнджлог
 
+- **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Engine → AI Layer → SOP Layer.
 - **2026-07-08** — **Runtime engine/ layering**: `templates/`, `schemas/`, `validators/`, `scripts/` сгруппированы под `engine/` (Documentation Engine слой). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `engine/...` префикс. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Engine → AI Layer.
 - **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `validators/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.
 - **2026-07-07** — v2 split: пособие переписано как Greenfield Playbook; Adoption Guide выделен отдельно (brownfield); добавлен Value Proof case Kordon/MegaDelta; README переписан с индексом, Why-секцией и питчем. CI guard исправлен (frontmatter-only, без false positives); `WARN_ONLY` switch для brownfield rollout.

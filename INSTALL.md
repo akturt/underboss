@@ -36,6 +36,8 @@ priority: P0
 - **Validators** — `validate-frontmatter.sh` для local + CI проверки.
 - **Templates** — canonical шаблоны всех типов документов.
 - **Schema** — `frontmatter.schema.json` (JSON Schema для IDE/агентов).
+- **Agent roles** — готовые конфиги ролей (`architecture-reviewer`, `documentation-reviewer`) для Claude Code и opencode. Кладёте в `.claude/agents/` или `.opencode/agents/` — активируете через slash commands.
+- **SOPs** — 7 декларативных YAML-описаний типовых процессов (`new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`). Планировщик `sops/planner.mjs` печатает DAG шагов с ролями.
 
 ---
 
@@ -57,6 +59,7 @@ priority: P0
 │           ├── engine/            ← Documentation Engine (validators, templates, schemas, scripts)
 │           ├── bootstrap/         ← создание структуры в вашем проекте
 │           ├── agents/            ← роли AI-агентов для claude-code и opencode
+│           ├── sops/              ← Standard Operating Procedures (YAML) + planner
 │           └── docs/              ← dogfood: собственная документация Runtime
 └── .gitmodules                    ← конфиг submodule
 ```
@@ -337,8 +340,30 @@ git commit -m "chore: pin Documentation Runtime to <commit-sha>"
 - `normalize-frontmatter.mjs` — авто-нормализация (сортировка ключей, mandatory заполнение).
 - `repository_dispatch` — централизованная рассылка обновлений в зависимые репо.
 - Полный набор ролей в `agents/` — сейчас только `architecture-reviewer` и `documentation-reviewer` для `claude-code` и `opencode`.
+- `sops/` slash-command bindings — пока запуск ролей по SOP ручной. CI step bindings и slash-commands — Tier 2 после dogfooding.
 
 См. README → Status и changelog.
+
+---
+
+## SOP — Standard Operating Procedures (если используете процессы)
+
+Если вы хотите следовать типовым процессам развития (New Feature / Bugfix / Release / Incident), Runtime содержит декларативные описания в `sops/*.yaml`. Каждая SOP — это YAML, описывающий шаги в виде DAG с референсами на роли из `agents/` или `human` (manual).
+
+```bash
+# Список доступных SOP
+node .context/runtime/naprolom-docs/sops/planner.mjs
+
+# План выполнения для new-feature (показывает параллельные группы и роли)
+node .context/runtime/naprolom-docs/sops/planner.mjs new-feature --platform claude-code
+
+# Только роли AI-агентов (без manual human steps) — чтобы понять, кого вызвать через slash command
+node .context/runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
+```
+
+SOP — это чек-лист, не оркестратор. Вы читаете план, вручную вызываете роли через slash commands в агентах (например, `/architecture-reviewer` в Claude Code или `@architecture-reviewer` в opencode), выполняете manual-шаги сами. Никакого runtime scheduler.
+
+Кастомные SOP для специфичных процессов вашего проекта — кладите в `.context/sops/` вашего репозитория (вне submodule), Runtime их не переопределяет.
 
 ---
 

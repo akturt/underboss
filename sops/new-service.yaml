@@ -1,0 +1,113 @@
+name: new-service
+description: Добавление нового сервиса/микросервиса в инфраструктуру — от proposal до deploy + audit
+triggers:
+  - Spec создаётся с типом «new service»
+  - PR добавляет новую запись в docker-compose.yml / kubernetes manifest
+
+input:
+  required:
+    - type: spec
+      path_pattern: docs/specs/drafts/YYYY-MM-DD-<service-name>-service.md
+      status: draft
+      frontmatter_mandatory: [entity_refs, touches]
+
+output:
+  - type: adr
+    final_path: docs/adr/NNN-<service-name>.md
+    status: accepted
+  - type: spec
+    final_path: docs/specs/implemented/YYYY-MM-DD-<service-name>-service.md
+    status: implemented
+  - type: architecture_doc
+    path: docs/architecture/<topic>.md
+    status: active
+  - type: runbook
+    final_path: docs/<service-name>-deploy.md
+    status: active
+    kind: deploy
+  - type: audit
+    final_path: docs/audits/YYYY-MM-DD-<service-name>-service.md
+    status: completed
+
+steps:
+  - id: 1
+    name: Architecture Review
+    role: architecture-reviewer
+    platform: any
+    produces: "ADR proposed; инварианты из docs/architecture/README.md проверены против нового сервиса"
+    depends_on: []
+
+  - id: 2
+    name: Documentation Review — spec frontmatter
+    role: documentation-reviewer
+    platform: any
+    produces: "spec с корректным Schema v1 FM"
+    depends_on: []
+
+  - id: 3
+    name: Promote spec drafts→review
+    role: human
+    produces: "git mv → docs/specs/review/; frontmatter status=review"
+    depends_on: [1, 2]
+
+  - id: 4
+    name: Promote spec review→approved
+    role: human
+    produces: "git mv → docs/specs/approved/; frontmatter status=approved"
+    depends_on: [3]
+
+  - id: 5
+    name: Update architecture docs — topology, data model, invariants
+    role: human
+    produces: "docs/architecture/README.md Module Index обновлён; docs/architecture/topology.md обновлён (порты, сети)"
+    depends_on: [4]
+
+  - id: 6
+    name: Create service deploy runbook
+    role: human
+    produces: "docs/<service-name>-deploy.md (type: runbook, kind: deploy)"
+    depends_on: [4]
+
+  - id: 7
+    name: Add secrets references
+    role: human
+    produces: "docs/secrets.md обновлён (или новый docs/<service-name>-secrets.md если секретов много)"
+    depends_on: [4]
+
+  - id: 8
+    name: Update ops runbook
+    role: human
+    produces: "docs/ops.md day-to-day operations включает новый сервис"
+    depends_on: [4]
+
+  - id: 9
+    name: Implementation (docker-compose / k8s / Terraform / код сервиса)
+    role: human
+    produces: "PR с инфраструктурой и кодом сервиса, тесты зелёные"
+    depends_on: [5, 6, 7, 8]
+
+  - id: 10
+    name: Deploy (staging → prod)
+    role: human
+    produces: "сервис поднят в staging, smoke-tests зелёные, release в prod"
+    depends_on: [9]
+
+  - id: 11
+    name: Documentation Review — post-implementation
+    role: documentation-reviewer
+    platform: any
+    produces: "все затронутые .md в docs/ имеют корректный Schema v1 FM"
+    depends_on: [10]
+
+  - id: 12
+    name: Promote spec approved→implemented + заполнить ## Result
+    role: human
+    produces: "git mv → docs/specs/implemented/; frontmatter status=implemented"
+    depends_on: [10]
+
+  - id: 13
+    name: Audit — post-deploy review
+    role: human
+    platform: any
+    produces: "docs/audits/YYYY-MM-DD-<service-name>-service.md (status=completed)"
+    depends_on: [12]

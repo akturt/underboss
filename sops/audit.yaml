@@ -1,0 +1,72 @@
+name: audit
+description: Проведение аудита — от определения scope до append-only completed audit документа
+triggers:
+  - periodic check (квартальный/месячный)
+  - post-incident review
+  - pre-release sanity check
+  - external auditor request
+
+input:
+  required:
+    - type: trigger
+      description: "одна из: periodic / incident / pre-release / external"
+    - type: scope
+      description: "список сущностей (entity_refs) которые будут проверены"
+
+output:
+  - type: audit
+    final_path: docs/audits/YYYY-MM-DD-<slug>.md
+    status: completed
+    body_sections: [Summary, Findings, Conflicts, Resolution, Delta]
+
+steps:
+  - id: 1
+    name: Define scope and trigger
+    role: human
+    produces: "scope факторов, trigger целиком записан в FM поле trigger; entity_refs в FM указывают на проверяемые сущности"
+    depends_on: []
+
+  - id: 2
+    name: Copy template to target path
+    role: human
+    produces: "cp .context/runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md"
+    depends_on: [1]
+
+  - id: 3
+    name: Fill frontmatter
+    role: human
+    produces: "frontmatter заполнен: schema=1, id=audit-<slug>, type=audit, status=draft, date, owners, scope, trigger, entity_refs, touches"
+    depends_on: [2]
+
+  - id: 4
+    name: Conduct audit — gather findings
+    role: human
+    produces: "Findings таблица (Серьёзность, Файл, Эвиденс, Рекомендация); Conflicts section если есть противоречия; Delta section — что изменилось с прошлого аудита"
+    depends_on: [3]
+
+  - id: 5
+    name: Documentation Review — check canonical form
+    role: documentation-reviewer
+    platform: any
+    produces: "FM корректный (Schema v1, audit per-type extension scope/trigger заполнены); body следует canonical structure (Summary→Findings→Conflicts→Resolution→Delta)"
+    depends_on: [4]
+
+  - id: 6
+    name: Architecture Review (если audit архитектурно-чувствительный)
+    role: architecture-reviewer
+    platform: any
+    produces: "если audit затрагивает ADR или architecture/ — проверка что findings consistent с существующими ADR"
+    depends_on: [4]
+    condition: "if architecture scope"
+
+  - id: 7
+    name: Resolution — plan addressing findings
+    role: human
+    produces: "Resolution section: для каждого non-trivial findings — назначение follow-up action (issue, ADR, spec, manual fix)"
+    depends_on: [4, 5, 6]
+
+  - id: 8
+    name: Promote audit draft→completed + freeze body
+    role: human
+    produces: "frontmatter status=completed; body append-only — больше не редактируется; follow-up actions вынесены в GitHub Issues или backlog"
+    depends_on: [7]

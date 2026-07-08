@@ -1,0 +1,80 @@
+name: new-feature
+description: Добавление новой пользовательской фичи — от черновика spec до implemented + audit
+triggers:
+  - Создан .md в docs/specs/drafts/
+  - PR добавляет новую пользовательскую capability (endpoint, UI flow, команда CLI)
+
+input:
+  required:
+    - type: spec
+      path_pattern: docs/specs/drafts/YYYY-MM-DD-<slug>.md
+      status: draft
+      frontmatter_mandatory: [entity_refs]
+  optional:
+    - type: adr
+      path_pattern: docs/adr/NNN-<slug>.md
+      status: proposed
+
+output:
+  - type: spec
+    final_path: docs/specs/implemented/YYYY-MM-DD-<slug>.md
+    status: implemented
+  - type: adr
+    final_path: docs/adr/NNN-<slug>.md
+    status: accepted
+  - type: audit
+    final_path: docs/audits/YYYY-MM-DD-<slug>.md
+    status: completed
+
+steps:
+  - id: 1
+    name: Architecture Review
+    role: architecture-reviewer
+    platform: any
+    produces: "ADR proposed (или обоснование «не нужен» если фича тривиальная)"
+    depends_on: []
+
+  - id: 2
+    name: Documentation Review — spec frontmatter
+    role: documentation-reviewer
+    platform: any
+    produces: "spec с корректным Schema v1 FM; frontmatter status=draft готов к review"
+    depends_on: []
+
+  - id: 3
+    name: Promote spec drafts→review
+    role: human
+    produces: "git mv docs/specs/drafts/<spec>.md → docs/specs/review/; frontmatter status=review"
+    depends_on: [1, 2]
+
+  - id: 4
+    name: Promote spec review→approved
+    role: human
+    produces: "git mv → docs/specs/approved/; frontmatter status=approved"
+    depends_on: [3]
+
+  - id: 5
+    name: Implementation (code + tests)
+    role: human
+    produces: "PR с реализацией и тестами зелёный"
+    depends_on: [4]
+
+  - id: 6
+    name: Documentation Review — post-implementation docs update
+    role: documentation-reviewer
+    platform: any
+    produces: "docs/architecture/, docs/adr/, runbook обновлены если необходимо"
+    depends_on: [5]
+
+  - id: 7
+    name: Promote spec approved→implemented + заполнить ## Result
+    role: human
+    produces: "git mv → docs/specs/implemented/; frontmatter status=implemented; заполнен ## Result"
+    depends_on: [5, 6]
+
+  - id: 8
+    name: Audit — post-implementation review
+    role: human
+    platform: any
+    produces: "docs/audits/YYYY-MM-DD-<slug>.md; frontmatter status=completed; body append-only"
+    depends_on: [7]

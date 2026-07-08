@@ -1,0 +1,78 @@
+name: architecture-change
+description: Изменение архитектуры — от proposal до accepted ADR с обновлением docs/architecture/
+triggers:
+  - proposal нового ADR в docs/adr/
+  - PR меняет topology (новый балансировщик, новая БД, замена очереди)
+  - PR меняет data model (новая схема, новый тип индекса)
+  - PR меняет security model (RBAC, ACL, authn/authz)
+
+input:
+  required:
+    - type: adr
+      path_pattern: docs/adr/NNN-<slug>.md
+      status: proposed
+      canonical_body_sections: [Status, Context, Decision, Consequences]
+
+output:
+  - type: adr
+    final_path: docs/adr/NNN-<slug>.md
+    status: accepted
+  - type: architecture_doc
+    path: docs/architecture/<topic>.md
+    status: active
+    note: "обновляется только если меняется topology/data-model/invariants"
+  - type: spec
+    note: "опционально: если архитектурное решение требует implementation spec"
+    final_path: docs/specs/approved/YYYY-MM-DD-<slug>.md
+    status: approved
+
+steps:
+  - id: 1
+    name: Architecture Review — валидация ADR
+    role: architecture-reviewer
+    platform: any
+    produces: "ADR canonical form verified; body has 4 sections; status=proposed; supersedes (если есть) корректно оформлен"
+    depends_on: []
+
+  - id: 2
+    name: Security Review
+    role: human
+    produces: "подтверждение что security model не нарушена; помечает ADR security-sensitive если да"
+    depends_on: [1]
+    condition: "if security-impact"
+
+  - id: 3
+    name: Acceptance — promote ADR proposed→accepted
+    role: human
+    produces: "frontmatter status=accepted; ADR body остаётся byte-for-byte неизменным (только FM переход)"
+    depends_on: [1, 2]
+
+  - id: 4
+    name: Update architecture docs
+    role: human
+    produces: "docs/architecture/README.md Critical Invariants обновлён; соответствующий docs/architecture/<topic>.md обновлён (не новая версия, обновление существующего)"
+    depends_on: [3]
+    condition: "if topology or invariants changed"
+
+  - id: 5
+    name: Documentation Review — validate affected docs
+    role: documentation-reviewer
+    platform: any
+    produces: "все затронутые .md корректные по Schema v1; новые entity_refs ссылаются на существующие id в docs/architecture/"
+    depends_on: [4]
+    condition: "if docs changed"
+
+  - id: 6
+    name: Optional — создать implementation spec
+    role: human
+    produces: "опционально: docs/specs/drafts/YYYY-MM-DD-<slug>.md (если архитектурное решение требует явной имплементации)"
+    depends_on: [3, 5]
+    condition: "if implementation work needed"
+
+  - id: 7
+    name: Audit (если архитектурный change high-impact)
+    role: human
+    platform: any
+    produces: "docs/audits/YYYY-MM-DD-<slug>.md (status=completed) — оценка post-implementation"
+    depends_on: [3]
+    condition: "if high-impact change"
