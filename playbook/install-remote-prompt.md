@@ -47,7 +47,7 @@ priority: P0
 
 ## Контекст-урл (используй для инструкций внутри SOP и промптов)
 
-Runtime submodule монтируется в `.context/runtime/naprolom-docs/`. Все дальнейшие пути consumer-side относительные от него.
+Runtime submodule монтируется в `docs/.runtime/naprolom-docs/`. Все дальнейшие пути consumer-side относительные от него.
 
 ---
 
@@ -90,17 +90,17 @@ find docs/ -name "*.md" 2>/dev/null | wc -l
 Только если в Step 2 — `NO_DOCS` (нет существующей документации).
 
 ```bash
-mkdir -p .context/runtime
-git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+mkdir -p docs/.runtime
+git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git submodule update --init --recursive
-ls -la .context/runtime/naprolom-docs/        # должно показать содержимое Runtime
+ls -la docs/.runtime/naprolom-docs/        # должно показать содержимое Runtime
 ```
 
 Bootstrap создаст skeleton + CLAUDE.md snippet + workflow:
 
 ```bash
-bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
 **Что должно появиться:**
@@ -120,9 +120,9 @@ bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
 ### 4a — Подключить submodule
 
 ```bash
-mkdir -p .context/runtime
-git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+mkdir -p docs/.runtime
+git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git submodule update --init --recursive
 ```
 
@@ -155,7 +155,7 @@ YML
 [ -f .context/boundaries.yml ] || cat > .context/boundaries.yml << 'YML'
 boundaries:
   pristine:
-    - path: .context/runtime/naprolom-docs/
+    - path: docs/.runtime/naprolom-docs/
       reason: "submodule, NEVER edit in-place"
   editable:
     - path: docs/
@@ -164,7 +164,7 @@ boundaries:
   secret: []
 YML
 
-[ -f .context/agent-entry.md ] || cp .context/runtime/naprolom-docs/bootstrap/.context-agent-entry-template 2>/dev/null || cat > .context/agent-entry.md << 'MD'
+[ -f .context/agent-entry.md ] || cp docs/.runtime/naprolom-docs/bootstrap/.context-agent-entry-template 2>/dev/null || cat > .context/agent-entry.md << 'MD'
 # Agent Entry Protocol
 
 Read in order:
@@ -175,7 +175,7 @@ Read in order:
 
 Before creating any .md in docs/:
 1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-2. Copy template from runtime: .context/runtime/naprolom-docs/engine/templates/<type>.md
+2. Copy template from runtime: docs/.runtime/naprolom-docs/engine/templates/<type>.md
 3. Fill the 6 mandatory fields: schema, id, type, status, date, owners
 4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)
 5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope
@@ -185,7 +185,7 @@ MD
 ### 4c — Проверить состояние legacy frontmatter (без записи)
 
 ```bash
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run --owner <TEAM_NAME> 2>&1 | head -40
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run --owner <TEAM_NAME> 2>&1 | head -40
 ```
 
 Сохраняй вывод для отчёта оператору: сколько `.md` было бы изменено, сколько с `TODO_ENTITY_REF` (требуют manual review).
@@ -195,7 +195,7 @@ node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run 
 **Не запускай без явного подтверждения.** Миграция перезаписывает все `.md` в `docs/` canonical Schema v1.
 
 ```bash
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <TEAM_NAME>
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <TEAM_NAME>
 ```
 
 **Exit codes:**
@@ -223,7 +223,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 YML
 ```
 
@@ -269,7 +269,7 @@ find . -maxdepth 2 -type d -not -path "./.git*" -not -path "./node_modules*"
 ```
 
 Заполни в `.context/boundaries.yml`:
-- `pristine` — то, что НЕ трогать (vendor/, third-party, .context/runtime/naprolom-docs/).
+- `pristine` — то, что НЕ трогать (vendor/, third-party, docs/.runtime/naprolom-docs/).
 - `editable` — где можно менять (src/, docs/, infra/).
 - `generated` — то, что создают скрипты.
 - `secret` — файлы с секретами (.env, *.key, *.pem).
@@ -291,7 +291,7 @@ fi
 Для `NEED_APPEND` или `NEED_CREATE` — вызови bootstrap (он идемпотентен, не перезапишет) или скопируй snippet вручную:
 
 ```bash
-bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
 Если залоговые создаются — `agent-entry.md` перезапишется только если он не существует (проверь через `bootstrap.sh` идемпотентность).
@@ -313,7 +313,7 @@ bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
 
 ```bash
 mkdir -p .opencode/agents
-cp .context/runtime/naprolom-docs/agents/opencode/*.md .opencode/agents/
+cp docs/.runtime/naprolom-docs/agents/opencode/*.md .opencode/agents/
 ls -la .opencode/agents/
 # должно показать: architecture-reviewer.md, documentation-reviewer.md
 ```
@@ -322,7 +322,7 @@ ls -la .opencode/agents/
 
 ```bash
 mkdir -p .claude/agents
-cp .context/runtime/naprolom-docs/agents/claude-code/*.md .claude/agents/
+cp docs/.runtime/naprolom-docs/agents/claude-code/*.md .claude/agents/
 ls -la .claude/agents/
 ```
 
@@ -336,7 +336,7 @@ ls -la .claude/agents/
 
 ```bash
 PROJECT_NAME_KEBAB=$(echo "<PROJECT_NAME>" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-bootstrap-documentation-runtime.md
+cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-bootstrap-documentation-runtime.md
 # Отредактируй frontmatter (id, date, owners) и body (Context про подключение naprolom-docs, Decision про submodule+branch=master, Consequences)
 $EDITOR docs/adr/001-bootstrap-documentation-runtime.md 2>/dev/null || true
 ```
@@ -353,10 +353,10 @@ $EDITOR docs/adr/001-bootstrap-documentation-runtime.md 2>/dev/null || true
 
 ```bash
 # strict mode (greenfield)
-bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 
 # warn-only (если brownfield и миграция ещё не завершена)
-WARN_ONLY=true bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 **Ожидаемый вывод:**
@@ -377,7 +377,7 @@ git commit -m "chore: add naprolom-docs Documentation System Runtime as git subm
 
 Stage <PROJECT_NAME> for Canonical Schema v1 documentation:
 
-- Add submodule .context/runtime/naprolom-docs pinned to master branch
+- Add submodule docs/.runtime/naprolom-docs pinned to master branch
 - Add .context/ stubs (project.yml, boundaries.yml, agent-entry.md)
 - Add .github/workflows/docs-validate.yml calling engine/validators/validate-frontmatter.sh
 - Add CLAUDE.md snippet (6 rules: playbook→templates→schema→validator→migrate→sops)
@@ -399,14 +399,14 @@ git push <PROJECT_REPOS_REMOTE> <PROJECT_BRANCH>
 
 Repository: <PROJECT_REPO_URL>
 Branch: <PROJECT_BRANCH>
-Path: .context/runtime/naprolom-docs/ (submodule pinned to master)
+Path: docs/.runtime/naprolom-docs/ (submodule pinned to master)
 Mode: GREENFIELD | BROWNFIELD (warn-only period for ~3-7 days)
 Commit SHA: <git rev-parse HEAD>
-Submodule SHA: <git -C .context/runtime/naprolom-docs rev-parse HEAD>
+Submodule SHA: <git -C docs/.runtime/naprolom-docs rev-parse HEAD>
 
 Files created/changed:
 - .gitmodules (new submodule entry, branch=master)
-- .context/runtime/naprolom-docs/ (submodule)
+- docs/.runtime/naprolom-docs/ (submodule)
 - .context/project.yml
 - .context/boundaries.yml
 - .context/agent-entry.md
@@ -420,7 +420,7 @@ Validator result: docs-validate: OK (or WARN count: <N> if brownfield warn-only)
 Next steps for operator:
   1. Review .context/project.yml — замени TODO на реальный стек
   2. Review .context/boundaries.yml — классифицируй файлы проекта
-  3. First SOP run: node .context/runtime/naprolom-docs/sops/planner.mjs --list
+  3. First SOP run: node docs/.runtime/naprolom-docs/sops/planner.mjs --list
   4. <IF BROWNFIELD> outline cleanup: ~<N> docs with TODO_ENTITY_REF need manual entity_refs
   5. <IF BROWNFIELD> после cleanup переключить CI на strict: WARN_ONLY="" в .github/workflows/docs-validate.yml
 ```
@@ -431,7 +431,7 @@ Next steps for operator:
 
 ### Git-version < 2.20
 
-`git submodule add --branch master <url> .context/runtime/naprolom-docs` — поддерживается, но если git старый, вручную добавь `branch = master` в `.gitmodules` после `add`.
+`git submodule add --branch master <url> docs/.runtime/naprolom-docs` — поддерживается, но если git старый, вручную добавь `branch = master` в `.gitmodules` после `add`.
 
 ### Node.js не установлен
 
@@ -445,15 +445,15 @@ Next steps for operator:
 
 Проверь `.gitmodules` содержит:
 ```
-[submodule ".context/runtime/naprolom-docs"]
-    path = .context/runtime/naprolom-docs
+[submodule "docs/.runtime/naprolom-docs"]
+    path = docs/.runtime/naprolom-docs
     url = https://github.com/akturt/naprolom-docs.git
     branch = master
 ```
 
 Если строки `branch = master` нет — добавь:
 ```bash
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git add .gitmodules && git commit -m "chore: pin submodule to master branch"
 ```
 
@@ -470,10 +470,10 @@ jobs:
 
 ### Что НЕ делать
 
-- ❌ Не редактируй файлы в `.context/runtime/naprolom-docs/` in-place. Это submodule.
+- ❌ Не редактируй файлы в `docs/.runtime/naprolom-docs/` in-place. Это submodule.
 - ❌ Не запускай bootstrap дважды на brownfield с существующим `.github/workflows/docs-validate.yml` — bootstrap создаёт только если файл отсутствует.
 - ❌ Не включай strict CI (`WARN_ONLY=""`) сразу на brownfield. Сначала пройди полный cleanup забытых архивов, потом переключай.
-- ❌ Не создавай `.md` в `docs/` без `cp .context/runtime/naprolom-docs/engine/templates/<type>.md docs/<type>/...` — canonical frontmatter сложно написать «из головы».
+- ❌ Не создавай `.md` в `docs/` без `cp docs/.runtime/naprolom-docs/engine/templates/<type>.md docs/<type>/...` — canonical frontmatter сложно написать «из головы».
 
 ---
 
@@ -483,19 +483,19 @@ jobs:
 
 ```bash
 # Список доступных SOP
-node .context/runtime/naprolom-docs/sops/planner.mjs --list
+node docs/.runtime/naprolom-docs/sops/planner.mjs --list
 
 # План выполнения для new-feature (с указанием платформы)
-node .context/runtime/naprolom-docs/sops/planner.mjs new-feature --platform opencode
+node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --platform opencode
 
 # Только то, что нужно вызвать агентов (без manual human steps)
-node .context/runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
+node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
 
 # Создать новый документ из template
-cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/002-<decision>.md
+cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/002-<decision>.md
 
 # Перед коммитом запустить validator
-bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 Запуск ролей ai-агентом (для opencode):

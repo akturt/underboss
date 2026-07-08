@@ -9,9 +9,11 @@
 # Run from the ROOT of the consumer project, not from inside the submodule.
 # It auto-detects the submodule path if invoked from inside it.
 #
+# v1.1 (D-BR): submodule resides inside docs/.runtime/naprolom-docs/, not .context/runtime/.
+#
 # Usage:
-#   bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
-#   bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh /path/to/project
+#   bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+#   bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh /path/to/project
 #
 # Idempotent: re-running is safe, existing files are preserved.
 
@@ -20,7 +22,7 @@ set -eu
 # Resolve consumer project root:
 #  - first positional arg, OR
 #  - git toplevel of current cwd, OR
-#  - 3 levels up from this script (default submodule path .context/runtime/naprolom-docs)
+#  - 3 levels up from this script (default submodule path docs/.runtime/naprolom-docs)
 TARGET="${1:-}"
 if [ -z "$TARGET" ]; then
   TARGET=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
@@ -37,6 +39,17 @@ RUNTIME_ROOT="$(cd "$SELF_DIR/.." && pwd)"
 echo "→ Target project:  $TARGET"
 echo "→ Runtime root:    $RUNTIME_ROOT"
 echo ""
+
+# v1.1 (D-BR): advisory check — warn if .gitmodules still points to old v1.0 path.
+if [ -f "$TARGET/.gitmodules" ]; then
+  if grep -q "\.context/runtime/naprolom-docs" "$TARGET/.gitmodules" 2>/dev/null; then
+    echo "⚠ WARNING: .gitmodules references legacy v1.0 path '.context/runtime/naprolom-docs'." >&2
+    echo "  v1.1 expects submodule mounted at 'docs/.runtime/naprolom-docs'." >&2
+    echo "  To migrate: git mv .context/runtime docs/.runtime && git submodule absorbgitdirs" >&2
+    echo "  (Advisory only — bootstrap continues.)" >&2
+    echo ""
+  fi
+fi
 
 # 1. docs/ skeleton (5 layer model). .gitkeep for empty dirs.
 mkdir -p "$TARGET/docs/architecture" \
@@ -80,10 +93,12 @@ fi
 if [ ! -f "$TARGET/.context/boundaries.yml" ]; then
   cat > "$TARGET/.context/boundaries.yml" << 'YML'
 boundaries:
-  pristine: []
+  pristine:
+    - path: docs/.runtime/
+      reason: "Documentation System Runtime submodule (managed by git submodule update --remote)"
   editable:
     - path: docs/
-      reason: "documentation"
+      reason: "all user-authored documentation (architecture, adr, specs, audits, backlog, api)"
   generated: []
   secret: []
 YML
@@ -101,7 +116,7 @@ Read in order:
 
 Before creating any .md in docs/:
 1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-2. Copy template from runtime: `.context/runtime/naprolom-docs/engine/templates/<type>.md`
+2. Copy template from runtime: `docs/.runtime/naprolom-docs/engine/templates/<type>.md`
 3. Fill the 6 mandatory fields: schema, id, type, status, date, owners
 4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)
 5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope
@@ -115,7 +130,7 @@ SNIPPET=$(cat << 'MD'
 
 Documentation System Runtime is connected as a Git Submodule:
 
-    .context/runtime/naprolom-docs/
+    docs/.runtime/naprolom-docs/
 
 Before any change to `docs/`:
 1. Study `playbook/playbook-v2.md` (target model)
@@ -124,6 +139,8 @@ Before any change to `docs/`:
 4. Run `engine/validators/validate-frontmatter.sh` before commit
 5. For brownfield migration, follow `playbook/migrate-legacy.md`
 6. For typical processes, pick a SOP in `sops/` and run `sops/planner.mjs <name>` — call roles by name
+7. If task involves architectural review — see `sops/architecture-review.yaml`; foundation is `reality-auditor` BEFORE `architecture-reviewer`.
+8. Common knowledge bases live in `knowledge/` (`architecture-principles`, `evidence-model`, `audit-principles`, `report-formats`, `capabilities`) — roles reference them by short-id, not inline.
 MD
 )
 
@@ -157,9 +174,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Validate Canonical Schema v1 frontmatter
+      - name: Validate Canonical Schema v1 frontmatter (docs/)
         run: |
-          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+      - name: Validate knowledge/ frontmatter
+        run: |
+          ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
 YML
   echo "→ Created .github/workflows/docs-validate.yml"
 else
@@ -172,6 +192,6 @@ echo ""
 echo "Next steps:"
 echo "  1. Fill .context/project.yml with project-specific stack and metadata"
 echo "  2. Edit .context/boundaries.yml for pristine/secret paths of THIS project"
-echo "  3. Create your first ADR: cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-<slug>.md"
+echo "  3. Create your first ADR: cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-<slug>.md"
 echo "  4. Create docs/architecture/README.md (topology + invariants)"
 echo "  5. Commit the new structure"

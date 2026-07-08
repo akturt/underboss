@@ -39,19 +39,21 @@ priority: P0
 
 ## Как подключить
 
-```bash
-# 1. Подключить submodule
-mkdir -p .context/runtime
-git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+> **v1.1 (D-BR):** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
 
-# 2. Запустить bootstrap (создаст docs/, .context/, CLAUDE.md snippet, CI workflow)
-bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+```bash
+# 1. Подключить submodule ВНУТРЬ docs/
+mkdir -p docs/.runtime
+git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+
+# 2. Запустить bootstrap (создаст docs/ skeleton, .context/, CLAUDE.md snippet, CI workflow)
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 
 # 3. Заполнить .context/project.yml и .context/boundaries.yml под ваш проект
 
 # 4. Создать первый документ из template
-cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
+cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
 ```
 
 **Полная инструкция с troubleshooting и edge-cases** → [`INSTALL.md`](INSTALL.md).
@@ -63,7 +65,7 @@ cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestra
 ## Что входит (Runtime layout)
 
 ```
-naprolom-docs/
+naprolom-docs/                                  ← репо-ПРОДУКТ (layout продукта; D-BR — в consumer'е всё локализовано под docs/)
 ├── README.md                              ← этот файл (landing page)
 ├── INSTALL.md                             ← consumer integration (submodule + bootstrap)
 ├── playbook/
@@ -76,20 +78,31 @@ naprolom-docs/
 │   ├── schemas/
 │   │   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
 │   ├── validators/
-│   │   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
+│   │   └── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match, ROOT= path override
 │   └── scripts/
 │       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
 ├── bootstrap/
-│   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный
+│   ├── bootstrap.sh                        ← POSIX, минимальный, идемпотентный (D-BR: advisory path-check)
 │   └── bootstrap.ps1                       ← Windows / PowerShell
-├── agents/                                 ← роли AI-агентов (reviewer, architect) для claude-code и opencode
+├── knowledge/                              ← v1.1 NEW: общий knowledge-слой (роли подключают по short-id)
+│   ├── architecture-principles.md
+│   ├── evidence-model.md
+│   ├── audit-principles.md
+│   ├── report-formats.md
+│   └── capabilities.md                     ← capability catalog (без providers, D-CP)
+├── agents/                                 ← роли AI-агентов для claude-code и opencode (4 roles, slim)
+│   └── README.md                           ← overview capabilities, указатель на knowledge/capabilities.md
 ├── sops/                                   ← Standard Operating Procedures (YAML) + planner.mjs
-│   ├── planner.mjs                         ← печатает DAG выполнения по input типу
-│   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident
+│   ├── planner.mjs                         ← печатает DAG (DAG-printer, не executor)
+│   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident / architecture-review / forensic-audit
 ├── docs/                                   ← dogfood: собственная документация Runtime
-│   └── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
-└── .github/workflows/docs-validate.yml     ← CI guard, вызывающий engine/validators/validate-frontmatter.sh
+│   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation)
+│   ├── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
+│   └── specs/approved/                     ← спеки Runtime v1.x
+└── .github/workflows/docs-validate.yml     ← CI guard + knowledge/ validation step
 ```
+
+> **Внимание:** этот layout описывает репозиторий-продукт `naprolom-docs`. В consumer-репозитории (после `bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`) вы увидите только `docs/` в корне плюс `docs/.runtime/naprolom-docs/...` где лежит submodule со всем содержимым Runtime. См. §«Two-repo model» в INSTALL.md.
 
 ---
 
@@ -99,9 +112,10 @@ naprolom-docs/
 
 ```bash
 git clone your-new-repo && cd your-new-repo
-git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
-bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh
+mkdir -p docs/.runtime
+git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 # → docs/, .context/, CLAUDE.md, docs-validate.yml созданы
 # → заполните .context/project.yml, создайте первый ADR из template
 git add -A && git commit -m "chore: bootstrap documentation runtime"
@@ -110,12 +124,13 @@ git add -A && git commit -m "chore: bootstrap documentation runtime"
 ### Brownfield (репо с существующей документацией)
 
 ```bash
-git submodule add https://github.com/akturt/naprolom-docs.git .context/runtime/naprolom-docs
-git config -f .gitmodules submodule.".context/runtime/naprolom-docs".branch master
+mkdir -p docs/.runtime
+git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
 # Запустить миграцию (dry-run сначала!)
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner your-team
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner your-team
 # → covered TODO_ENTITY_REF markers go to manual review
 
 # Включить warn-only CI на 3–7 дней → cleanup forgotten docs → strict
@@ -130,7 +145,7 @@ node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner yo
 ```bash
 # Вариант A — вручную (пять секунд, рекомендуется)
 git submodule update --remote --merge
-git add .context/runtime/naprolom-docs
+git add docs/.runtime/naprolom-docs
 git commit -m "chore: update Documentation System Runtime"
 ```
 
@@ -185,7 +200,7 @@ node sops/planner.mjs new-feature --hide-human
 - **Не требует Node.js/Python/Go toolchain** в проекте — работает для FastAPI, Go, Rust, Terraform, Ansible.
 - **Фиксируется commit SHA** — воспроизводимость, тривиальный откат.
 - **Обновляется по вашему решению** — нет автоматического registry pull, который сломает проект.
-- **Не засоряет основной репо** — Runtime живёт в `.context/runtime/`, не в `node_modules/` или `vendor/`.
+- **Не засоряет основной репо** — Runtime живёт в `docs/.runtime/`, а корень consumer'а содержит только `docs/` (v1.1, D-BR). Раньше v1.0 использовал `.context/runtime/`; в v1.1 это deprecated в пользу локализации внутрь `docs/`.
 - **Соответствует вашему стеку** GitOps/IaC — единый источник истины, обновления через PR-review.
 
 Альтернативы (npm package, GitHub Releases + curl) рассмотрены и отклонены: завязка на toolchain либо нарушает portability, либо теряет воспроизводимость.
@@ -223,6 +238,7 @@ node sops/planner.mjs new-feature --hide-human
 
 ## Чейнджлог
 
+- **2026-07-08** — **v1.1 — Agentic Layer Separation**. Пять сущностей первого класса: **Knowledge** (`knowledge/` — 4 файла принципов + capabilities.md), **Role** (slim-roles в `agents/`, +2 новые: `reality-auditor`, `adversary-checker`), **Capability** (что умеет;单向 Role→Capability, каталог в `knowledge/capabilities.md` без `provided by:`), **SOP** (декларативный DAG с artifact-contract'ами; gate:manual вместо role:human), **Artifact** (что путешествует между шагами — reality-report, architecture-findings, validated-findings, forensic-report). Два новых SOP: `architecture-review.yaml` (sequential Reality→Arch→Doc→Adversary-optional→human) и `forensic-audit.yaml` (8-step pipeline, замещает прежний forensic-orchestrator). `sops/planner.mjs` остаётся DAG-printer (НЕ executor), расширен чтением `capability:`/`consumes:`/`produces:`/`gate:`. **D-BR: bootstrap разворачивает Runtime в `docs/.runtime/naprolom-docs/`, НЕ в `.context/runtime/`** — корень consumer'а содержит только `docs/`. См. `docs/specs/approved/2026-07-08-agentic-layer.md` и `docs/adr/001-agentic-layer-separation.md` (dogfood).
 - **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Engine → AI Layer → SOP Layer.
 - **2026-07-08** — **Runtime engine/ layering**: `templates/`, `schemas/`, `validators/`, `scripts/` сгруппированы под `engine/` (Documentation Engine слой). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `engine/...` префикс. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Engine → AI Layer.
 - **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `validators/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.

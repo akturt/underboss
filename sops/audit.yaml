@@ -29,7 +29,7 @@ steps:
   - id: 2
     name: Copy template to target path
     role: human
-    produces: "cp .context/runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md"
+    produces: "cp docs/.runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md"
     depends_on: [1]
 
   - id: 3

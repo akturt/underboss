@@ -4,9 +4,11 @@
 # Creates docs/ skeleton + .context/ stubs + drops CLAUDE.md snippet into the
 # consumer repository. Idempotent. Mirrors bootstrap.sh.
 #
+# v1.1 (D-BR): submodule resides inside docs/.runtime/naprolom-docs/, not .context/runtime/.
+#
 # Usage:
-#   powershell -File .context\runtime\naprolom-docs\bootstrap\bootstrap.ps1
-#   powershell -File .context\runtime\naprolom-docs\bootstrap\bootstrap.ps1 -ProjectPath C:\path\to\project
+#   powershell -File docs\.runtime\naprolom-docs\bootstrap\bootstrap.ps1
+#   powershell -File docs\.runtime\naprolom-docs\bootstrap\bootstrap.ps1 -ProjectPath C:\path\to\project
 
 [CmdletBinding()]
 param(
@@ -30,6 +32,19 @@ $RuntimeRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Write-Host "-> Target project:  $ProjectPath"
 Write-Host "-> Runtime root:    $RuntimeRoot"
 Write-Host ""
+
+# v1.1 (D-BR): advisory check for old v1.0 submodule path.
+$gitmodules = Join-Path $ProjectPath ".gitmodules"
+if (Test-Path $gitmodules) {
+  $gm = Get-Content -Path $gitmodules -Raw -ErrorAction SilentlyContinue
+  if ($gm -match '\.context/runtime/naprolom-docs') {
+    Write-Host "WARNING: .gitmodules references legacy v1.0 path '.context/runtime/naprolom-docs'." 2>&1
+    Write-Host "  v1.1 expects submodule mounted at 'docs/.runtime/naprolom-docs'." 2>&1
+    Write-Host "  To migrate: git mv .context/runtime docs/.runtime && git submodule absorbgitdirs" 2>&1
+    Write-Host "  (Advisory only — bootstrap continues.)" 2>&1
+    Write-Host ""
+  }
+}
 
 $dirs = @(
   "docs\architecture",
@@ -80,10 +95,12 @@ Write-StubIfMissing (Join-Path $ctx 'project.yml') $projectYml
 
 $boundariesYml = @(
   'boundaries:',
-  '  pristine: []',
+  '  pristine:',
+  '    - path: docs/.runtime/',
+  '      reason: "Documentation System Runtime submodule (managed by git submodule update --remote)"',
   '  editable:',
   '    - path: docs/',
-  '      reason: "documentation"',
+  '      reason: "all user-authored documentation"',
   '  generated: []',
   '  secret: []'
 )
@@ -100,7 +117,7 @@ $agentEntry = @(
   '',
   'Before creating any .md in docs/:',
   '1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)',
-  '2. Copy template from runtime: `.context/runtime/naprolom-docs/engine/templates/<type>.md`',
+  '2. Copy template from runtime: `docs/.runtime/naprolom-docs/engine/templates/<type>.md`',
   '3. Fill the 6 mandatory fields: schema, id, type, status, date, owners',
   '4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)',
   '5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope'
@@ -112,7 +129,7 @@ $snippet = @(
   '',
   'Documentation System Runtime is connected as a Git Submodule:',
   '',
-  '    .context/runtime/naprolom-docs/',
+  '    docs/.runtime/naprolom-docs/',
   '',
   'Before any change to `docs/`:',
   '1. Study `playbook/playbook-v2.md` (target model)',
@@ -120,7 +137,9 @@ $snippet = @(
   '3. Follow `engine/schemas/frontmatter.schema.json`',
   '4. Run `engine/validators/validate-frontmatter.sh` before commit',
   '5. For brownfield migration, follow `playbook/migrate-legacy.md`',
-  '6. For typical processes, pick a SOP in `sops/` and run `sops/planner.mjs <name>` - call roles by name'
+  '6. For typical processes, pick a SOP in `sops/` and run `sops/planner.mjs <name>` - call roles by name',
+  '7. If task involves architectural review - see `sops/architecture-review.yaml`; foundation is `reality-auditor` BEFORE `architecture-reviewer`.',
+  '8. Common knowledge bases live in `knowledge/` (`architecture-principles`, `evidence-model`, `audit-principles`, `report-formats`, `capabilities`) - roles reference them by short-id, not inline.'
 )
 
 $claude = Join-Path $ProjectPath "CLAUDE.md"
@@ -157,9 +176,12 @@ if (-not (Test-Path $wf)) {
     "      - uses: actions/checkout@v4",
     "        with:",
     "          submodules: true",
-    "      - name: Validate Canonical Schema v1 frontmatter",
+    "      - name: Validate Canonical Schema v1 frontmatter (docs/)",
     "        run: |",
-    "          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh"
+    "          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh",
+    "      - name: Validate knowledge/ frontmatter",
+    "        run: |",
+    "          ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge"
   )
   $wfContent | Set-Content -Path $wf -Encoding utf8
   Write-Host "-> Created .github/workflows/docs-validate.yml"
@@ -173,6 +195,6 @@ Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  1. Fill .context/project.yml with project-specific stack and metadata"
 Write-Host "  2. Edit .context/boundaries.yml for pristine/secret paths of THIS project"
-Write-Host "  3. Copy template to create first ADR: copy .context/runtime/naprolom-docs/engine/templates/adr.md to docs/adr/001-<slug>.md"
+Write-Host "  3. Copy template to create first ADR: copy docs/.runtime/naprolom-docs/engine/templates/adr.md to docs/adr/001-<slug>.md"
 Write-Host "  4. Create docs/architecture/README.md (topology + invariants)"
 Write-Host "  5. Commit the new structure"

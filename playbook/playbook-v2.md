@@ -509,7 +509,7 @@ owners: [naprolom-team]
 #### 3.1 Создание ADR
 
 ```bash
-cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/NNN-<slug>.md
+cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/NNN-<slug>.md
 # NN — следующий свободный номер (zero-padded до 3 цифр)
 # slug — kebab-case, описывает решение (не реализацию)
 ```
@@ -542,7 +542,7 @@ cp .context/runtime/naprolom-docs/engine/templates/adr.md docs/adr/NNN-<slug>.md
 #### 4.1 Создание спеки
 
 ```bash
-cp .context/runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
+cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
 # fill frontmatter: status: draft (обязательно совпадает с директорией!)
 # fill body: Goal, Context, Scope, Technical approach, Affected files, Open questions
 ```
@@ -583,7 +583,7 @@ git mv docs/specs/approved/2026-07-06-feature.md docs/specs/superseded/
 
 #### 4.3 Правила
 
-- **Создание:** `cp .context/runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+- **Создание:** `cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 - **Нельзя имплементировать** спеку не в `approved/` (CI FAIL на PR, меняющем код без соответствующей спеки в `approved/`)
 - **После имплементации:** заполнить `## Result`, переложить в `implemented/`, `status: implemented`
 - **Supersede:** если новая спека заменяет старую — переместить старую в `superseded/` с `status: superseded`, в новой указать `supersedes: [<old-id>]`
@@ -681,7 +681,7 @@ applies-to: path("docs/specs/**")
 
 Создание:
 
-1. `cp .context/runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 2. fill FM:
    - `id`: `<slug>` (без даты, stable)
    - `status`: `draft` (обязательно — совпадает с drafts/ директорией)
@@ -721,7 +721,7 @@ applies-to: path("docs/audits/**")
 
 Когда создаёшь новый audit:
 
-1. Скопируй `.context/runtime/naprolom-docs/engine/templates/audit.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
+1. Скопируй `docs/.runtime/naprolom-docs/engine/templates/audit.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполни frontmatter:
    - `id`: `audit-<slug>` (slug без даты)
    - `status`: `draft` (если в работе) или `completed` (если завершён)
@@ -854,7 +854,7 @@ Before adding a new service:
 
 ### Создание нового аудита
 
-1. `cp .context/runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполнить frontmatter: `id`, `status: draft`, `date`, `scope`, `trigger`, `entity_refs`, `touches`
 3. Заполнить body: `# Audit: <title>`, Summary, Findings, Conflicts (optional), Resolution, Delta
 4. Если audit завершён — `status: completed` (terminal)
@@ -1041,7 +1041,7 @@ done
 | Дублирование в .claude/rules/ | Выходят из синхронизации | Thin pointers → канонический источник в docs/ |
 | Runbooks без `kind:` | Нельзя отличить deploy от troubleshoot | `type: runbook` всегда с `kind:` |
 | Body ADR модифицирован при добавлении FM | Нарушение immutability | Carve-out rule: FM ≠ body. Body byte-for-byte не трогается, при необходимости update — FM only |
-| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp .context/runtime/naprolom-docs/engine/templates/audit.md ...` |
+| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp docs/.runtime/naprolom-docs/engine/templates/audit.md ...` |
 | Создание .md без template | FM не canonical, нет `schema:`/`id` | Greenfield invariant: начинаем с `cp <type>/_template.md`, не с пустого файла |
 | Удаление выполненных спек | Потеря истории решений | Никогда не удалять, хранить в `implemented/` |
 | `supersedes_adr:` вместо `supersedes:` | Legacy field, breaks parser | `supersedes: [<id>]` — list (может быть несколько) |
@@ -1057,9 +1057,9 @@ done
 - [ ] `.context/project.yml` существует и содержит стек
 - [ ] `.context/boundaries.yml` классифицирует файлы
 - [ ] `docs/architecture/README.md` существует, canonical FM, содержит инварианты и индекс модулей
-- [ ] `.context/runtime/naprolom-docs/engine/templates/spec.md` существует с Canonical Schema v1 Base
-- [ ] `.context/runtime/naprolom-docs/engine/templates/audit.md` существует с audit extension (`scope`, `trigger`)
-- [ ] `.context/runtime/naprolom-docs/engine/templates/adr.md` существует с canonical ADR FM
+- [ ] `docs/.runtime/naprolom-docs/engine/templates/spec.md` существует с Canonical Schema v1 Base
+- [ ] `docs/.runtime/naprolom-docs/engine/templates/audit.md` существует с audit extension (`scope`, `trigger`)
+- [ ] `docs/.runtime/naprolom-docs/engine/templates/adr.md` существует с canonical ADR FM
 - [ ] Хотя бы 1 ADR в `docs/adr/` со статусом `accepted` (или proposed)
 - [ ] `docs/README.md` существует, canonical FM (`type: guide, kind: index`), START HERE секция
 - [ ] `.claude/rules/doc-update.md` определяет протокол обновления доков
@@ -1120,7 +1120,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 

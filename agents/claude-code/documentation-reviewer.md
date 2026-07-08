@@ -11,6 +11,8 @@ touches: [docs]
 docs: [../playbook/playbook-v2.md, ../playbook/migrate-legacy.md]
 refs: []
 depends_on: []
+capabilities: [validate-frontmatter, validate-entity-refs]
+knowledge: [report-formats]
 tags: [claude-code, agent, reviewer, documentation]
 priority: P1
 ---
@@ -39,7 +41,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
 
 2. **Run Runtime validator** as the primary source of truth:
    ```bash
-   bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+   bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
    ```
    - Exit code `0` → all green. Proceed to manual checks.
    - Non-zero → CI should already fail in strict mode. Surface the validator's specific output in your review, do not duplicate logic.

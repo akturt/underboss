@@ -33,7 +33,7 @@ priority: P1
 
 ## Входные требования
 
-- Submodule `naprolom-docs` уже подключён по адресу `.context/runtime/naprolom-docs/` (см. `../../INSTALL.md`).
+- Submodule `naprolom-docs` уже подключён по адресу `docs/.runtime/naprolom-docs/` (см. `../../INSTALL.md`).
 - В репозитории уже запущен `bootstrap/bootstrap.sh` (`.context/`, `docs/` skeleton, `CLAUDE.md` snippet созданы).
 - Node.js 18+ доступен для `engine/scripts/migrate-legacy.mjs`.
 
@@ -56,7 +56,7 @@ Greenfield — strict с первого PR. Brownfield проходит чере
 
 ```bash
 # Сколько .md-файлов в проекте (вне submodule)?
-find docs/ -name "*.md" -not -path "*/.context/runtime/*" | wc -l
+find docs/ -name "*.md" -not -path "*/docs/.runtime/*" | wc -l
 
 # Какие фронматтеры уже есть?
 grep -rE "^(schema:|author:|title:|created:|lifecycle:|type:|status:)" docs/ \
@@ -69,7 +69,7 @@ for f in $(find docs/ -name "*.md"); do
 done
 
 # Какие директории не попадают в 5-слойную модель?
-find docs/ -type d -not -path "*/.context/runtime/*" \
+find docs/ -type d -not -path "*/docs/.runtime/*" \
   | grep -E "archive|old|wiki|tmp|legacy|draft|misc" || true
 ```
 
@@ -105,13 +105,13 @@ find docs/ -type d -not -path "*/.context/runtime/*" \
 
 ```bash
 # Dry-run: покажет что было бы изменено, без записи
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
 
 # Реальный прогон
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <team-name>
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <team-name>
 
 # Тихий режим (только summary)
-node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
+node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
 ```
 
 **Что делает скрипт:**
@@ -180,7 +180,7 @@ jobs:
 
 ```bash
 # Что скажет polity CI в warn-only
-WARN_ONLY=true bash .context/runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
 ```
 
 Длительность warn-only: 3–7 дней или до тех пор, пока в нескольких PR подряд не будет ни одного warning'а.
@@ -201,7 +201,7 @@ WARN_ONLY=true bash .context/runtime/naprolom-docs/engine/validators/validate-fr
 
 ```bash
 # Найти забытые директории
-find docs/ -type d -not -path "*/.context/runtime/*" \
+find docs/ -type d -not -path "*/docs/.runtime/*" \
   | grep -E "archive|old|wiki|tmp|misc"
 
 # Найти сессионные файлы (обычно не документация)

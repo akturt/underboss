@@ -5,9 +5,9 @@
 // Implements playbook/migrate-legacy.md.
 //
 // Run from the ROOT of the consumer project:
-//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs
-//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --docs docs --dry-run
-//   node .context/runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner team-x
+//   node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs
+//   node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --docs docs --dry-run
+//   node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner team-x
 //
 // What it does:
 //   - For every .md in docs/:
