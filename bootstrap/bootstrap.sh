@@ -76,16 +76,16 @@ extract_registry_nested() {
 # ─── v1.2: State + version detection (unified) ─────────────────────────────
 
 # detect_install_state
-# Returns: "fresh", "legacy", "partial", "installed"
-# Side effect: sets GLOBAL_VERSION to "none", "1.0", "1.1", "1.2"
+# Outputs two lines: "state version" (e.g., "installed 1.2")
+# Avoids subshell variable loss by encoding both values in stdout.
 detect_install_state() {
   local state="fresh"
-  GLOBAL_VERSION="none"
+  local version="none"
 
   # Check for legacy v1.0 layout
   if [ -d "$TARGET/.context/runtime/naprolom-docs" ] || [ -d "$TARGET/.context/runtime" ]; then
     state="legacy"
-    GLOBAL_VERSION="1.0"
+    version="1.0"
   # Check for v1.1+ layout
   elif [ -d "$TARGET/docs/.runtime/naprolom-docs" ]; then
     local runtime_dir="$TARGET/docs/.runtime/naprolom-docs"
@@ -104,17 +104,16 @@ detect_install_state() {
     fi
     # Detect version
     if [ -f "$runtime_dir/runtime/registry.yaml" ]; then
-      GLOBAL_VERSION="1.2"
+      version="1.2"
     else
-      GLOBAL_VERSION="1.1"
+      version="1.1"
     fi
   fi
 
-  echo "$state"
+  echo "$state $version"
 }
 
-CURRENT_STATE=$(detect_install_state)
-CURRENT_VERSION="$GLOBAL_VERSION"
+read -r CURRENT_STATE CURRENT_VERSION <<< "$(detect_install_state)"
 echo "→ Current state:  $CURRENT_STATE"
 echo "→ Current version: $CURRENT_VERSION"
 
@@ -142,7 +141,6 @@ if [ "$CURRENT_STATE" = "installed" ] && [ "$CURRENT_VERSION" = "1.1" ]; then
     if [ -f "$RUNTIME_DIR/runtime/registry.yaml" ]; then
       echo "  v1.2 components found. Upgrade complete." >&2
       CURRENT_VERSION="1.2"
-      GLOBAL_VERSION="1.2"
     else
       echo "  WARNING: Submodule updated but v1.2 components still missing." >&2
       echo "  Manual intervention may be required:" >&2
