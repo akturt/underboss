@@ -1,0 +1,75 @@
+name: reality-audit
+description: Automated project state reconstruction and drift detection via Reality Engine
+engine: reality-engine
+triggers:
+  - manual invocation for comprehensive state reconstruction
+  - periodic reality check (recommended: weekly or after major changes)
+  - before architecture review (pre-step)
+input:
+  required:
+    - type: project-root
+      path: "."
+      artifact: project-root
+      note: "root directory of the project to audit"
+output:
+  - artifact: reality-report
+    final_path: docs/audits/YYYY-MM-DD-reality-audit.md
+    type: audit
+    status: completed
+steps:
+  - id: 1
+    name: Architecture Inventory
+    engine_step: collectors/architecture-inventory.sh
+    consumes: [project-root]
+    produces: architecture-inventory
+    note: "extract actual architecture from codebase: modules, services, dependencies"
+    depends_on: []
+  - id: 2
+    name: Entity Inventory
+    engine_step: collectors/entity-inventory.sh
+    consumes: [project-root]
+    produces: entity-inventory
+    note: "map domain entities to code artifacts, cross-reference with docs/architecture/"
+    depends_on: []
+  - id: 3
+    name: Module Inventory
+    engine_step: collectors/module-inventory.sh
+    consumes: [project-root]
+    produces: module-inventory
+    note: "inventory modules and their dependencies"
+    depends_on: []
+  - id: 4
+    name: Dependency Graph
+    engine_step: collectors/dependency-graph.sh
+    consumes: [project-root]
+    produces: dependency-graph
+    note: "build dependency graph from code imports and references"
+    depends_on: []
+  - id: 5
+    name: Documentation Drift
+    engine_step: analyzers/documentation-drift.sh
+    consumes: [architecture-inventory]
+    produces: drift-report
+    note: "compare documentation against actual project state"
+    depends_on: [1]
+  - id: 6
+    name: ADR Drift
+    engine_step: analyzers/adr-drift.sh
+    consumes: [architecture-inventory]
+    produces: adr-drift
+    note: "check ADR compliance with reality"
+    depends_on: [1]
+  - id: 7
+    name: Spec Drift
+    engine_step: analyzers/spec-drift.sh
+    consumes: [architecture-inventory]
+    produces: spec-drift
+    note: "check spec compliance with reality"
+    depends_on: [1]
+  - id: 8
+    name: Report Generation
+    engine_step: reporters/reality-report.sh
+    consumes: [drift-report, adr-drift, spec-drift]
+    produces: reality-report
+    note: "generate comprehensive state report from all analyzer outputs"
+    depends_on: [5, 6, 7]

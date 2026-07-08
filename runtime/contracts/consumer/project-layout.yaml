@@ -1,0 +1,68 @@
+project_layout:
+  description: Expected directory structure in consumer project
+  version: 1
+
+  root:
+    - README.md
+    - CLAUDE.md
+    - .context/
+    - docs/
+    - .github/
+
+  docs:
+    description: "User-owned documentation (only root-level directory in consumer)"
+    subdirectories:
+      - path: architecture/
+        description: "topology, invariants, domain model"
+        required: false
+      - path: adr/
+        description: "Architecture Decision Records"
+        required: false
+      - path: specs/
+        description: "specification documents"
+        subdirectories:
+          - drafts/
+          - review/
+          - approved/
+          - implemented/
+          - superseded/
+        required: false
+      - path: audits/
+        description: "audit reports and reality checks"
+        required: false
+      - path: backlog/
+        description: "backlog items"
+        required: false
+      - path: api/
+        description: "API documentation"
+        required: false
+      - path: .runtime/
+        description: "Runtime submodule (System-owned, never edit directly)"
+        contents:
+          - naprolom-docs/
+            description: "Git submodule mount point"
+            immutable: true
+
+  context:
+    description: "AI agent entry metadata"
+    files:
+      - path: project.yml
+        description: "project metadata (stack, domain, maintainer)"
+        required: true
+      - path: boundaries.yml
+        description: "boundary definitions (pristine, editable, generated, secret)"
+        required: true
+      - path: agent-entry.md
+        description: "agent entry protocol"
+        required: true
+
+  invariant: "consumer repo contains exactly one root-level directory: docs/"
+
+  no_root_level:
+    - agents/
+    - knowledge/
+    - sops/
+    - engine/
+    - bootstrap/
+    - playbook/
+    - .context/runtime/

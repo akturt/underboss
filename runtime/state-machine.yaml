@@ -1,0 +1,38 @@
+states:
+  fresh:
+    description: No Runtime installed
+    transitions:
+      - action: bootstrap
+        target: installed
+
+  installed:
+    description: Runtime fully deployed
+    transitions:
+      - action: git-submodule-update
+        target: updated
+      - action: manual-edit
+        target: broken
+
+  updated:
+    description: Runtime updated via submodule
+    transitions:
+      - action: manual-edit
+        target: broken
+
+  partial:
+    description: Some components missing
+    transitions:
+      - action: bootstrap
+        target: installed
+
+  legacy:
+    description: Old .context/runtime/ layout detected
+    transitions:
+      - action: migration
+        target: installed
+
+  broken:
+    description: Runtime integrity compromised
+    transitions:
+      - action: re-bootstrap
+        target: installed

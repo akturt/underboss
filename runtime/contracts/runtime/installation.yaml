@@ -1,0 +1,37 @@
+installation:
+  description: What bootstrap creates and what state it expects
+  version: 1
+
+  creates:
+    docs:
+      - docs/architecture/
+      - docs/adr/
+      - docs/specs/drafts/
+      - docs/specs/review/
+      - docs/specs/approved/
+      - docs/specs/implemented/
+      - docs/specs/superseded/
+      - docs/audits/
+      - docs/backlog/
+      - docs/api/
+    context:
+      - .context/project.yml
+      - .context/boundaries.yml
+      - .context/agent-entry.md
+    root:
+      - CLAUDE.md
+    ci:
+      - .github/workflows/docs-validate.yml
+
+  expects:
+    state: fresh | partial | legacy | broken
+    gitmodules: "path = docs/.runtime/naprolom-docs"
+
+  template_sources:
+    engine: engine/templates/
+    knowledge: knowledge/
+    agents: agents/
+    sops: sops/
+
+  idempotent: true
+  non_destructive: true

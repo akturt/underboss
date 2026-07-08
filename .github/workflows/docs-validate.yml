@@ -6,6 +6,8 @@ on:
       - "knowledge/**"
       - "engine/templates/**"
       - "engine/schemas/**"
+      - "engine/reality-engine/**"
+      - "runtime/**"
       - "playbook/**"
 
 jobs:
@@ -36,3 +38,6 @@ jobs:
             done
           done
           echo "templates: OK"
+      - name: Validate Runtime dependency graph
+        run: |
+          bash engine/validators/validate-runtime.sh

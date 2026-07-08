@@ -15,15 +15,15 @@ priority: P0
 # Deploy Prompt for AI Agent
 
 > Give this prompt to any AI agent (opencode, Claude Code, Cursor, etc.) to install
-> Documentation System Runtime v1.1 on any project. The agent auto-detects the project
-> context and handles both fresh install and v1.0→v1.1 migration.
+> Documentation System Runtime v1.2 on any project. The agent auto-detects the project
+> context and handles both fresh install and v1.0→v1.2 migration.
 
 ---
 
 ## Prompt
 
 ```
-You are deploying Documentation System Runtime (naprolom-docs v1.1) on the current project.
+You are deploying Documentation System Runtime (naprolom-docs v1.2) on the current project.
 
 ## Step 0 — Detect project context
 
@@ -45,6 +45,7 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel)
 echo "=== .gitmodules ===" && cat "$PROJECT_ROOT/.gitmodules" 2>/dev/null || echo "none"
 echo "=== existing docs/ ===" && ls "$PROJECT_ROOT/docs/" 2>/dev/null | head -10 || echo "no docs/"
 echo "=== existing .context/runtime ===" && ls "$PROJECT_ROOT/.context/runtime/" 2>/dev/null | head -5 || echo "none"
+echo "=== Runtime version ===" && [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ] && echo "v1.2" || echo "v1.1 or earlier"
 echo "=== CLAUDE.md ===" && [ -f "$PROJECT_ROOT/CLAUDE.md" ] && echo "exists" || echo "none"
 echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" || echo "none"
 ```
@@ -52,7 +53,8 @@ echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" ||
 Report what you found:
 - Fresh project (no Runtime) → go to Step 1A
 - v1.0 installed (.context/runtime/) → go to Step 1B
-- v1.1 already installed (docs/.runtime/naprolom-docs/) → skip to Step 3
+- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C
+- v1.2+ already installed (docs/.runtime/naprolom-docs/runtime/registry.yaml exists) → skip to Step 3
 
 ## Step 1A — Fresh install
 
@@ -64,7 +66,7 @@ mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: add Documentation System Runtime v1.1 via submodule"
+git commit -m "chore: add Documentation System Runtime v1.2 via submodule"
 ```
 
 ## Step 1B — Migrate from v1.0
@@ -86,7 +88,26 @@ mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: migrate naprolom-docs v1.0→v1.1 (docs/.runtime/ path)"
+git commit -m "chore: migrate naprolom-docs v1.0→v1.2 (docs/.runtime/ path)"
+```
+
+## Step 1C — Upgrade from v1.1 to v1.2
+
+The old Runtime v1.1 is at `docs/.runtime/naprolom-docs/` but lacks v1.2 components (registry, state-machine, contracts, reality-engine).
+
+```bash
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+cd "$PROJECT_ROOT"
+
+# Update submodule to latest (includes v1.2)
+git submodule update --remote --merge
+
+# Verify v1.2 components exist
+ls docs/.runtime/naprolom-docs/runtime/registry.yaml || { echo "FAIL: v1.2 not pulled"; exit 1; }
+ls docs/.runtime/naprolom-docs/runtime/state-machine.yaml || { echo "FAIL: v1.2 not pulled"; exit 1; }
+
+git add docs/.runtime/naprolom-docs
+git commit -m "chore: upgrade Documentation System Runtime v1.1→v1.2"
 ```
 
 ## Step 2 — Initialize submodule
@@ -110,10 +131,11 @@ bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 
 What bootstrap creates:
 - `docs/{architecture,adr,specs/...,audits,backlog,api}/` — 5-layer documentation structure
+- `docs/architecture/entity-catalog.md` — domain entity catalog template (consumer fills in)
 - `.context/{project.yml,boundaries.yml,agent-entry.md}` — AI agent entry stubs
 - `CLAUDE.md` — Runtime instructions (PREPEND to existing file, never overwrite)
 - `AGENTS.md` — Runtime instructions (only if file already exists, never create)
-- `.github/workflows/docs-validate.yml` — CI guard
+- `.github/workflows/docs-validate.yml` — CI guard (includes Runtime dependency graph validation)
 
 ## Step 4 — Verify
 
@@ -146,11 +168,12 @@ done
 [ $FAIL -eq 1 ] && echo "ABORT: Runtime directories leaked to root" || echo "PASS: all clean"
 ```
 
-### 4.3 Frontmatter validation
+### 4.3 Frontmatter + Runtime validation
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
 bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/engine/validators/validate-runtime.sh
 ```
 
 ### 4.4 CLAUDE.md check
@@ -168,12 +191,12 @@ cd "$(git rev-parse --show-toplevel)"
 git add -A
 git status --short
 git diff --cached --stat
-git commit -m "docs: Documentation System Runtime v1.1 installed" || echo "nothing to commit"
+git commit -m "docs: Documentation System Runtime v1.2 installed" || echo "nothing to commit"
 ```
 
 Do NOT push. Report to user:
 1. Project path and repo
-2. Install type (fresh / migrated from v1.0 / already v1.1)
+2. Install type (fresh / migrated from v1.0 / already installed)
 3. Verification results (structure, root check, validation)
 4. Next steps: fill `.context/project.yml`, create first ADR, create `docs/architecture/README.md`
 

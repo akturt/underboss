@@ -1,0 +1,35 @@
+state_machine:
+  description: Reference to runtime/state-machine.yaml
+  version: 1
+  alias: ../state-machine.yaml
+
+  states:
+    - fresh
+    - installed
+    - updated
+    - partial
+    - legacy
+    - broken
+
+  transitions:
+    - from: fresh
+      action: bootstrap
+      to: installed
+    - from: installed
+      action: git-submodule-update
+      to: updated
+    - from: installed
+      action: manual-edit
+      to: broken
+    - from: updated
+      action: manual-edit
+      to: broken
+    - from: partial
+      action: bootstrap
+      to: installed
+    - from: legacy
+      action: migration
+      to: installed
+    - from: broken
+      action: re-bootstrap
+      to: installed
