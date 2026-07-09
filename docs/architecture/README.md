@@ -1,8 +1,10 @@
 ---
-title: Architecture Overview
+schema: 1
+id: architecture-readme
 type: architecture
-domain: unknown
-created: 2026-07-09
+status: active
+date: 2026-07-09
+owners: [naprolom-team]
 ---
 
 # Architecture Overview

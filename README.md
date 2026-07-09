@@ -51,7 +51,7 @@ bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/boo
 
 ### Ручной способ
 
-> **v1.4:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
+> **v1.5:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
 
 ```bash
 # 1. Подключить submodule ВНУТРЬ docs/
@@ -84,9 +84,9 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   ├── playbook-v2.md                      ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
 │   └── migrate-legacy.md                   ← brownfield агент-промпт (7 шагов с checkpoint'ами)
 ├── runtime/                                ← [Runtime Core — Infrastructure]
-│   ├── registry.yaml                       ← v1.4: единый источник истины для всех компонентов Runtime Core
-│   ├── state-machine.yaml                  ← v1.4: состояния установки и переходы
-│   └── contracts/                          ← v1.4: контракты (runtime/ + consumer/)
+│   ├── registry.yaml                       ← v1.5: единый источник истины для всех компонентов Runtime Core
+│   ├── state-machine.yaml                  ← v1.5: состояния установки и переходы
+│   └── contracts/                          ← v1.5: контракты (runtime/ + consumer/)
 │       ├── runtime/{installation,migration,validation}.yaml
 │       └── consumer/{boundaries,project-layout}.yaml
 ├── documentation/                          ← [Documentation Module]
@@ -95,11 +95,11 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   │   └── audit.md  runbook.md  backlog.md
 │   ├── validation/
 │   │   ├── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
-│   │   └── validate-runtime.sh             ← v1.4: валидация графа зависимостей Runtime
+│   │   └── validate-runtime.sh             ← v1.5: валидация графа зависимостей Runtime
 │   └── schemas/
 │       └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
 ├── engine/                                 ← [Runtime Core — Infrastructure]
-│   ├── reality-engine/                     ← v1.4: движок реконструкции состояния
+│   ├── reality-engine/                     ← v1.5: движок реконструкции состояния
 │   │   ├── collectors/                     ← сбор данных (architecture, entity, module, dependency)
 │   │   ├── analyzers/                      ← анализ дрейфа (documentation, adr, spec)
 │   │   ├── reporters/                      ← генерация отчётов
@@ -107,10 +107,10 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   └── scripts/
 │       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
 ├── bootstrap/                              ← [Runtime Core — Infrastructure]
-│   ├── bootstrap.sh                        ← v1.4: registry-driven universal loader
-│   ├── install.sh                          ← v1.4: one-liner установщик
+│   ├── bootstrap.sh                        ← v1.5: registry-driven universal loader
+│   ├── install.sh                          ← v1.5: one-liner установщик
 │   ├── templates/
-│   │   └── entity-catalog.md               ← v1.4: шаблон каталога сущностей
+│   │   └── entity-catalog.md               ← v1.5: шаблон каталога сущностей
 │   └── DEPLOY-PROMPT.md                    ← промпт для AI-агента: автоустановка на любой проект
 ├── knowledge/                              ← [Documentation Module] общий knowledge-слой (роли подключают по short-id)
 │   ├── architecture-principles.md
@@ -122,7 +122,7 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 │   └── README.md                           ← overview capabilities, указатель на knowledge/capabilities.md
 ├── sops/                                   ← [Documentation Module] Standard Operating Procedures (YAML) + planner.mjs
 │   ├── planner.mjs                         ← печатает DAG (DAG-printer, не executor)
-│   ├── reality-audit.yaml                  ← v1.4: SOP использует Reality Engine
+│   ├── reality-audit.yaml                  ← v1.5: SOP использует Reality Engine
 │   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident / architecture-review / forensic-audit
 ├── docs/                                   ← dogfood: собственная документация Runtime
 │   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation, 002-runtime-v1.2)
@@ -208,7 +208,7 @@ updates:
 
 `sops/` — декларативные описания типовых процессов разработки в виде YAML. Не исполнение — описание:
 - `new-feature.yaml`, `bugfix.yaml`, `new-service.yaml`, `architecture-change.yaml`, `audit.yaml`, `release.yaml`, `incident.yaml`.
-- `reality-audit.yaml` — v1.4: SOP использует Reality Engine для реконструкции состояния проекта.
+- `reality-audit.yaml` — v1.5: SOP использует Reality Engine для реконструкции состояния проекта.
 - Каждый — DAG шагов с референсами на роли из `agents/{platform}/` либо `human`.
 - `sops/planner.mjs` — по input типу печатает последовательность шагов с параллельными группами.
 
@@ -232,7 +232,7 @@ node sops/planner.mjs new-feature --hide-human
 - **Не требует Node.js/Python/Go toolchain** в проекте — работает для FastAPI, Go, Rust, Terraform, Ansible.
 - **Фиксируется commit SHA** — воспроизводимость, тривиальный откат.
 - **Обновляется по вашему решению** — нет автоматического registry pull, который сломает проект.
-- **Не засоряет основной репо** — Runtime живёт в `docs/.runtime/`, а корень consumer'а содержит только `docs/` (v1.1, D-BR; актуально и в v1.4 — Runtime Core + Documentation Module локализованы внутри submodule). Раньше v1.0 использовал `.context/runtime/`; в v1.1 это deprecated в пользу локализации внутрь `docs/`.
+- **Не засоряет основной репо** — Runtime живёт в `docs/.runtime/`, а корень consumer'а содержит только `docs/` (v1.1, D-BR; актуально и в v1.5 — Runtime Core + Documentation Module локализованы внутри submodule). Раньше v1.0 использовал `.context/runtime/`; в v1.1 это deprecated в пользу локализации внутрь `docs/`.
 - **Соответствует вашему стеку** GitOps/IaC — единый источник истины, обновления через PR-review.
 
 Альтернативы (npm package, GitHub Releases + curl) рассмотрены и отклонены: завязка на toolchain либо нарушает portability, либо теряет воспроизводимость.
@@ -263,8 +263,8 @@ node sops/planner.mjs new-feature --hide-human
 | Reality Engine (collectors, analyzers, reporters) | ✅ stubs, architecture defined |
 | CI guard (validate-frontmatter + validate-runtime) | ✅ реализован |
 | install.sh (one-liner) | ✅ реализован |
-| **Runtime v1.4 — Module Decomposition** | ✅ реализован |
-| **Dogfooding на реальном проекте** | ✅ первый consumer обновлён до v1.4 |
+| **Runtime v1.5 — Module Decomposition** | ✅ реализован |
+| **Dogfooding на реальном проекте** | ✅ первый consumer обновлён до v1.5 |
 
 ---
 
@@ -272,7 +272,7 @@ node sops/planner.mjs new-feature --hide-human
 
 - **2026-07-09** — **v1.5 — Bootstrap Decomposition + Registry SSOT**. Bootstrap.sh декомпозирован: из монолита (637 строк) выделены `bootstrap/lib/` (registry.sh, detect-state.sh, detect-stack.sh, verify.sh) и `bootstrap/generators/` (5 скриптов: architecture-readme, boundaries, project-yml, claude-md, ci-workflow). Stack detectors вынесены в `bootstrap/detectors/` как плагины (node, python, go, rust, php, docker) — добавление нового стека = один файл. Registry расширен: `schema:`, `contracts:`, `directories:`, `templates:`, `validators:`, `generators:`, `scripts:`, `detectors:`, `components:` — bootstrap/install/validators читают все пути из одного SSOT. Bootstrap orchestrator сокращён до ~90 строк. Все валидаторы проходят (16 checks).
 - **2026-07-09** — **v1.2.1 — Post-Deployment Fixes**. Исправлен subshell bug в validate-runtime.sh (fail flag терялся в pipe → CI всегда проходил). Исправлен CI: добавлен `submodules: true` в checkout, добавлены недостающие trigger paths (validators, bootstrap, sops, agents). Entity resolution расширен: registry компоненты + concept entities теперь resolve в entity_refs. Bootstrap: объединены detect_state + detect_version, добавлен auto-upgrade v1.1→v1.2. Добавлен install.sh one-liner. Registry: убрано дублирование из agents, добавлена engine секция. Удалён redundant state-machine contract. DEPLOY-PROMPT.md обновлён до v1.2.1.
-- **2026-07-09** — **v1.4 — Module Decomposition**. Runtime разделён на Runtime Core и Documentation Module. `engine/templates/`, `engine/validators/`, `engine/schemas/` перенесены в `documentation/`. `engine/` содержит только `reality-engine/` и `scripts/`. Registry: `modules:` → `composition:`, добавлен `entrypoints:`. State machine: убрано транзиентное состояние `updated` (5 persistent states). Project layout: `no_root_level:` → `allowed_root:`. Migration: добавлены `requires_bootstrap`, `requires_manual_actions`, `requires_consumer_changes`, `breaking` флаги. Installation: `template_sources` удалены, bootstrap читает из registry. Все валидаторы проходят (14 checks).
+- **2026-07-09** — **v1.5 — Module Decomposition**. Runtime разделён на Runtime Core и Documentation Module. `engine/templates/`, `engine/validators/`, `engine/schemas/` перенесены в `documentation/`. `engine/` содержит только `reality-engine/` и `scripts/`. Registry: `modules:` → `composition:`, добавлен `entrypoints:`. State machine: убрано транзиентное состояние `updated` (5 persistent states). Project layout: `no_root_level:` → `allowed_root:`. Migration: добавлены `requires_bootstrap`, `requires_manual_actions`, `requires_consumer_changes`, `breaking` флаги. Installation: `template_sources` удалены, bootstrap читает из registry. Все валидаторы проходят (14 checks).
 - **2026-07-08** — **v1.2 — Operating Platform**. Registry как единый источник истины (`runtime/registry.yaml`). State machine с 6 состояниями. Contracts разделены на runtime/ и consumer/. Reality Engine вынесен в standalone движок (`engine/reality-engine/`). Self-validation: `validate-runtime.sh` проверяет 10 категорий графа зависимостей. CI workflow обновлён: +runtime/** paths, +validate-runtime шаг. ADR 002 документирующий v1.2.
 - **2026-07-08** — **v1.1 — Agentic Layer Separation**. Пять сущностей первого класса: **Knowledge** (`knowledge/` — 4 файла принципов + capabilities.md), **Role** (slim-roles в `agents/`, +2 новые: `reality-auditor`, `adversary-checker`), **Capability** (что умеет; односторонняя Role→Capability, каталог в `knowledge/capabilities.md` без `provided by:`), **SOP** (декларативный DAG с artifact-contract'ами; gate:manual вместо role:human), **Artifact** (что путешествует между шагами — reality-report, architecture-findings, validated-findings, forensic-report). Два новых SOP: `architecture-review.yaml` (sequential Reality→Arch→Doc→Adversary-optional→human) и `forensic-audit.yaml` (8-step pipeline, замещает прежний forensic-orchestrator). `sops/planner.mjs` остаётся DAG-printer (НЕ executor), расширен чтением `capability:`/`consumes:`/`produces:`/`gate:`. **D-BR: bootstrap разворачивает Runtime в `docs/.runtime/naprolom-docs/`, НЕ в `.context/runtime/`** — корень consumer'а содержит только `docs/`. См. `docs/specs/approved/2026-07-08-agentic-layer.md` и `docs/adr/001-agentic-layer-separation.md` (dogfood).
 - **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Module → AI Layer → SOP Layer.

@@ -67,12 +67,12 @@ fi
 
 # --- Create docs/ skeleton ---
 echo "  → Ensuring docs/ skeleton..."
-for dir in documentation agents knowledge sops; do
+for dir in architecture adr; do
   mkdir -p "$TARGET/docs/$dir"
 done
-mkdir -p "$TARGET/docs/architecture" "$TARGET/docs/adr" "$TARGET/docs/specs/drafts" \
-         "$TARGET/docs/specs/review" "$TARGET/docs/specs/approved" "$TARGET/docs/specs/implemented" \
-         "$TARGET/docs/specs/superseded" "$TARGET/docs/audits" "$TARGET/docs/backlog" "$TARGET/docs/api"
+mkdir -p "$TARGET/docs/specs/drafts" "$TARGET/docs/specs/review" "$TARGET/docs/specs/approved" \
+         "$TARGET/docs/specs/implemented" "$TARGET/docs/specs/superseded" "$TARGET/docs/audits" \
+         "$TARGET/docs/backlog" "$TARGET/docs/api"
 
 # --- Generate components ---
 echo ""

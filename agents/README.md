@@ -13,13 +13,13 @@ touches: []
 docs: [../README.md, ../INSTALL.md, ../playbook/playbook-v2.md]
 refs: []
 depends_on: []
-tags: [agents, roles, index, v1.4, capabilities, knowledge]
+tags: [agents, roles, index, v1.5, capabilities, knowledge]
 priority: P1
 ---
 
 # agents/ — Репозитарий ролей AI-агентов
 
-Runtime v1.4 содержит 4 роли, каждая — готовый промпт-конфигурация для конкретной платформы (Claude Code, opencode).
+Runtime v1.5 содержит 4 роли, каждая — готовый промпт-конфигурация для конкретной платформы (Claude Code, opencode).
 
 ## Roles
 
