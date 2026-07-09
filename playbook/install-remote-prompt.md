@@ -175,7 +175,7 @@ Read in order:
 
 Before creating any .md in docs/:
 1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-2. Copy template from runtime: docs/.runtime/naprolom-docs/engine/templates/<type>.md
+2. Copy template from runtime: docs/.runtime/naprolom-docs/documentation/templates/<type>.md
 3. Fill the 6 mandatory fields: schema, id, type, status, date, owners
 4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)
 5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope
@@ -223,7 +223,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 YML
 ```
 
@@ -336,7 +336,7 @@ ls -la .claude/agents/
 
 ```bash
 PROJECT_NAME_KEBAB=$(echo "<PROJECT_NAME>" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-bootstrap-documentation-runtime.md
+cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-bootstrap-documentation-runtime.md
 # Отредактируй frontmatter (id, date, owners) и body (Context про подключение naprolom-docs, Decision про submodule+branch=master, Consequences)
 $EDITOR docs/adr/001-bootstrap-documentation-runtime.md 2>/dev/null || true
 ```
@@ -353,10 +353,10 @@ $EDITOR docs/adr/001-bootstrap-documentation-runtime.md 2>/dev/null || true
 
 ```bash
 # strict mode (greenfield)
-bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 
 # warn-only (если brownfield и миграция ещё не завершена)
-WARN_ONLY=true bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
 **Ожидаемый вывод:**
@@ -379,7 +379,7 @@ Stage <PROJECT_NAME> for Canonical Schema v1 documentation:
 
 - Add submodule docs/.runtime/naprolom-docs pinned to master branch
 - Add .context/ stubs (project.yml, boundaries.yml, agent-entry.md)
-- Add .github/workflows/docs-validate.yml calling engine/validators/validate-frontmatter.sh
+- Add .github/workflows/docs-validate.yml calling documentation/validation/validate-frontmatter.sh
 - Add CLAUDE.md snippet (6 rules: playbook→templates→schema→validator→migrate→sops)
 - <GREENFIELD: 'Bootstrap created docs/ skeleton (5-layer architecture)'>
 - <BROWNFIELD: 'Existing docs/ preserved; CI guard in WARN_ONLY=true period'>
@@ -473,7 +473,7 @@ jobs:
 - ❌ Не редактируй файлы в `docs/.runtime/naprolom-docs/` in-place. Это submodule.
 - ❌ Не запускай bootstrap дважды на brownfield с существующим `.github/workflows/docs-validate.yml` — bootstrap создаёт только если файл отсутствует.
 - ❌ Не включай strict CI (`WARN_ONLY=""`) сразу на brownfield. Сначала пройди полный cleanup забытых архивов, потом переключай.
-- ❌ Не создавай `.md` в `docs/` без `cp docs/.runtime/naprolom-docs/engine/templates/<type>.md docs/<type>/...` — canonical frontmatter сложно написать «из головы».
+- ❌ Не создавай `.md` в `docs/` без `cp docs/.runtime/naprolom-docs/documentation/templates/<type>.md docs/<type>/...` — canonical frontmatter сложно написать «из головы».
 
 ---
 
@@ -492,10 +492,10 @@ node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --platform opencod
 node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
 
 # Создать новый документ из template
-cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/002-<decision>.md
+cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/002-<decision>.md
 
 # Перед коммитом запустить validator
-bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
 Запуск ролей ai-агентом (для opencode):

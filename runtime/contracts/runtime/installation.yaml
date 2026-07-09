@@ -27,11 +27,7 @@ installation:
     state: fresh | partial | legacy | broken
     gitmodules: "path = docs/.runtime/naprolom-docs"
 
-  template_sources:
-    engine: engine/templates/
-    knowledge: knowledge/
-    agents: agents/
-    sops: sops/
+  sources: "bootstrap reads component paths from registry.yaml (composition: section)"
 
   idempotent: true
   non_destructive: true

@@ -1,7 +1,7 @@
 #!/bin/bash
 # bootstrap/install.sh
 #
-# One-liner installer for Documentation System Runtime v1.2.1.
+# One-liner installer for Documentation System Runtime v1.4.
 # Usage: bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
 #
 # Or clone + run:
@@ -24,7 +24,7 @@ echo "→ Project: $PROJECT_ROOT"
 
 # Check if Runtime already installed
 if [ -f "$PROJECT_ROOT/$SUBMODULE_PATH/runtime/registry.yaml" ]; then
-  echo "→ Runtime v1.2 already installed. Running bootstrap..."
+  echo "→ Runtime v1.4 already installed. Running bootstrap..."
   bash "$PROJECT_ROOT/$SUBMODULE_PATH/bootstrap/bootstrap.sh" "$PROJECT_ROOT"
   exit 0
 fi
@@ -38,7 +38,7 @@ if [ -d "$PROJECT_ROOT/.context/runtime" ]; then
 fi
 
 # Fresh install
-echo "→ Installing Runtime v1.2..."
+echo "→ Installing Runtime v1.4..."
 
 # Ensure docs/.runtime exists
 mkdir -p "$PROJECT_ROOT/docs/.runtime"
@@ -68,4 +68,4 @@ echo "  2. Complete docs/architecture/entity-catalog.md"
 echo "  3. Create your first ADR"
 echo ""
 echo "Commit with:"
-echo "  git add -A && git commit -m 'docs: install Documentation System Runtime v1.2'"
+echo "  git add -A && git commit -m 'docs: install Documentation System Runtime v1.4'"

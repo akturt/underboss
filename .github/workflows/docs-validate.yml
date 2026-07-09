@@ -4,9 +4,7 @@ on:
     paths:
       - "docs/**"
       - "knowledge/**"
-      - "engine/templates/**"
-      - "engine/schemas/**"
-      - "engine/validators/**"
+      - "documentation/**"
       - "engine/reality-engine/**"
       - "runtime/**"
       - "sops/**"
@@ -27,15 +25,15 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter (own docs/)
         run: |
-          bash engine/validators/validate-frontmatter.sh
+          bash documentation/validation/validate-frontmatter.sh
       - name: Validate knowledge/ frontmatter
         run: |
-          ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge
+          ROOT=knowledge bash documentation/validation/validate-frontmatter.sh knowledge
       - name: Validate templates (canonical Schema v1 placeholders)
         run: |
-          # engine/templates/ лежат вне docs/ → CI их не проверяет автоматически.
+          # documentation/templates/ лежат вне docs/ → CI их не проверяет автоматически.
           # Проверяем, что каждый template имеет schema: 1 и mandatory поля.
-          for f in engine/templates/*.md; do
+          for f in documentation/templates/*.md; do
             fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
             [ -n "$fm" ] || { echo "ERROR: $f: no frontmatter"; exit 1; }
             echo "$fm" | grep -qE "^schema:[[:space:]]*1[[:space:]]*$" || { echo "ERROR: $f: schema != 1"; exit 1; }
@@ -46,4 +44,4 @@ jobs:
           echo "templates: OK"
       - name: Validate Runtime dependency graph
         run: |
-          bash engine/validators/validate-runtime.sh
+          bash documentation/validation/validate-runtime.sh

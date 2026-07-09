@@ -5,6 +5,10 @@ migration:
   transitions:
     - from: "1.0"
       to: "1.1"
+      requires_bootstrap: true
+      requires_manual_actions: true
+      requires_consumer_changes: true
+      breaking: true
       changes:
         - description: "Submodule mount point moved"
           from: ".context/runtime/naprolom-docs/"
@@ -22,6 +26,10 @@ migration:
 
     - from: "1.1"
       to: "1.2"
+      requires_bootstrap: false
+      requires_manual_actions: false
+      requires_consumer_changes: false
+      breaking: false
       changes:
         - description: "Registry added as primary object"
           paths: ["runtime/registry.yaml"]
@@ -32,9 +40,54 @@ migration:
         - description: "Reality Engine extracted"
           paths: ["engine/reality-engine/"]
         - description: "Self-validation added"
-          paths: ["engine/validators/validate-runtime.sh"]
+          paths: ["documentation/validation/validate-runtime.sh"]
         - description: "Entity catalog template added"
           paths: ["bootstrap/templates/entity-catalog.md"]
+
+    - from: "1.2"
+      to: "1.2.1"
+      requires_bootstrap: false
+      requires_manual_actions: false
+      requires_consumer_changes: false
+      breaking: false
+      changes:
+        - description: "Subshell bug fix in validate-runtime.sh"
+          paths: ["documentation/validation/validate-runtime.sh"]
+        - description: "Auto-upgrade v1.1→v1.2 added"
+          paths: ["bootstrap/bootstrap.sh"]
+
+    - from: "1.2.1"
+      to: "1.3"
+      requires_bootstrap: false
+      requires_manual_actions: false
+      requires_consumer_changes: false
+      breaking: false
+      changes:
+        - description: "Auto-detect stack from lockfiles"
+          paths: ["bootstrap/bootstrap.sh"]
+        - description: "Auto-generate boundaries.yml from .gitignore"
+          paths: ["bootstrap/bootstrap.sh"]
+        - description: "Auto-generate architecture/README.md"
+          paths: ["bootstrap/bootstrap.sh"]
+
+    - from: "1.3"
+      to: "1.4"
+      requires_bootstrap: false
+      requires_manual_actions: false
+      requires_consumer_changes: false
+      breaking: false
+      changes:
+        - description: "Module decomposition: Runtime Core + Documentation Module"
+          paths: ["documentation/"]
+          details: "engine/templates/, engine/validators/, engine/schemas/ moved to documentation/"
+        - description: "Registry updated with composition: section"
+          paths: ["runtime/registry.yaml"]
+        - description: "State machine simplified: removed transient 'updated' state"
+          paths: ["runtime/state-machine.yaml"]
+        - description: "Project layout flipped to positive (allowed_root)"
+          paths: ["runtime/contracts/consumer/project-layout.yaml"]
+        - description: "Migration transitions now include requires_* flags"
+          paths: ["runtime/contracts/runtime/migration.yaml"]
 
   breaking_changes:
     - version: "1.0 → 1.1"

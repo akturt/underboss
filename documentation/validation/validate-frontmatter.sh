@@ -1,5 +1,5 @@
 #!/bin/bash
-# validators/validate-frontmatter.sh
+# documentation/validation/validate-frontmatter.sh
 #
 # Validates that every .md file under docs/ has Canonical Schema v1 frontmatter.
 # Frontmatter-only checks (no false positives on prose/code blocks).
@@ -10,9 +10,9 @@
 #   1 — at least one error (when WARN_ONLY unset/empty)
 #
 # Usage:
-#   ./validators/validate-frontmatter.sh [docs-root]
-#   WARN_ONLY=1 ./validators/validate-frontmatter.sh      # warn-only (brownfield rollout)
-#   ROOT=docs ./validators/validate-frontmatter.sh        # override default docs/ root
+#   ./documentation/validation/validate-frontmatter.sh [docs-root]
+#   WARN_ONLY=1 ./documentation/validation/validate-frontmatter.sh      # warn-only (brownfield rollout)
+#   ROOT=docs ./documentation/validation/validate-frontmatter.sh        # override default docs/ root
 
 set -u
 

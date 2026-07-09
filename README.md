@@ -18,7 +18,7 @@ priority: P0
 
 # naprolom-docs — Documentation System Runtime
 
-**Превращает документацию в инфраструктуру**, а не в свалку `.md`-файлов. Каноническая Schema v1, lifecycle из path, 5-слойная архитектура, CI guard. Подключается как Git Submodule — один runtime на всю экосистему.
+**Превращает документацию в инфраструктуру**, а не в свалку `.md`-файлов. Каноническая Schema v1, lifecycle из path, 5-слойная архитектура, CI guard. Архитектура Runtime v1.4: **Runtime Core** (инфраструктурный слой: runtime/, bootstrap/, engine/) + **Documentation Module** (документационный слой: documentation/, knowledge/, agents/, sops/, playbook/). Подключается как Git Submodule — один runtime на всю экосистему.
 
 > **Доказательство:** проект Kordon/MegaDelta — 141 хаотичный файл → 40 canonical за 30 минут и один промпт. Онбординг с 2–5 дней до 5 минут, контекст LLM легче на 73%, стоимость промпта — на 80%. См. `docs/audits/`.
 
@@ -37,7 +37,7 @@ priority: P0
 - **Runnable migration** — для brownfield-репозиториев: `engine/scripts/migrate-legacy.mjs` переводит legacy FM в Schema v1 с `TODO_ENTITY_REF` маркерами для manual review.
 - **SOPs** — декларативное описание типовых процессов разработки в `sops/*.yaml` (New Feature, Bugfix, Release, Incident и др.). Планировщик `sops/planner.mjs` печатает DAG выполнения по типу входной сущности. Роли упоминаются по имени (из `agents/`) или `human`.
 - **Reality Engine** — движок реконструкции состояния проекта и обнаружения дрейфа (`engine/reality-engine/`). Используется SOP `reality-audit.yaml`.
-- **Registry** — единый источник истины для всех компонентов Runtime (`runtime/registry.yaml`).
+- **Registry** — единый источник истины для всех компонентов Runtime Core (`runtime/registry.yaml`).
 
 ---
 
@@ -51,7 +51,7 @@ bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/boo
 
 ### Ручной способ
 
-> **v1.2:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
+> **v1.4:** Runtime подключается **внутрь `docs/`**, а не в `.context/runtime/`. В корне consumer-репо остаётся только `docs/` — никаких служебных каталогов `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`. См. §Two-repo model в `docs/specs/approved/2026-07-08-agentic-layer.md`.
 
 ```bash
 # 1. Подключить submodule ВНУТРЬ docs/
@@ -65,7 +65,7 @@ bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 # 3. Заполнить .context/project.yml и .context/boundaries.yml под ваш проект
 
 # 4. Создать первый документ из template
-cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-orchestrator-choice.md
+cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-orchestrator-choice.md
 ```
 
 **Полная инструкция с troubleshooting и edge-cases** → [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
@@ -83,45 +83,46 @@ naprolom-docs/                                  ← репо-ПРОДУКТ (lay
 ├── playbook/
 │   ├── playbook-v2.md                      ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
 │   └── migrate-legacy.md                   ← brownfield агент-промпт (7 шагов с checkpoint'ами)
-├── runtime/
-│   ├── registry.yaml                       ← v1.2: единый источник истины для всех компонентов
-│   ├── state-machine.yaml                  ← v1.2: состояния установки и переходы
-│   └── contracts/                          ← v1.2: контракты (runtime/ + consumer/)
+├── runtime/                                ← [Runtime Core — Infrastructure]
+│   ├── registry.yaml                       ← v1.4: единый источник истины для всех компонентов Runtime Core
+│   ├── state-machine.yaml                  ← v1.4: состояния установки и переходы
+│   └── contracts/                          ← v1.4: контракты (runtime/ + consumer/)
 │       ├── runtime/{installation,migration,validation}.yaml
 │       └── consumer/{boundaries,project-layout}.yaml
-├── engine/
+├── documentation/                          ← [Documentation Module]
 │   ├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
 │   │   ├── architecture.md  adr.md  spec.md
 │   │   └── audit.md  runbook.md  backlog.md
-│   ├── schemas/
-│   │   └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
-│   ├── validators/
+│   ├── validation/
 │   │   ├── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
-│   │   └── validate-runtime.sh             ← v1.2: валидация графа зависимостей Runtime
-│   ├── reality-engine/                     ← v1.2: движок реконструкции состояния
+│   │   └── validate-runtime.sh             ← v1.4: валидация графа зависимостей Runtime
+│   └── schemas/
+│       └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
+├── engine/                                 ← [Runtime Core — Infrastructure]
+│   ├── reality-engine/                     ← v1.4: движок реконструкции состояния
 │   │   ├── collectors/                     ← сбор данных (architecture, entity, module, dependency)
 │   │   ├── analyzers/                      ← анализ дрейфа (documentation, adr, spec)
 │   │   ├── reporters/                      ← генерация отчётов
 │   │   └── README.md
 │   └── scripts/
 │       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
-├── bootstrap/
-│   ├── bootstrap.sh                        ← v1.2: registry-driven universal loader
-│   ├── install.sh                          ← v1.2: one-liner установщик
+├── bootstrap/                              ← [Runtime Core — Infrastructure]
+│   ├── bootstrap.sh                        ← v1.4: registry-driven universal loader
+│   ├── install.sh                          ← v1.4: one-liner установщик
 │   ├── templates/
-│   │   └── entity-catalog.md               ← v1.2: шаблон каталога сущностей
+│   │   └── entity-catalog.md               ← v1.4: шаблон каталога сущностей
 │   └── DEPLOY-PROMPT.md                    ← промпт для AI-агента: автоустановка на любой проект
-├── knowledge/                              ← общий knowledge-слой (роли подключают по short-id)
+├── knowledge/                              ← [Documentation Module] общий knowledge-слой (роли подключают по short-id)
 │   ├── architecture-principles.md
 │   ├── evidence-model.md
 │   ├── audit-principles.md
 │   ├── report-formats.md
 │   └── capabilities.md                     ← capability catalog (без providers, D-CP)
-├── agents/                                 ← роли AI-агентов для claude-code и opencode (4 roles, slim)
+├── agents/                                 ← [Documentation Module] роли AI-агентов для claude-code и opencode (4 roles, slim)
 │   └── README.md                           ← overview capabilities, указатель на knowledge/capabilities.md
-├── sops/                                   ← Standard Operating Procedures (YAML) + planner.mjs
+├── sops/                                   ← [Documentation Module] Standard Operating Procedures (YAML) + planner.mjs
 │   ├── planner.mjs                         ← печатает DAG (DAG-printer, не executor)
-│   ├── reality-audit.yaml                  ← v1.2: SOP использует Reality Engine
+│   ├── reality-audit.yaml                  ← v1.4: SOP использует Reality Engine
 │   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident / architecture-review / forensic-audit
 ├── docs/                                   ← dogfood: собственная документация Runtime
 │   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation, 002-runtime-v1.2)
@@ -207,7 +208,7 @@ updates:
 
 `sops/` — декларативные описания типовых процессов разработки в виде YAML. Не исполнение — описание:
 - `new-feature.yaml`, `bugfix.yaml`, `new-service.yaml`, `architecture-change.yaml`, `audit.yaml`, `release.yaml`, `incident.yaml`.
-- `reality-audit.yaml` — v1.2: SOP использует Reality Engine для реконструкции состояния проекта.
+- `reality-audit.yaml` — v1.4: SOP использует Reality Engine для реконструкции состояния проекта.
 - Каждый — DAG шагов с референсами на роли из `agents/{platform}/` либо `human`.
 - `sops/planner.mjs` — по input типу печатает последовательность шагов с параллельными группами.
 
@@ -231,7 +232,7 @@ node sops/planner.mjs new-feature --hide-human
 - **Не требует Node.js/Python/Go toolchain** в проекте — работает для FastAPI, Go, Rust, Terraform, Ansible.
 - **Фиксируется commit SHA** — воспроизводимость, тривиальный откат.
 - **Обновляется по вашему решению** — нет автоматического registry pull, который сломает проект.
-- **Не засоряет основной репо** — Runtime живёт в `docs/.runtime/`, а корень consumer'а содержит только `docs/` (v1.1, D-BR). Раньше v1.0 использовал `.context/runtime/`; в v1.1 это deprecated в пользу локализации внутрь `docs/`.
+- **Не засоряет основной репо** — Runtime живёт в `docs/.runtime/`, а корень consumer'а содержит только `docs/` (v1.1, D-BR; актуально и в v1.4 — Runtime Core + Documentation Module локализованы внутри submodule). Раньше v1.0 использовал `.context/runtime/`; в v1.1 это deprecated в пользу локализации внутрь `docs/`.
 - **Соответствует вашему стеку** GitOps/IaC — единый источник истины, обновления через PR-review.
 
 Альтернативы (npm package, GitHub Releases + curl) рассмотрены и отклонены: завязка на toolchain либо нарушает portability, либо теряет воспроизводимость.
@@ -251,7 +252,7 @@ node sops/planner.mjs new-feature --hide-human
 
 | Этап | Состояние |
 |------|-----------|
-| Runtime v1.0 (bootstrap, engine, templates, schemas, validators) | ✅ реализован |
+| Runtime v1.0 (bootstrap, documentation, engine, templates, schemas, validators) | ✅ реализован |
 | Playbook v2 (greenfield-модель) | ✅ реализован |
 | Migration Prompt (brownfield агент-промпт) | ✅ реализован |
 | Bootstrap (.sh + .ps1, идемпотентный) | ✅ реализован, протестирован на POSIX и Windows |
@@ -262,17 +263,19 @@ node sops/planner.mjs new-feature --hide-human
 | Reality Engine (collectors, analyzers, reporters) | ✅ stubs, architecture defined |
 | CI guard (validate-frontmatter + validate-runtime) | ✅ реализован |
 | install.sh (one-liner) | ✅ реализован |
-| **Dogfooding на реальном проекте** | ✅ первый consumer обновлён до v1.2 |
+| **Runtime v1.4 — Module Decomposition** | ✅ реализован |
+| **Dogfooding на реальном проекте** | ✅ первый consumer обновлён до v1.4 |
 
 ---
 
 ## Чейнджлог
 
 - **2026-07-09** — **v1.2.1 — Post-Deployment Fixes**. Исправлен subshell bug в validate-runtime.sh (fail flag терялся в pipe → CI всегда проходил). Исправлен CI: добавлен `submodules: true` в checkout, добавлены недостающие trigger paths (validators, bootstrap, sops, agents). Entity resolution расширен: registry компоненты + concept entities теперь resolve в entity_refs. Bootstrap: объединены detect_state + detect_version, добавлен auto-upgrade v1.1→v1.2. Добавлен install.sh one-liner. Registry: убрано дублирование из agents, добавлена engine секция. Удалён redundant state-machine contract. DEPLOY-PROMPT.md обновлён до v1.2.1.
+- **2026-07-09** — **v1.4 — Module Decomposition**. Runtime разделён на Runtime Core и Documentation Module. `engine/templates/`, `engine/validators/`, `engine/schemas/` перенесены в `documentation/`. `engine/` содержит только `reality-engine/` и `scripts/`. Registry: `modules:` → `composition:`, добавлен `entrypoints:`. State machine: убрано транзиентное состояние `updated` (5 persistent states). Project layout: `no_root_level:` → `allowed_root:`. Migration: добавлены `requires_bootstrap`, `requires_manual_actions`, `requires_consumer_changes`, `breaking` флаги. Installation: `template_sources` удалены, bootstrap читает из registry. Все валидаторы проходят (14 checks).
 - **2026-07-08** — **v1.2 — Operating Platform**. Registry как единый источник истины (`runtime/registry.yaml`). State machine с 6 состояниями. Contracts разделены на runtime/ и consumer/. Reality Engine вынесен в standalone движок (`engine/reality-engine/`). Self-validation: `validate-runtime.sh` проверяет 10 категорий графа зависимостей. CI workflow обновлён: +runtime/** paths, +validate-runtime шаг. ADR 002 документирующий v1.2.
 - **2026-07-08** — **v1.1 — Agentic Layer Separation**. Пять сущностей первого класса: **Knowledge** (`knowledge/` — 4 файла принципов + capabilities.md), **Role** (slim-roles в `agents/`, +2 новые: `reality-auditor`, `adversary-checker`), **Capability** (что умеет; односторонняя Role→Capability, каталог в `knowledge/capabilities.md` без `provided by:`), **SOP** (декларативный DAG с artifact-contract'ами; gate:manual вместо role:human), **Artifact** (что путешествует между шагами — reality-report, architecture-findings, validated-findings, forensic-report). Два новых SOP: `architecture-review.yaml` (sequential Reality→Arch→Doc→Adversary-optional→human) и `forensic-audit.yaml` (8-step pipeline, замещает прежний forensic-orchestrator). `sops/planner.mjs` остаётся DAG-printer (НЕ executor), расширен чтением `capability:`/`consumes:`/`produces:`/`gate:`. **D-BR: bootstrap разворачивает Runtime в `docs/.runtime/naprolom-docs/`, НЕ в `.context/runtime/`** — корень consumer'а содержит только `docs/`. См. `docs/specs/approved/2026-07-08-agentic-layer.md` и `docs/adr/001-agentic-layer-separation.md` (dogfood).
-- **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Engine → AI Layer → SOP Layer.
-- **2026-07-08** — **Runtime engine/ layering**: `templates/`, `schemas/`, `validators/`, `scripts/` сгруппированы под `engine/` (Documentation Engine слой). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `engine/...` префикс. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Engine → AI Layer.
-- **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `validators/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.
+- **2026-07-08** — **SOP layer (Tier 1.5)**: введён четвёртый слой `sops/` — декларативные YAML-описания типовых процессов разработки. 7 протоколов: `new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`. `sops/planner.mjs` — простой node-скрипт, который по input типу печатает DAG выполнения (параллельные группы из `depends_on`). Роли в SOP ссылаются на `agents/{claude-code,opencode}/` по имени (`architecture-reviewer`, `documentation-reviewer`) или `human` для ручных шагов. Никакого runtime/БД/Temporal/LangGraph — просто YAML + planner. Запуск пока ручной через slash commands; slash-command bindings — Tier 2 после dogfooding. README дополнен секцией «SOP» и упомянут в четырёхслойной модели: Runtime → Documentation Module → AI Layer → SOP Layer.
+- **2026-07-08** — **Documentation Module layering**: `templates/`, `schemas/`, `validation/` сгруппированы под `documentation/` (Documentation Module слой). `engine/` содержит `reality-engine/` и `scripts/` (движок и утилиты). `bootstrap/` поднят рядом на корне (Runtime-уровень). `agents/` остался как самостоятельный AI-слой. Все consumer-facing пути в INSTALL, README, playbook, migrate-legacy, bootstrap.sh, bootstrap.ps1, workflow и агентах обновлены на `documentation/...` и `engine/...` префиксы. Устранён визуальный дрейф «свалка директорий в корне»; корень теперь читается как трёхслойная модель: Runtime → Documentation Module → AI Layer.
+- **2026-07-08** — **Runtime refactor v1.0**: репозиторий превращён из набора промптов в Documentation System Runtime. Структура `playbook/`, `bootstrap/`, `templates/`, `schemas/`, `validators/`, `scripts/`, `agents/`, `docs/`. Создан `INSTALL.md` как consumer-integration document. Playbook вынесен из корня, §Bootstrap и §Result переписаны под актуальные пути. CI guard теперь вызывает `documentation/validation/validate-frontmatter.sh` (единый source of truth). Создан runnable `scripts/migrate-legacy.mjs` для brownfield-миграции. Добавлены `bootstrap/bootstrap.sh` и `bootstrap.ps1` (идемпотентные, минимальные). Adoption Guide переформатирован как агент-промпт `playbook/migrate-legacy.md`.
 - **2026-07-07** — v2 split: пособие переписано как Greenfield Playbook; Adoption Guide выделен отдельно (brownfield); добавлен Value Proof case Kordon/MegaDelta; README переписан с индексом, Why-секцией и питчем. CI guard исправлен (frontmatter-only, без false positives); `WARN_ONLY` switch для brownfield rollout.
 - **2026-07-07** — initial commit: README + Playbook v2 (greenfield модель).

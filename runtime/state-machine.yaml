@@ -8,14 +8,6 @@ states:
   installed:
     description: Runtime fully deployed
     transitions:
-      - action: git-submodule-update
-        target: updated
-      - action: manual-edit
-        target: broken
-
-  updated:
-    description: Runtime updated via submodule
-    transitions:
       - action: manual-edit
         target: broken
 

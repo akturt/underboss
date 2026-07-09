@@ -78,7 +78,7 @@ This agent is invoked on:
 
 ```bash
 # Schema v1 validity on changed files only (fast feedback)
-bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 
 # Check ADR body immutability: PR branch ADR vs master ADR (for status transitions)
 git diff origin/master...HEAD -- docs/adr/ | grep -E "^[+-]" | grep -v "^[+-]---$" | grep -v "^[+-]schema:" | grep -v "^[+-]id:" | grep -v "^[+-]type:" | grep -v "^[+-]status:" | grep -v "^[+-]date:" | grep -v "^[+-]updated:" | grep -v "^[+-]owners:" | grep -v "^[+-]supersedes:" | grep -v "^[+-]depends_on:" | grep -v "^[+-]tags:"

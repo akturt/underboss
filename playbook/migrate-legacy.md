@@ -180,7 +180,7 @@ jobs:
 
 ```bash
 # Что скажет polity CI в warn-only
-WARN_ONLY=true bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
 Длительность warn-only: 3–7 дней или до тех пор, пока в нескольких PR подряд не будет ни одного warning'а.

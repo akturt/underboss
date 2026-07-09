@@ -9,7 +9,7 @@ owners: [naprolom-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, agent-entry-protocol, lifecycle-spec, lifecycle-adr]
 touches: [docs, .context, .claude/rules, .github/workflows]
-code: [.github/workflows/docs-validate.yml, bootstrap/bootstrap.sh, bootstrap/bootstrap.ps1, engine/validators/validate-frontmatter.sh, engine/scripts/migrate-legacy.mjs, engine/schemas/frontmatter.schema.json, engine/templates/architecture.md, engine/templates/adr.md, engine/templates/spec.md, engine/templates/audit.md, engine/templates/runbook.md, engine/templates/backlog.md]
+code: [.github/workflows/docs-validate.yml, bootstrap/bootstrap.sh, bootstrap/bootstrap.ps1, documentation/validation/validate-frontmatter.sh, engine/scripts/migrate-legacy.mjs, documentation/schemas/frontmatter.schema.json, documentation/templates/architecture.md, documentation/templates/adr.md, documentation/templates/spec.md, documentation/templates/audit.md, documentation/templates/runbook.md, documentation/templates/backlog.md]
 docs: [migrate-legacy.md]
 refs: []
 depends_on: [adr-001-tech-stack, adr-002-three-schema-db, adr-003-arq-workers]
@@ -55,7 +55,7 @@ powershell -File bootstrap/bootstrap.ps1
 
 Bootstrap идемпотентен и минимален: создаёт `docs/` skeleton (5-слойная архитектура), `.context/` stubs (`project.yml`, `boundaries.yml`, `agent-entry.md`), `CLAUDE.md` snippet и `docs-validate.yml` workflow. Никакой магии модификации существующих файлов.
 
-Полные шаблоны документов (`.md`) живут отдельно от bootstrap — см. `engine/templates/`, не встраиваются в скрипт. Это устраняет дрейф между playbook и реальными артефактами.
+Полные шаблоны документов (`.md`) живут отдельно от bootstrap — см. `documentation/templates/`, не встраиваются в скрипт. Это устраняет дрейф между playbook и реальными артефактами.
 
 **Время выполнения:** ~5 секунд vs 2-3 часа ручного создания.
 
@@ -509,7 +509,7 @@ owners: [naprolom-team]
 #### 3.1 Создание ADR
 
 ```bash
-cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/NNN-<slug>.md
+cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/NNN-<slug>.md
 # NN — следующий свободный номер (zero-padded до 3 цифр)
 # slug — kebab-case, описывает решение (не реализацию)
 ```
@@ -542,7 +542,7 @@ cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/NNN-<slug>.md
 #### 4.1 Создание спеки
 
 ```bash
-cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
+cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
 # fill frontmatter: status: draft (обязательно совпадает с директорией!)
 # fill body: Goal, Context, Scope, Technical approach, Affected files, Open questions
 ```
@@ -583,7 +583,7 @@ git mv docs/specs/approved/2026-07-06-feature.md docs/specs/superseded/
 
 #### 4.3 Правила
 
-- **Создание:** `cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+- **Создание:** `cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 - **Нельзя имплементировать** спеку не в `approved/` (CI FAIL на PR, меняющем код без соответствующей спеки в `approved/`)
 - **После имплементации:** заполнить `## Result`, переложить в `implemented/`, `status: implemented`
 - **Supersede:** если новая спека заменяет старую — переместить старую в `superseded/` с `status: superseded`, в новой указать `supersedes: [<old-id>]`
@@ -681,7 +681,7 @@ applies-to: path("docs/specs/**")
 
 Создание:
 
-1. `cp docs/.runtime/naprolom-docs/engine/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 2. fill FM:
    - `id`: `<slug>` (без даты, stable)
    - `status`: `draft` (обязательно — совпадает с drafts/ директорией)
@@ -721,7 +721,7 @@ applies-to: path("docs/audits/**")
 
 Когда создаёшь новый audit:
 
-1. Скопируй `docs/.runtime/naprolom-docs/engine/templates/audit.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
+1. Скопируй `docs/.runtime/naprolom-docs/documentation/templates/audit.md` в `docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполни frontmatter:
    - `id`: `audit-<slug>` (slug без даты)
    - `status`: `draft` (если в работе) или `completed` (если завершён)
@@ -854,7 +854,7 @@ Before adding a new service:
 
 ### Создание нового аудита
 
-1. `cp docs/.runtime/naprolom-docs/engine/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/naprolom-docs/documentation/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
 2. Заполнить frontmatter: `id`, `status: draft`, `date`, `scope`, `trigger`, `entity_refs`, `touches`
 3. Заполнить body: `# Audit: <title>`, Summary, Findings, Conflicts (optional), Resolution, Delta
 4. Если audit завершён — `status: completed` (terminal)
@@ -1041,7 +1041,7 @@ done
 | Дублирование в .claude/rules/ | Выходят из синхронизации | Thin pointers → канонический источник в docs/ |
 | Runbooks без `kind:` | Нельзя отличить deploy от troubleshoot | `type: runbook` всегда с `kind:` |
 | Body ADR модифицирован при добавлении FM | Нарушение immutability | Carve-out rule: FM ≠ body. Body byte-for-byte не трогается, при необходимости update — FM only |
-| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp docs/.runtime/naprolom-docs/engine/templates/audit.md ...` |
+| Audit без canonical template | Body structure varies, hard to parse | Всегда `cp docs/.runtime/naprolom-docs/documentation/templates/audit.md ...` |
 | Создание .md без template | FM не canonical, нет `schema:`/`id` | Greenfield invariant: начинаем с `cp <type>/_template.md`, не с пустого файла |
 | Удаление выполненных спек | Потеря истории решений | Никогда не удалять, хранить в `implemented/` |
 | `supersedes_adr:` вместо `supersedes:` | Legacy field, breaks parser | `supersedes: [<id>]` — list (может быть несколько) |
@@ -1057,9 +1057,9 @@ done
 - [ ] `.context/project.yml` существует и содержит стек
 - [ ] `.context/boundaries.yml` классифицирует файлы
 - [ ] `docs/architecture/README.md` существует, canonical FM, содержит инварианты и индекс модулей
-- [ ] `docs/.runtime/naprolom-docs/engine/templates/spec.md` существует с Canonical Schema v1 Base
-- [ ] `docs/.runtime/naprolom-docs/engine/templates/audit.md` существует с audit extension (`scope`, `trigger`)
-- [ ] `docs/.runtime/naprolom-docs/engine/templates/adr.md` существует с canonical ADR FM
+- [ ] `docs/.runtime/naprolom-docs/documentation/templates/spec.md` существует с Canonical Schema v1 Base
+- [ ] `docs/.runtime/naprolom-docs/documentation/templates/audit.md` существует с audit extension (`scope`, `trigger`)
+- [ ] `docs/.runtime/naprolom-docs/documentation/templates/adr.md` существует с canonical ADR FM
 - [ ] Хотя бы 1 ADR в `docs/adr/` со статусом `accepted` (или proposed)
 - [ ] `docs/README.md` существует, canonical FM (`type: guide, kind: index`), START HERE секция
 - [ ] `.claude/rules/doc-update.md` определяет протокол обновления доков
@@ -1120,7 +1120,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
 
@@ -1143,20 +1143,20 @@ jobs:
 **changed (this Runtime refactor):**
 - `playbook/playbook-v2.md` — этот файл (ранее в корне репо, переименован и перенесён).
 - `playbook/migrate-legacy.md` — агент-промпт для brownfield миграции (ранее `docs/guides/legacy-migration.md`).
-- `engine/templates/architecture.md`, `engine/templates/adr.md`, `engine/templates/spec.md`, `engine/templates/audit.md`, `engine/templates/runbook.md`, `engine/templates/backlog.md` — canonical шаблоны, вынесенные из playbook как standalone файлы.
-- `engine/schemas/frontmatter.schema.json` — JSON Schema для Canonical Schema v1 (base + per-type extensions + forbidden legacy fields).
-- `engine/validators/validate-frontmatter.sh` — frontmatter-only валидатор (с `WARN_ONLY` switch, path-status match с `drafts→draft` нормализацией, проверкой `kind:` для runbook).
+- `documentation/templates/architecture.md`, `documentation/templates/adr.md`, `documentation/templates/spec.md`, `documentation/templates/audit.md`, `documentation/templates/runbook.md`, `documentation/templates/backlog.md` — canonical шаблоны, вынесенные из playbook как standalone файлы.
+- `documentation/schemas/frontmatter.schema.json` — JSON Schema для Canonical Schema v1 (base + per-type extensions + forbidden legacy fields).
+- `documentation/validation/validate-frontmatter.sh` — frontmatter-only валидатор (с `WARN_ONLY` switch, path-status match с `drafts→draft` нормализацией, проверкой `kind:` для runbook).
 - `bootstrap/bootstrap.sh`, `bootstrap/bootstrap.ps1` — минимальный идемпотентный bootstrap (создаёт `docs/` skeleton, `.context/` stubs, `CLAUDE.md` snippet, `docs-validate.yml` workflow).
 - `engine/scripts/migrate-legacy.mjs` — runnable миграция brownfield (без внешних зависимостей).
 - `INSTALL.md` — consumer integration: submodule add, `.gitmodules` branch=master, CLAUDE.md snippet, manual update, Dependabot gitsubmodule.
 - `README.md` — переписан как Landing Page Runtime (не как canonical index репозитория).
-- `.github/workflows/docs-validate.yml` — workflow, вызывающий `engine/validators/validate-frontmatter.sh` (локально; push ожидает нового PAT с `workflow` scope).
+- `.github/workflows/docs-validate.yml` — workflow, вызывающий `documentation/validation/validate-frontmatter.sh` (локально; push ожидает нового PAT с `workflow` scope).
 - `agents/{claude-code,opencode}/` — роли `architecture-reviewer`, `documentation-reviewer` для обеих платформ.
 
 **deviations (vs. исходный план v2):**
-- Runtime layout поднят до трёхуровневой модели: `engine/` (Documentation Engine: `templates/`, `schemas/`, `validators/`, `scripts/`) → `bootstrap/` (Runtime layer) → `agents/` (AI layer). Устраняет визуальный дрейф «свалка директорий в корне».
-- `engine/templates/` вынесены из playbook как standalone canonical файлы — устраняет дрейф между документацией и реальными артефактами.
+- Runtime layout разделён на Runtime Core и Documentation Module: `engine/reality-engine/`, `engine/scripts/` (Runtime Core) → `documentation/` (templates, validation, schemas) + `knowledge/` + `agents/` + `sops/` + `playbook/` (Documentation Module). Устраняет визуальный дрейф «свалка директорий в корне».
+- `documentation/templates/` вынесены из playbook как standalone canonical файлы — устраняет дрейф между документацией и реальными артефактами.
 - `bootstrap/` минимизирован: создаёт только `docs/` + `.context/` + `CLAUDE.md` snippet + workflow — никакой магии модификации существующих файлов.
 - Валидатор поддерживает нормализацию `drafts` → `draft` (директория plural, статус singular).
-- CI guard вызывает `engine/validators/validate-frontmatter.sh`, не содержит inline-проверок — единый source of truth.
+- CI guard вызывает `documentation/validation/validate-frontmatter.sh`, не содержит inline-проверок — единый source of truth.
 - `docs/bootstrap script inline в playbook` удалён — playbook ссылается на `bootstrap/bootstrap.sh`.

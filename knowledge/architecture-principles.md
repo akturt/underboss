@@ -29,7 +29,7 @@ priority: P1
 ## Operational Principles (7)
 
 8. **Schema v1 Compliance** — каждый `.md` в `docs/` обязан иметь Schema v1 frontmatter с 6 mandatory fields. CI проверяет это автоматически.
-9. **Template-First Creation** — новые документы создаются через `cp engine/templates/<type>.md`, не «из головы». Шаблон гарантирует canonical structure.
+9. **Template-First Creation** — новые документы создаются через `cp documentation/templates/<type>.md`, не «из головы». Шаблон гарантирует canonical structure.
 10. **Append-Only Audits** — тело audit с `status: completed` неизменяемо. Новый аудит того же объекта = новый файл с новой датой.
 11. **Separation of Concerns** — Role = идентичность (кто я), Knowledge = знания (что знаю), SOP = процесс (когда применяю), Capability = навык (что умею). Не смешивать.
 12. **DRY Knowledge** — общие знания живут в `knowledge/`, не дублируются inline в Roles. Roles ссылаются по short-id.

@@ -4,7 +4,7 @@
 # Minimal Documentation System Runtime bootstrap.
 # Creates docs/ skeleton + .context/ stubs + drops a CLAUDE.md snippet into the
 # consumer repository. No magic, no templates written into the project — the
-# templates live inside the engine/ subdirectory (engine/templates/) and are referenced by path.
+# templates live inside the documentation/ subdirectory (documentation/templates/) and are referenced by path.
 #
 # Run from the ROOT of the consumer project, not from inside the submodule.
 # It auto-detects the submodule path if invoked from inside it.
@@ -14,6 +14,7 @@
 #       State detection via runtime/state-machine.yaml states (filesystem-based).
 # v1.2.1: fixed GLOBAL_VERSION subshell bug, auto-upgrade v1.1->v1.2.
 # v1.3: auto-detect stack from lockfiles, auto-generate boundaries.yml and architecture/README.md.
+# v1.4: registry version detection, updated user-facing messages.
 #
 # Usage:
 #   bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
@@ -93,7 +94,7 @@ detect_install_state() {
     local runtime_dir="$TARGET/docs/.runtime/naprolom-docs"
     # Check if all expected components exist
     local missing=0
-    for dir in engine bootstrap agents knowledge sops; do
+    for dir in documentation bootstrap agents knowledge sops; do
       if [ ! -d "$runtime_dir/$dir" ]; then
         missing=1
         break
@@ -106,7 +107,8 @@ detect_install_state() {
     fi
     # Detect version
     if [ -f "$runtime_dir/runtime/registry.yaml" ]; then
-      version="1.2"
+      version=$(grep 'version:' "$runtime_dir/runtime/registry.yaml" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+      [ -z "$version" ] && version="1.4"
     else
       version="1.1"
     fi
@@ -121,7 +123,6 @@ echo "→ Current version: $CURRENT_VERSION"
 
 # State machine transitions (from runtime/state-machine.yaml):
 #   fresh     → bootstrap → installed
-#   installed → git-submodule-update → updated
 #   installed → manual-edit → broken
 #   partial   → bootstrap → installed
 #   legacy    → migration → installed
@@ -130,7 +131,7 @@ echo "→ Current version: $CURRENT_VERSION"
 # ─── v1.2: Auto-upgrade v1.1 → v1.2 ──────────────────────────────────────
 
 if [ "$CURRENT_STATE" = "installed" ] && [ "$CURRENT_VERSION" = "1.1" ]; then
-  echo "→ v1.1 detected. Attempting auto-upgrade to v1.2..." >&2
+  echo "→ v1.1 detected. Attempting auto-upgrade to v1.4..." >&2
 
   RUNTIME_DIR="$TARGET/docs/.runtime/naprolom-docs"
   if [ -d "$RUNTIME_DIR/.git" ] || [ -f "$RUNTIME_DIR/.git" ]; then
@@ -141,10 +142,10 @@ if [ "$CURRENT_STATE" = "installed" ] && [ "$CURRENT_VERSION" = "1.1" ]; then
     )
     # Verify v1.2 components exist after pull
     if [ -f "$RUNTIME_DIR/runtime/registry.yaml" ]; then
-      echo "  v1.2 components found. Upgrade complete." >&2
-      CURRENT_VERSION="1.2"
+      echo "  v1.4 components found. Upgrade complete." >&2
+      CURRENT_VERSION="1.4"
     else
-      echo "  WARNING: Submodule updated but v1.2 components still missing." >&2
+      echo "  WARNING: Submodule updated but v1.4 components still missing." >&2
       echo "  Manual intervention may be required:" >&2
       echo "    cd $TARGET" >&2
       echo "    git submodule update --remote --merge" >&2
@@ -152,7 +153,7 @@ if [ "$CURRENT_STATE" = "installed" ] && [ "$CURRENT_VERSION" = "1.1" ]; then
     fi
   else
     echo "  Submodule directory exists but is not a git repo." >&2
-    echo "  To upgrade: re-add submodule at v1.2" >&2
+    echo "  To upgrade: re-add submodule at v1.4" >&2
   fi
   echo ""
 fi
@@ -173,8 +174,8 @@ case "$CURRENT_STATE" in
     echo ""
     ;;
   installed)
-    if [ "$CURRENT_VERSION" = "1.2" ]; then
-      echo "→ Runtime v1.2 already installed. Running idempotent re-bootstrap." >&2
+    if [ "$CURRENT_VERSION" = "1.4" ]; then
+      echo "→ Runtime v1.4 already installed. Running idempotent re-bootstrap." >&2
       echo ""
     fi
     ;;
@@ -477,7 +478,7 @@ Read in order:
 
 Before creating any .md in docs/:
 1. Identify `type` (spec|adr|audit|runbook|guide|api|architecture|backlog|prompt)
-2. Copy template from runtime: `docs/.runtime/naprolom-docs/engine/templates/<type>.md`
+2. Copy template from runtime: `docs/.runtime/naprolom-docs/documentation/templates/<type>.md`
 3. Fill the 6 mandatory fields: schema, id, type, status, date, owners
 4. Never add `lifecycle:` to frontmatter (computed from path for specs/api)
 5. Never add legacy fields: author, title, created, referenced_by, supersedes_adr, excludes-from-scope
@@ -496,9 +497,9 @@ Documentation System Runtime is connected as a Git Submodule:
 
 Before any change to `docs/`:
 1. Study `docs/.runtime/naprolom-docs/playbook/playbook-v2.md` (target model)
-2. Use `docs/.runtime/naprolom-docs/engine/templates/` — do NOT copy templates into the project
-3. Follow `docs/.runtime/naprolom-docs/engine/schemas/frontmatter.schema.json`
-4. Run `docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh` before commit
+2. Use `docs/.runtime/naprolom-docs/documentation/templates/` — do NOT copy templates into the project
+3. Follow `docs/.runtime/naprolom-docs/documentation/schemas/frontmatter.schema.json`
+4. Run `docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh` before commit
 5. For brownfield migration, follow `docs/.runtime/naprolom-docs/playbook/migrate-legacy.md`
 6. For typical processes, pick a SOP in `docs/.runtime/naprolom-docs/sops/` and run `node docs/.runtime/naprolom-docs/sops/planner.mjs <name>` — call roles by name
 7. If task involves architectural review — see `docs/.runtime/naprolom-docs/sops/architecture-review.yaml`; foundation is `reality-auditor` BEFORE `architecture-reviewer`.
@@ -543,9 +544,7 @@ on:
     paths:
       - "docs/**"
       - "knowledge/**"
-      - "engine/templates/**"
-      - "engine/schemas/**"
-      - "engine/validators/**"
+      - "documentation/**"
       - "engine/reality-engine/**"
       - "runtime/**"
       - "sops/**"
@@ -563,13 +562,13 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter (docs/)
         run: |
-          bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh
+          bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
       - name: Validate knowledge/ frontmatter
         run: |
-          ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
+          ROOT=knowledge bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh knowledge
       - name: Validate Runtime dependency graph
         run: |
-          bash docs/.runtime/naprolom-docs/engine/validators/validate-runtime.sh
+          bash docs/.runtime/naprolom-docs/documentation/validation/validate-runtime.sh
 YML
   echo "→ Created .github/workflows/docs-validate.yml"
 else
@@ -580,7 +579,7 @@ fi
 
 if [ -n "$REGISTRY" ] && [ -f "$REGISTRY" ]; then
   echo ""
-  echo "→ Registry components (v1.2):"
+  echo "→ Registry components (v1.4):"
   echo "  Agents:     $(extract_registry_list 'agents' | tr '\n' ', ' | sed 's/,$//')"
   echo "  Knowledge:  $(extract_registry_list 'knowledge' | tr '\n' ', ' | sed 's/,$//')"
   echo "  SOPs:       $(extract_registry_list 'sops' | tr '\n' ', ' | sed 's/,$//')"
@@ -593,29 +592,29 @@ RUNTIME_DIR="$TARGET/docs/.runtime/naprolom-docs"
 v12_ok=1
 
 if [ ! -f "$RUNTIME_DIR/runtime/registry.yaml" ]; then
-  echo "⚠ v1.2: runtime/registry.yaml not found — submodule may need update" >&2
+  echo "⚠ v1.4: runtime/registry.yaml not found — submodule may need update" >&2
   v12_ok=0
 fi
 if [ ! -f "$RUNTIME_DIR/runtime/state-machine.yaml" ]; then
-  echo "⚠ v1.2: runtime/state-machine.yaml not found — submodule may need update" >&2
+  echo "⚠ v1.4: runtime/state-machine.yaml not found — submodule may need update" >&2
   v12_ok=0
 fi
 if [ ! -d "$RUNTIME_DIR/runtime/contracts" ]; then
-  echo "⚠ v1.2: runtime/contracts/ not found — submodule may need update" >&2
+  echo "⚠ v1.4: runtime/contracts/ not found — submodule may need update" >&2
   v12_ok=0
 fi
 if [ ! -d "$RUNTIME_DIR/engine/reality-engine" ]; then
-  echo "⚠ v1.2: engine/reality-engine/ not found — submodule may need update" >&2
+  echo "⚠ v1.4: engine/reality-engine/ not found — submodule may need update" >&2
   v12_ok=0
 fi
-if [ ! -f "$RUNTIME_DIR/engine/validators/validate-runtime.sh" ]; then
-  echo "⚠ v1.2: engine/validators/validate-runtime.sh not found — submodule may need update" >&2
+if [ ! -f "$RUNTIME_DIR/documentation/validation/validate-runtime.sh" ]; then
+  echo "⚠ v1.4: documentation/validation/validate-runtime.sh not found — submodule may need update" >&2
   v12_ok=0
 fi
 
 if [ "$v12_ok" -eq 0 ]; then
   echo "" >&2
-  echo "  Some v1.2 components are missing. Run:" >&2
+  echo "  Some v1.4 components are missing. Run:" >&2
   echo "    cd $TARGET && git submodule update --remote --merge" >&2
   echo "    bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh" >&2
   echo "" >&2
@@ -634,5 +633,5 @@ echo "Next steps:"
 echo "  1. Review and complete .context/project.yml (fill description, domain, repository)"
 echo "  2. Review .context/boundaries.yml (add project-specific pristine/secret paths)"
 echo "  3. Complete docs/architecture/entity-catalog.md with your domain entities"
-echo "  4. Create your first ADR: cp docs/.runtime/naprolom-docs/engine/templates/adr.md docs/adr/001-<slug>.md"
+echo "  4. Create your first ADR: cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-<slug>.md"
 echo "  5. Commit the new structure"

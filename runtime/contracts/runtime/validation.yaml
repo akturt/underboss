@@ -4,7 +4,7 @@ validation:
 
   validators:
     - name: validate-frontmatter
-      path: engine/validators/validate-frontmatter.sh
+      path: documentation/validation/validate-frontmatter.sh
       description: "Validates Canonical Schema v1 frontmatter in all .md files"
       checks:
         - "schema: 1 present"
@@ -23,7 +23,7 @@ validation:
           default: ""
 
     - name: validate-runtime
-      path: engine/validators/validate-runtime.sh
+      path: documentation/validation/validate-runtime.sh
       description: "Validates Runtime dependency graph integrity"
       checks:
         - "Role → Capability: every capabilities: entry exists in knowledge/capabilities.md"
@@ -33,7 +33,7 @@ validation:
         - "Contract consistency: every contract referenced by registry exists and is valid YAML"
         - "Bootstrap consistency: bootstrap references components that exist in registry"
         - "Workflow consistency: every SOP role: has matching agent, every capability: exists"
-        - "Template conformance: every engine/templates/*.md has valid Schema v1 FM"
+        - "Template conformance: every documentation/templates/*.md has valid Schema v1 FM"
         - "Internal links: all entity_refs resolve to existing id: fields"
         - "Engine components: every collector/analyzer/reporter referenced by SOP exists"
       scope: runtime/ (full dependency graph)

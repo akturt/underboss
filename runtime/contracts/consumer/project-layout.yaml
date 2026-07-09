@@ -1,13 +1,15 @@
 project_layout:
   description: Expected directory structure in consumer project
-  version: 1
+  version: 2
 
-  root:
+  allowed_root:
     - README.md
     - CLAUDE.md
     - .context/
     - docs/
     - .github/
+
+  invariant: "consumer repo contains exactly one root-level directory: docs/"
 
   docs:
     description: "User-owned documentation (only root-level directory in consumer)"
@@ -55,14 +57,3 @@ project_layout:
       - path: agent-entry.md
         description: "agent entry protocol"
         required: true
-
-  invariant: "consumer repo contains exactly one root-level directory: docs/"
-
-  no_root_level:
-    - agents/
-    - knowledge/
-    - sops/
-    - engine/
-    - bootstrap/
-    - playbook/
-    - .context/runtime/

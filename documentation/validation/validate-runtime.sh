@@ -1,5 +1,5 @@
 #!/bin/bash
-# validators/validate-runtime.sh
+# documentation/validation/validate-runtime.sh
 #
 # Validates Runtime's own integrity as a complete dependency graph.
 # Checks: Role→Capability, Capability→Knowledge, Knowledge exists, Registry consistency,
@@ -11,8 +11,8 @@
 #   1 — at least one error
 #
 # Usage:
-#   ./validators/validate-runtime.sh [runtime-root]
-#   RUNTIME_ROOT=/path/to/naprolom-docs ./validators/validate-runtime.sh
+#   ./validation/validate-runtime.sh [runtime-root]
+#   RUNTIME_ROOT=/path/to/naprolom-docs ./validation/validate-runtime.sh
 
 set -u
 
@@ -95,16 +95,16 @@ ok
 
 # Check templates
 while IFS= read -r tmpl; do
-  if [ ! -f "$RUNTIME_ROOT/engine/templates/$tmpl.md" ]; then
-    error "Registry template '$tmpl' has no matching file engine/templates/$tmpl.md"
+  if [ ! -f "$RUNTIME_ROOT/documentation/templates/$tmpl.md" ]; then
+    error "Registry template '$tmpl' has no matching file documentation/templates/$tmpl.md"
   fi
 done < <(extract_section "templates")
 ok
 
 # Check validators
 while IFS= read -r val; do
-  if [ ! -f "$RUNTIME_ROOT/engine/validators/$val.sh" ]; then
-    error "Registry validator '$val' has no matching file engine/validators/$val.sh"
+  if [ ! -f "$RUNTIME_ROOT/documentation/validation/$val.sh" ]; then
+    error "Registry validator '$val' has no matching file documentation/validation/$val.sh"
   fi
 done < <(extract_section "validators")
 ok
@@ -222,7 +222,7 @@ ok
 
 # ─── 7. Template conformance: every template has valid Schema v1 FM ──────────
 
-for tmpl_file in "$RUNTIME_ROOT/engine/templates/"*.md; do
+for tmpl_file in "$RUNTIME_ROOT/documentation/templates/"*.md; do
   [ -f "$tmpl_file" ] || continue
   tmpl_name=$(basename "$tmpl_file")
 
@@ -248,7 +248,7 @@ all_ids=$(printf '%s\n' "runtime-agentic-layer" "agent-role-separation" "sop-dag
 
 # a) Explicit id: fields from docs/ and knowledge/
 all_ids="$all_ids
-$(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" -name "*.md" -type f 2>/dev/null | while read -r f; do
+$(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" "$RUNTIME_ROOT/documentation" -name "*.md" -type f 2>/dev/null | while read -r f; do
   awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f && /^id:/{gsub(/^id:[[:space:]]*/, ""); print}' "$f"
 done)"
 
@@ -299,7 +299,7 @@ while IFS= read -r f; do
       error "$rel_path: entity_ref '$ref' does not resolve to any id: field or registry component"
     fi
   done
-done < <(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" -name "*.md" -type f 2>/dev/null)
+done < <(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" "$RUNTIME_ROOT/documentation" -name "*.md" -type f 2>/dev/null)
 ok
 
 # ─── 9. Engine components: collectors/analyzers/reporters referenced by SOP exist ─
