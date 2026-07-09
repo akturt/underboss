@@ -590,31 +590,31 @@ After the existing 5 rules, add 2 (idempotently, via `grep -q`):
 ### Phase 0 — Bootstrap path migration (D-BR)
 **First — the fundamental fix**, then everything else. What changes is only **where bootstrap deploys Runtime in the consumer repo**:  from `.context/runtime/naprolom-docs/` to `docs/.runtime/naprolom-docs/`. Internal structure of `naprolom-docs` (the product) does NOT change.
 0.1. `bootstrap/bootstrap.sh`:
-   - `RUNTIME_ROOT` (submodule mount path detection) — leave as-is (it is determined from the location of bootstrap.sh внутри `naprolom-docs`, this does not depend on WHERE `naprolom-docs` itself is mounted).
+   - `RUNTIME_ROOT` (submodule mount path detection) — leave as-is (it is determined from the location of bootstrap.sh inside `naprolom-docs`, this does not depend on WHERE `naprolom-docs` itself is mounted).
    - comments in header: update paths 'Run from the ROOT of the consumer project' — instead of `.context/runtime/naprolom-docs/bootstrap/bootstrap.sh` use `docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`.
-   - check_gitmodules_path(): new helper (idempotent), which checks that `.gitmodules` points to `docs/.runtime/naprolom-docs`, NOT `.context/runtime/naprolom-docs`. If v1.0 path found — warn-only on v1.1 (consumers can migrate themselves via `git mv`). Это **advisory check**, does not block bootstrap.
+   - check_gitmodules_path(): new helper (idempotent), which checks that `.gitmodules` points to `docs/.runtime/naprolom-docs`, NOT `.context/runtime/naprolom-docs`. If v1.0 path found — warn-only on v1.1 (consumers can migrate themselves via `git mv`). This is an **advisory check**, does not block bootstrap.
    - in `CLAUDE.md` snippet paths: `.context/runtime/naprolom-docs/...` → `docs/.runtime/naprolom-docs/...`.
 0.2. `bootstrap/bootstrap.ps1` — mirror 0.1 (PS syntax, single-quoted strings).
-0.3. `INSTALL.md` — all command examples (`git submodule add ...`, `git submodule update --remote`, `bash .context/runtime/naprolom-docs/...`, `.gitmodules` блок) switch to `docs/.runtime/naprolom-docs/`. Architecture diagram — update consumer side: `docs/` contains user-content + `.runtime/`. Добавить новый §«Two-repo model» subsection, explaining product vs consumer (D-BR mapping). В.Importantly: **large subsection on self-vs-consumer** для clear separation.
-0.4. `playbook/playbook-v2.md` — in §Bootstrap section update path to bootstrap.sh via `docs/.runtime/...`. В §Phase 1, §Phase 3, §Phase 4, §Canon Source of Truth — all `cp .context/runtime/naprolom-docs/engine/templates/...` → `cp docs/.runtime/naprolom-docs/engine/templates/...`. В §CI Schema v1 Guard — `bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh`.
+0.3. `INSTALL.md` — all command examples (`git submodule add ...`, `git submodule update --remote`, `bash .context/runtime/naprolom-docs/...`, `.gitmodules` block) switch to `docs/.runtime/naprolom-docs/`. Architecture diagram — update consumer side: `docs/` contains user-content + `.runtime/`. Add new §«Two-repo model» subsection, explaining product vs consumer (D-BR mapping). **Large subsection on self-vs-consumer** for clear separation.
+0.4. `playbook/playbook-v2.md` — in §Bootstrap section update path to bootstrap.sh via `docs/.runtime/...`. In §Phase 1, §Phase 3, §Phase 4, §Canonical Source of Truth — all `cp .context/runtime/naprolom-docs/engine/templates/...` → `cp docs/.runtime/naprolom-docs/engine/templates/...`. In §CI Schema v1 Guard — `bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh`.
 0.5. `playbook/migrate-legacy.md` — if paths to migrate-legacy.mjs are mentioned — update to `docs/.runtime/...`. Check with grep.
 0.6. `playbook/install-remote-prompt.md` — verify/update paths in instructions for remote agent.
 0.7. `README.md` — Quick Start commands (`bash .context/runtime/naprolom-docs/...`) → `docs/.runtime/naprolom-docs/...`. Update consumer-side layout diagram.
 0.8. `agents/README.md`, `sops/README.md` — any mentions of `.context/runtime/...` → `docs/.runtime/...`.
-0.9. Existiong agent role files (`agents/claude-code/*.md`, `agents/opencode/*.md`) — in operating protocol may have hardcoded `.context/runtime/...` paths (например, architecture-reviewer ссылается `.context/runtime/naprolom-docs/playbook/playbook-v2.md`). Update all to `docs/.runtime/naprolom-docs/...`. Это часть Phase B refactor, но пути фиксируются здесь, so concerns don't overlap (slim refactor + path migration in one step).
-0.10. `.github/workflows/docs-validate.yml` — in `run:` block update the validator path на `docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh` (in the **naprolom-docs** repo itself — validator lives in `engine/`, path stays local; this is about the **consumer workflow** that install-remote-prompt copies into the consumer repo).
+0.9. Existiong agent role files (`agents/claude-code/*.md`, `agents/opencode/*.md`) — in operating protocol may have hardcoded `.context/runtime/...` paths (e.g. architecture-reviewer references `.context/runtime/naprolom-docs/playbook/playbook-v2.md`). Update all to `docs/.runtime/naprolom-docs/...`. This is part of Phase B refactor; paths are fixed here, so concerns don't overlap (slim refactor + path migration in one step).
+0.10. `.github/workflows/docs-validate.yml` — in `run:` block update the validator path to `docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh` (in the **naprolom-docs** repo itself — validator lives in `engine/`, path stays local; this is about the **consumer workflow** that install-remote-prompt copies into the consumer repo).
 0.11. `engine/validators/validate-frontmatter.sh` header — update example usage paths.
 0.12. `engine/scripts/migrate-legacy.mjs` header comments — update consumer invocation examples.
 
-> Phase 0 — это **sweep across all doc files**. grep for `.context/runtime` in `naprolom-docs` repo must return 0 matches after Phase 0 (except this spec file, where v4-changelog and §Two-repo model may mention old paths in historical comparison — this is OK).
+> Phase 0 — this is a **sweep across all doc files**. grep for `.context/runtime` in `naprolom-docs` repo must return 0 matches after Phase 0 (except this spec file, where v4-changelog and §Two-repo model may mention old paths in historical comparison — this is OK).
 
 ### Phase A — Knowledge layer (minimum, without over-engineering)
 A1. `knowledge/README.md` — index, explaining role knowledge refs.
 A2. `knowledge/architecture-principles.md` — extract from Appendix A `architecture-reviewer.md` §«Analysis Principles» (14 + 3 meta). FM: `type: guide, kind: index, status: active, owners: [naprolom-team]`, `id: knowledge-architecture-principles`.
-A3. `knowledge/evidence-model.md` — из Appendix A `reality-auditor.md` §«Trust Hierarchy» + §«Evidence Classification» + §«Behavioral Rules». FM аналогично.
-A4. `knowledge/audit-principles.md` — из Appendix A `adversary-checker.md` §«5-Stage Validation Protocol» + §«Verdict System» + §«Confidence Model» + §«Behavioral Constraints».
+A3. `knowledge/evidence-model.md` — from Appendix A `reality-auditor.md` §«Trust Hierarchy» + §«Evidence Classification» + §«Behavioral Rules». FM similarly.
+A4. `knowledge/audit-principles.md` — from Appendix A `adversary-checker.md` §«5-Stage Validation Protocol» + §«Verdict System» + §«Confidence Model» + §«Behavioral Constraints».
 A5. `knowledge/report-formats.md` — normalized description of output formats for 4 reviewers (architecture-review / reality-audit / adversary-report / forensic-report) from their inline blocks in Appendix A. One file.
-A6. `knowledge/capabilities.md` — NEW (D-CC): capability catalog. Content per-capability entry: description, consumes, produces, **WITHOUT `provided by:`** (D-CP — one-directional Role→Capability in Role FM, not in the catalog). Формат:
+A6. `knowledge/capabilities.md` — NEW (D-CC): capability catalog. Content per-capability entry: description, consumes, produces, **WITHOUT `provided by:`** (D-CP — one-directional Role→Capability in Role FM, not in the catalog). Format:
    ```
    ## capability: review-spec
    Description: <one-line>
@@ -634,7 +634,7 @@ B1. Refactor `agents/claude-code/architecture-reviewer.md`:
      knowledge: [architecture-principles, report-formats]
      ```
    - Remove 14 inline principles and output-format block.
-B2. Mirror B1 в `agents/opencode/architecture-reviewer.md` + opencode-style FM (`description`, `mode: subagent`, `permission`, `color`, `hidden`).
+B2. Mirror B1 in `agents/opencode/architecture-reviewer.md` + opencode-style FM (`description`, `mode: subagent`, `permission`, `color`, `hidden`).
 B3. Minimal touch `agents/claude-code/documentation-reviewer.md` + `.opencode` mirror — add to FM:
    ```yaml
    capabilities: [validate-frontmatter, validate-entity-refs]
@@ -648,7 +648,7 @@ B4. Create `agents/claude-code/reality-auditor.md`:
      knowledge: [evidence-model, report-formats]
      ```
    - Permissions: `read: allow`, `bash: ask` (read-only whitelist: `git log/diff/show/blame`, `find`, `grep`, `tree`, `ls`, `wc`), `edit: deny`, `webfetch: allow`.
-B5. Mirror B4 в `agents/opencode/reality-auditor.md`.
+B5. Mirror B4 in `agents/opencode/reality-auditor.md`.
 B6. Create `agents/claude-code/adversary-checker.md`:
    - System Prompt (Claim Validation), Input (Finding Set), 5-stage protocol (prose references knowledge: audit-principles), Output (prose references knowledge: report-formats), Refusal, Stalemate Protocol, What you do NOT do.
    - FM:
@@ -657,33 +657,33 @@ B6. Create `agents/claude-code/adversary-checker.md`:
      knowledge: [audit-principles, report-formats]
      ```
    - Permissions: `read: allow`, `bash: deny`, `edit: deny`, `webfetch: allow`.
-B7. Mirror B6 в `agents/opencode/adversary-checker.md`.
+B7. Mirror B6 in `agents/opencode/adversary-checker.md`.
 
-### Phase C — SOPs (упрощённые, с artifact contracts)
-C1. `sops/forensic-audit.yaml` — как в §Technical approach: `consumes:`/`produces:`/`note:`/`depends_on:`, без `constraints:`.
-C2. `sops/architecture-review.yaml` — sequential DAG (D-5), с artifact contracts (`reality-report` → `architecture-findings` → `documentation-report` → `validated-findings` → `decision-gate-result`).
+### Phase C — SOPs (simplified, with artifact contracts)
+C1. `sops/forensic-audit.yaml` — as in §Technical approach: `consumes:`/`produces:`/`note:`/`depends_on:`, without `constraints:`.
+C2. `sops/architecture-review.yaml` — sequential DAG (D-5), with artifact contracts (`reality-report` → `architecture-findings` → `documentation-report` → `validated-findings` → `decision-gate-result`).
 
-### Phase D — planner extension (минимальное)
-D1. `sops/planner.mjs` — добавить в парсер шагов чтение `capability:` (опционально) + `role:` (опционально, но хотя бы один из двух обязателен; otherwise warning). Если step указывает `capability:` без `role:` — warning. Также читать `consumes:`/`produces:` и печатать их в DAG visualization рядом с control-flow `depends_on:` (data-flow arrows). Не более ~15 строк кода, никакой логики executor'а.
+### Phase D — planner extension (minimum)
+D1. `sops/planner.mjs` — add step parser support for `capability:` (optional) + `role:` (optional, but at least one of the two is required; otherwise warning). If a step specifies `capability:` without `role:` — warning. Also read `consumes:`/`produces:` и print them in DAG visualization next to control-flow `depends_on:` (data-flow arrows). No more than ~15 lines of code, no executor logic.
 
 ### Phase E — Documentation & dogfood
-E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision описывает **5-слойную модель** (Knowledge / Role / Capability / SOP / Artifact), rationale, почему не переименовали `agents/` → `roles/`, почему output templates влит в knowledge, почему capability каталог живёт в `knowledge/capabilities.md`.
-E2. `README.md` — обновить layout diagram (+ `knowledge/`, включая `capabilities.md`), What you get расширить до 4 ролей + 6 knowledge + 9 SOPs, Changelog добавить `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
-E3. `INSTALL.md` — architecture diagram с `knowledge/`.
-E4. `agents/README.md` — extended таблица roles (4) с колонкой capabilities (Role→Capability односторонне, это и есть providers mapping — см. D-CP); раздел «Capabilities» (overview + указатель на `knowledge/capabilities.md`, **БЕЗ inline capability definitions** — каталог живёт там); раздел «Knowledge refs» (короткий: объясняет short-id формат в Role FM `knowledge: [...]` и что путь резолвит Runtime); обновить layout.
-E5. `sops/README.md` — добавить 2 новых SOP; раздел про parametrized input (`entities`/`mechanisms` в forensic-audit) с примером; clarifier «SOP описывает **оркестрацию**, не validation logic»; новый раздел «Artifact contracts» с пояснением `consumes:`/`produces:` и разницей data-flow vs control-flow (`depends_on:`); заметка про `gate: manual` для human steps (D-HG, с backend-compat note про `role: human` в существующих 7 SOP v1.0).
-E6. `bootstrap/bootstrap.sh` — CLAUDE.md snippet +2 lines (идемпотентно, через `grep -q`).
+E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision describes the **5-layer model** (Knowledge / Role / Capability / SOP / Artifact), rationale, why `agents/` was not renamed to `roles/`, why output templates were folded into knowledge, why the capability catalog lives in `knowledge/capabilities.md`.
+E2. `README.md` — update layout diagram (+ `knowledge/`, including `capabilities.md`), What you get expand to 4 roles + 6 knowledge + 9 SOPs, Changelog add `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
+E3. `INSTALL.md` — architecture diagram with `knowledge/`.
+E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **БЕЗ inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]` и что path is resolved by Runtime); update layout.
+E5. `sops/README.md` — add 2 new SOPs; section on parametrized input (`entities`/`mechanisms` в forensic-audit) with example; clarifier 'SOP describes **orchestration**, not validation logic'; new section «Artifact contracts» with explanation of `consumes:`/`produces:` и difference between data-flow vs control-flow (`depends_on:`); note about `gate: manual` for human steps (D-HG, with backend-compat note on `role: human` in existing 7 SOPs v1.0).
+E6. `bootstrap/bootstrap.sh` — CLAUDE.md snippet +2 lines (idempotently, via `grep -q`).
 E7. `bootstrap/bootstrap.ps1` — mirror E6 PS syntax.
 
 ### Phase F — CI & validation
-F1. `.github/workflows/docs-validate.yml` — добавить второй шаг:
+F1. `.github/workflows/docs-validate.yml` — add a second step:
    ```yaml
    - name: Validate knowledge/ frontmatter
      run: ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
    ```
-F2. Smoke test локально: `ROOT=docs bash engine/validators/validate-frontmatter.sh` и `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — оба должны `OK`.
-F3. `node sops/planner.mjs forensic-audit --platform opencode` — печатает DAG с data-flow arrows (consumes → produces), control-flow (depends_on), gate-шаги как `gate: manual`. **Planner must NOT read contents of `knowledge/`** (D-PL) — only roles (`agents/{platform}/` *.md FM), capabilities (per-role FM), SOP (`sops/*.yaml`).
-F4. `node sops/planner.mjs architecture-review --platform opencode` — prints sequential DAG (step 2 depends on step 1), step 5 как `gate: manual`.
+F2. Smoke test locally: `ROOT=docs bash engine/validators/validate-frontmatter.sh` и `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — both must show OK.
+F3. `node sops/planner.mjs forensic-audit --platform opencode` — prints DAG with data-flow arrows (consumes → produces), control-flow (depends_on), gate steps as `gate: manual`. **Planner must NOT read contents of `knowledge/`** (D-PL) — only roles (`agents/{platform}/` *.md FM), capabilities (per-role FM), SOP (`sops/*.yaml`).
+F4. `node sops/planner.mjs architecture-review --platform opencode` — prints sequential DAG (step 2 depends on step 1), step 5 as `gate: manual`.
 F5. Dogfood self-review: invoke `architecture-reviewer` on this spec; apply corrections from findings.
 
 ### Phase G — Cleanup & commit
@@ -695,26 +695,26 @@ G3. Do NOT push. Show `git diff` to user for final review.
 
 All initial Open Questions resolved in §Decisions (D-1 ÷ D-9 + D-OT/D-P/D-C/D-A/D-CC/D-CP/D-KR/D-PL/D-HG). 2 secondary ones remain, not blocking:
 
-Q-1. После Phase E: treat the created `docs/adr/001-...` as a full canonical ADR (validate it via `validate-frontmatter.sh` on strict-CI)? Рекомендация: **да** (it lives in `docs/adr/`, validator already covers it — this is the dogfood proof).
+Q-1. After Phase E: treat the created `docs/adr/001-...` as a full canonical ADR (validate it via `validate-frontmatter.sh` on strict-CI)? Recommendation: **да** (it lives in `docs/adr/`, validator already covers it — this is the dogfood proof).
 
-Q-2. В `knowledge/capabilities.md` на v1.1 — publish per-capability entry with **consumes/produces** artifact contract (full contract) или достаточно **description-only**? Рекомендация: **полный contract** (description + consumes + produces + artifacts) — без `provided by:` (см. D-CP). Capabilities.md was created to be a contract, not a list of names.
+Q-2. In `knowledge/capabilities.md` on v1.1 — publish per-capability entry with **consumes/produces** artifact contract (full contract) or is **description-only** enough? Recommendation: **full contract** (description + consumes + produces + artifacts) — without `provided by:` (see D-CP). Capabilities.md was created to be a contract, not a list of names.
 
 ## Out-of-scope follow-up (v1.2 candidate)
 
-Outside this spec, but proposed by the reviewer как будущая доработка. **Does not block v1.1 release** — Runtime already working; these are polish.
+Outside this spec, but proposed by the reviewer as future work. **Does not block v1.1 release** — Runtime already working; these are polish.
 
 ### Structural
-- **`runtime/` wrapper внутри naprolom-docs.** Внутри репо продукта — обернуть `engine/` + `bootstrap/` в один каталог `runtime/`, чтобы корень продукта стал минимально чистым:
+- **`runtime/` wrapper inside naprolom-docs.** Inside the product repo — wrap `engine/` + `bootstrap/` into one `runtime/` dir so the product root becomes minimally clean:
   ```
   README.md INSTALL.md
   runtime/   (engine, bootstrap, ...)
   agents/  knowledge/  sops/  docs/  .github/
   ```
-  Это **не влияет на consumer'а** (в consumer'е всё уже локализовано в `docs/.runtime/naprolom-docs/...` благодаря D-BR). Изменение касается только читаемости репо `naprolom-docs` (продукта). Низкий приоритет — layout продукта уже приемлемый.
-  В v1.1 НЕ ВХОДИТ — фиксируется здесь как roadmap reference.
+  Это **does not affect the consumer** (in the consumer everything is already localized в `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
+  NOT in v1.1 — recorded here as a roadmap reference.
 
 ### Knowledge layer refactor
-- **Group `knowledge/` by domain**, а не по происхождению от ролей. Например:
+- **Group `knowledge/` by domain**, rather than by origin from roles. Например:
   ```
   knowledge/
     architecture/   (principles.md, anti-fragility.md, decision-making.md)
@@ -722,19 +722,19 @@ Outside this spec, but proposed by the reviewer как будущая дораб
     review/         (evidence.md, confidence.md, reports.md)
     capabilities.md
   ```
-  Why deferred: на v1.1 knowledge-файлов всего 5 (4 содержательных + README), группировка premature and complicates paths. When files > 10 — reconsider.
+  Why deferred: on v1.1 only 5 knowledge files (4 substantive + README), grouping is premature and complicates paths. When files > 10 — reconsider.
 
 ### SOP/Role contract
-- **Knowledge loading from SOP, not from Role.** v1.1 уже ввёл **short-id knowledge refs** в Role FM (D-KR): `knowledge: [architecture-principles]` — путь резолвит Runtime. Следующий шаг v1.2: декларировать `knowledge_refs:` на уровне SOP-шага, чтобы Role был полностью переносимым (без знания о knowledge paths в FM). Инвазивно (требует переписать Roles + расширить planner), отложено.
-- **Capability-only SOP шаги (option 3).** Пока planner warning'ает; в v1.2 — резолв capability → role через `knowledge/capabilities.md` automatically, с platform preference. На v1.1 каталог capabilities полностью decoupled от providers (D-CP), что уже подготовило почву.
-- **SOP `forensic-audit.yaml` фазы (Control Objects, Signal Inventory и т.д.) вынести в knowledge.** Сейчас 8 фаз описаны как `name:`+`note:` в самом SOP; их содержательное описание (что именно искать, какие hypotheses проверять) может жить в `knowledge/forensic-audit-protocol.md` и подгружаться шагом. Отложено: на v1.1 `note:` поля достаточно для executor'a; если SOP разрастётся — вынесем.
+- **Knowledge loading from SOP, not from Role.** v1.1 already introduced **short-id knowledge refs** in Role FM (D-KR): `knowledge: [architecture-principles]` — path is resolved by Runtime. Next step v1.2: декларировать `knowledge_refs:` на уровне SOP-шага, so the Role is fully portable (without knowledge of knowledge paths in FM). Invasive (requires rewriting Roles + extending the planner), deferred.
+- **Capability-only SOP steps (option 3).** For now the planner warns; in v1.2 — resolve capability → role via `knowledge/capabilities.md` automatically, with platform preference. On v1.1 the capabilities catalog is fully decoupled from providers (D-CP), which has already prepared the ground.
+- **SOP `forensic-audit.yaml` phases (Control Objects, Signal Inventory etc.) move to knowledge.** Currently 8 phases described as `name:`+`note:` in the SOP itself; their substantive description (what exactly to look for, which hypotheses to check) can live in `knowledge/forensic-audit-protocol.md` и подгружаться шагом. Deferred: on v1.1 `note:` fields are sufficient for the executor; if the SOP grows — move it out.
 
 ### Execution layer (Major — v2.0)
-- **executor** (retry/scheduler/parallel/resume/checkpoint). Явно отклонено в D-3/D-P. Если реальная потребность возникнет после dogfooding — это уже v2.0 с самостоятельной архитектурой.
+- **executor** (retry/scheduler/parallel/resume/checkpoint). Explicitly rejected in D-3/D-P. If real need arises after dogfooding — this is v2.0 with its own architecture.
 
 ## Appendix A: Raw input preservation
 
-> The original file `docs/specs/drafts/agentic.md` (2168 lines, 4 raw agent prompts + architectural critique) is preserved until Phase G1. After deletion available via git history (commit SHA после Phase G2). Verbatim copy NOT inserted into spec to avoid bloat файла до 2200+ строк; план сохранения пути указан.
+> The original file `docs/specs/drafts/agentic.md` (2168 lines, 4 raw agent prompts + architectural critique) is preserved until Phase G1. After deletion available via git history (commit SHA after Phase G2). Verbatim copy NOT inserted into spec to avoid bloat file to 2200+ lines; preservation plan is noted.
 
 ## Result
 <!-- Filled after implementation -->
