@@ -38,7 +38,7 @@ steps:
     name: Documentation Review — spec frontmatter
     role: documentation-reviewer
     platform: any
-    produces: "spec с корректным Schema v1 FM; frontmatter status=draft готов к review"
+    produces: "spec with valid Schema v1 FM; frontmatter status=draft ready for review"
     depends_on: []
 
   - id: 3

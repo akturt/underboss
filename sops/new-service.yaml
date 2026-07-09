@@ -41,7 +41,7 @@ steps:
     name: Documentation Review — spec frontmatter
     role: documentation-reviewer
     platform: any
-    produces: "spec с корректным Schema v1 FM"
+    produces: "spec with valid Schema v1 FM"
     depends_on: []
 
   - id: 3
@@ -96,7 +96,7 @@ steps:
     name: Documentation Review — post-implementation
     role: documentation-reviewer
     platform: any
-    produces: "все затронутые .md в docs/ имеют корректный Schema v1 FM"
+    produces: "all affected .md in docs/ have valid Schema v1 FM"
     depends_on: [10]
 
   - id: 12

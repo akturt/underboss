@@ -26,5 +26,5 @@ What exactly was decided and why.
 Positive and negative consequences.
 
 ## Related
-- ADR-XXX (связанное решение)
+- ADR-XXX (related decision)
 - Spec: docs/specs/approved/YYYY-MM-DD-<slug>.md

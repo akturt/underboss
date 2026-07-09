@@ -79,7 +79,7 @@ steps:
     depends_on: [7]
 
   - id: 9
-    name: Post-release audit (для major или security релизов)
+    name: Post-release audit (for major or security releases)
     role: human
     platform: any
     produces: "docs/audits/YYYY-MM-DD-release-<version>.md (status=completed): what went well/badly, lessons learned"

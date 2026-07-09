@@ -171,7 +171,7 @@ Enable the CI guard in warn-only mode for the rollout period. In `.github/workfl
 jobs:
   schema-v1:
     env:
-      WARN_ONLY: "true"   # brownfield rollout: WARNING вместо FAIL
+      WARN_ONLY: "true"   # brownfield rollout: WARNING instead of FAIL
 ```
 
 Push the changes. CI will print warnings but will not fail. This is a "soft" period during which forgotten `docs/archive/`, `docs/old/`, `docs/wiki/`, `docs/tmp/` do not break PRs.

@@ -1,7 +1,7 @@
 name: audit
 description: Conducting an audit — from defining scope to an append-only completed audit document
 triggers:
-  - periodic check (квартальный/месячный)
+  - periodic check (quarterly/monthly)
   - post-incident review
   - pre-release sanity check
   - external auditor request

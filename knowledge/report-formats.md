@@ -14,7 +14,7 @@ priority: P1
 
 # Report Formats
 
-Выходные форматы 4 ревьюеров. Roles используют как шаблон вывода.
+Output formats for 4 reviewers. Roles use as output template.
 
 ## Architecture Review
 

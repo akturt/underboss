@@ -56,7 +56,7 @@ steps:
     depends_on: [3]
 
   - id: 6
-    name: Architecture Review (если root cause архитектурный)
+    name: Architecture Review (if root cause is architectural)
     role: architecture-reviewer
     platform: any
     produces: "if root cause is in the architecture — ADR proposed for a structural fix"
@@ -89,7 +89,7 @@ steps:
     depends_on: [9]
 
   - id: 11
-    name: Follow-up tracking — open GitHub Issues для каждого follow-up action
+    name: Follow-up tracking — open GitHub Issues for each follow-up action
     role: human
     produces: "Issues created and linked to the audit doc via entity_refs; tracking labels (incident-followup) applied"
     depends_on: [10]

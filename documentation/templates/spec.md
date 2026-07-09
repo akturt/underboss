@@ -41,4 +41,4 @@ Specific files, endpoints, tables.
 ---
 
 ## Result
-<!-- Заполняется после имплементации -->
+<!-- Filled after implementation -->

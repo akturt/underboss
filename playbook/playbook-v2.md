@@ -722,7 +722,7 @@ Each transition — git `mv` + update `status` in FM. CI validates path-status m
 **Forbidden:**
 - implement a spec that is not in `approved/`
 - leave the `lifecycle:` field (it was removed from Schema v1)
-- delete specs — `implemented/` и `superseded/` permanent
+- delete specs — `implemented/` and `superseded/` are permanent
 - create .md without `schema: 1` and `id:`
 ```
 
@@ -928,7 +928,7 @@ In case of conflicting information, read the canonical source.
 ## Backlog: from ideas to Issues
 
 ```
-docs/backlog/active.md       ← rough basket (свободный формат)
+docs/backlog/active.md       ← rough basket (free-form)
          -> team: "slice the backlog into tasks"
 GitHub Issues                ← atomic tasks с acceptance criteria
          -> after implementation

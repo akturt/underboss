@@ -54,11 +54,11 @@ The Runtime submodule is mounted at `docs/.runtime/naprolom-docs/`. All further 
 ## Step 1 — Clone the project (if not yet cloned on the server)
 
 ```bash
-cd ~                                          # или /opt / /srv — где должен жить проект
+cd ~                                          # or /opt / /srv — where the project should live
 git clone <PROJECT_REPO_URL> <PROJECT_NAME>
 cd <PROJECT_NAME>
 git checkout <PROJECT_BRANCH>
-git status                                     # убедись что ветка чистая, без uncommitted
+git status                                     # confirm the branch is clean, no uncommitted
 ```
 
 **Checkpoint 1:** report:
@@ -216,7 +216,7 @@ jobs:
   schema-v1:
     runs-on: ubuntu-latest
     env:
-      WARN_ONLY: "true"   # brownfield rollout: WARNING вместо FAIL
+      WARN_ONLY: "true"   # brownfield rollout: WARNING instead of FAIL
     steps:
       - uses: actions/checkout@v4
         with:
@@ -422,7 +422,7 @@ Next steps for operator:
   2. Review .context/boundaries.yml — classify project files
   3. First SOP run: node docs/.runtime/naprolom-docs/sops/planner.mjs --list
   4. <IF BROWNFIELD> outline cleanup: ~<N> docs with TODO_ENTITY_REF need manual entity_refs
-  5. <IF BROWNFIELD> after cleanup switch CI to strict: WARN_ONLY="" в .github/workflows/docs-validate.yml
+  5. <IF BROWNFIELD> after cleanup switch CI to strict: WARN_ONLY="" in .github/workflows/docs-validate.yml
 ```
 
 ---

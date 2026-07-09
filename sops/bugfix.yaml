@@ -32,16 +32,16 @@ steps:
     depends_on: []
 
   - id: 2
-    name: Triage — нужна ли spec?
+    name: Triage — is a spec needed?
     role: human
     produces: "decision trivial-fix vs non-trivial. For non-trivial — create a spec in docs/specs/drafts/"
     depends_on: [1]
 
   - id: 3
-    name: Documentation Review (если spec создана)
+    name: Documentation Review (if spec was created)
     role: documentation-reviewer
     platform: any
-    produces: "spec с корректным Schema v1 FM"
+    produces: "spec with valid Schema v1 FM"
     depends_on: [2]
     condition: "if spec created"
 
@@ -58,7 +58,7 @@ steps:
     depends_on: [4]
 
   - id: 6
-    name: Architecture Review (если фикс архитектурно-чувствительный)
+    name: Architecture Review (if fix is architecture-sensitive)
     role: architecture-reviewer
     platform: any
     produces: "ACK or ADR if the fix changes topology/model/contract"
@@ -66,13 +66,13 @@ steps:
     condition: "if architectural impact"
 
   - id: 7
-    name: Documentation update (если затронуты docs)
+    name: Documentation update (if docs are affected)
     role: human
     produces: "docs/architecture/, runbook, secrets updated as needed"
     depends_on: [5]
 
   - id: 8
-    name: Audit (только для hotfix/security)
+    name: Audit (only for hotfix/security)
     role: human
     platform: any
     produces: "docs/audits/YYYY-MM-DD-bugfix-<slug>.md if the fix is a hotfix or security-related"

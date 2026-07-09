@@ -664,14 +664,14 @@ C1. `sops/forensic-audit.yaml` — as in §Technical approach: `consumes:`/`prod
 C2. `sops/architecture-review.yaml` — sequential DAG (D-5), with artifact contracts (`reality-report` → `architecture-findings` → `documentation-report` → `validated-findings` → `decision-gate-result`).
 
 ### Phase D — planner extension (minimum)
-D1. `sops/planner.mjs` — add step parser support for `capability:` (optional) + `role:` (optional, but at least one of the two is required; otherwise warning). If a step specifies `capability:` without `role:` — warning. Also read `consumes:`/`produces:` и print them in DAG visualization next to control-flow `depends_on:` (data-flow arrows). No more than ~15 lines of code, no executor logic.
+D1. `sops/planner.mjs` — add step parser support for `capability:` (optional) + `role:` (optional, but at least one of the two is required; otherwise warning). If a step specifies `capability:` without `role:` — warning. Also read `consumes:`/`produces:` and print them in DAG visualization next to control-flow `depends_on:` (data-flow arrows). No more than ~15 lines of code, no executor logic.
 
 ### Phase E — Documentation & dogfood
 E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision describes the **5-layer model** (Knowledge / Role / Capability / SOP / Artifact), rationale, why `agents/` was not renamed to `roles/`, why output templates were folded into knowledge, why the capability catalog lives in `knowledge/capabilities.md`.
 E2. `README.md` — update layout diagram (+ `knowledge/`, including `capabilities.md`), What you get expand to 4 roles + 6 knowledge + 9 SOPs, Changelog add `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
 E3. `INSTALL.md` — architecture diagram with `knowledge/`.
-E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **БЕЗ inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]` и что path is resolved by Runtime); update layout.
-E5. `sops/README.md` — add 2 new SOPs; section on parametrized input (`entities`/`mechanisms` в forensic-audit) with example; clarifier 'SOP describes **orchestration**, not validation logic'; new section «Artifact contracts» with explanation of `consumes:`/`produces:` и difference between data-flow vs control-flow (`depends_on:`); note about `gate: manual` for human steps (D-HG, with backend-compat note on `role: human` in existing 7 SOPs v1.0).
+E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **NO inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]` и что path is resolved by Runtime); update layout.
+E5. `sops/README.md` — add 2 new SOPs; section on parametrized input (`entities`/`mechanisms` в forensic-audit) with example; clarifier 'SOP describes **orchestration**, not validation logic'; new section «Artifact contracts» with explanation of `consumes:`/`produces:` and difference between data-flow vs control-flow (`depends_on:`); note about `gate: manual` for human steps (D-HG, with backend-compat note on `role: human` in existing 7 SOPs v1.0).
 E6. `bootstrap/bootstrap.sh` — CLAUDE.md snippet +2 lines (idempotently, via `grep -q`).
 E7. `bootstrap/bootstrap.ps1` — mirror E6 PS syntax.
 
@@ -710,7 +710,7 @@ Outside this spec, but proposed by the reviewer as future work. **Does not block
   runtime/   (engine, bootstrap, ...)
   agents/  knowledge/  sops/  docs/  .github/
   ```
-  Это **does not affect the consumer** (in the consumer everything is already localized в `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
+  **This does not affect the consumer** (in the consumer everything is already localized в `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
   NOT in v1.1 — recorded here as a roadmap reference.
 
 ### Knowledge layer refactor

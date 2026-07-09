@@ -77,57 +77,57 @@ cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-orche
 ## What is included (Runtime layout)
 
 ```
-naprolom-docs/                                  ← репо-ПРОДУКТ (layout продукта; D-BR — в consumer'е всё локализовано под docs/)
-├── README.md                              ← этот файл (landing page)
+naprolom-docs/                                  ← product repo (product layout; D-BR — in consumer repo everything is localized under docs/)
+├── README.md                              ← this file (landing page)
 ├── INSTALL.md                             ← consumer integration (submodule + bootstrap)
 ├── playbook/
-│   ├── playbook-v2.md                      ← целевая Greenfield-модель (Schema v1, lifecycle, CI)
-│   └── migrate-legacy.md                   ← brownfield агент-промпт (7 шагов с checkpoint'ами)
+│   ├── playbook-v2.md                      ← target Greenfield model (Schema v1, lifecycle, CI)
+│   └── migrate-legacy.md                   ← brownfield agent prompt (7 steps with checkpoints)
 ├── runtime/                                ← [Runtime Core — Infrastructure]
-│   ├── registry.yaml                       ← v1.5: единый источник истины для всех компонентов Runtime Core
-│   ├── state-machine.yaml                  ← v1.5: состояния установки и переходы
-│   └── contracts/                          ← v1.5: контракты (runtime/ + consumer/)
+│   ├── registry.yaml                       ← v1.5: single source of truth for all Runtime Core components
+│   ├── state-machine.yaml                  ← v1.5: installation states and transitions
+│   └── contracts/                          ← v1.5: contracts (runtime/ + consumer/)
 │       ├── runtime/{installation,migration,validation}.yaml
 │       └── consumer/{boundaries,project-layout}.yaml
 ├── documentation/                          ← [Documentation Module]
-│   ├── templates/                          ← canonical шаблоны Schema v1 (NEVER copy into project)
+│   ├── templates/                          ← canonical Schema v1 templates (NEVER copy into project)
 │   │   ├── architecture.md  adr.md  spec.md
 │   │   └── audit.md  runbook.md  backlog.md
 │   ├── validation/
 │   │   ├── validate-frontmatter.sh         ← frontmatter-only (awk), WARN_ONLY switch, path-status match
-│   │   └── validate-runtime.sh             ← v1.5: валидация графа зависимостей Runtime
+│   │   └── validate-runtime.sh             ← v1.5: Runtime dependency graph validation
 │   └── schemas/
 │       └── frontmatter.schema.json         ← JSON Schema (base + per-type extensions + forbidden legacy)
 ├── engine/                                 ← [Runtime Core — Infrastructure]
-│   ├── reality-engine/                     ← v1.5: движок реконструкции состояния
-│   │   ├── collectors/                     ← сбор данных (architecture, entity, module, dependency)
-│   │   ├── analyzers/                      ← анализ дрейфа (documentation, adr, spec)
-│   │   ├── reporters/                      ← генерация отчётов
+│   ├── reality-engine/                     ← v1.5: state reconstruction engine
+│   │   ├── collectors/                     ← data collection (architecture, entity, module, dependency)
+│   │   ├── analyzers/                      ← drift analysis (documentation, adr, spec)
+│   │   ├── reporters/                      ← report generation
 │   │   └── README.md
 │   └── scripts/
-│       └── migrate-legacy.mjs              ← runnable brownfield миграция (без внешних зависимостей)
+│       └── migrate-legacy.mjs              ← runnable brownfield migration (no external dependencies)
 ├── bootstrap/                              ← [Runtime Core — Infrastructure]
 │   ├── bootstrap.sh                        ← v1.5: registry-driven universal loader
-│   ├── install.sh                          ← v1.5: one-liner установщик
+│   ├── install.sh                          ← v1.5: one-liner installer
 │   ├── templates/
-│   │   └── entity-catalog.md               ← v1.5: шаблон каталога сущностей
-│   └── DEPLOY-PROMPT.md                    ← промпт для AI-агента: автоустановка на любой проект
-├── knowledge/                              ← [Documentation Module] общий knowledge-слой (роли подключают по short-id)
+│   │   └── entity-catalog.md               ← v1.5: entity catalog template
+│   └── DEPLOY-PROMPT.md                    ← prompt for AI agent: auto-install on any project
+├── knowledge/                              ← [Documentation Module] shared knowledge layer (roles connect by short-id)
 │   ├── architecture-principles.md
 │   ├── evidence-model.md
 │   ├── audit-principles.md
 │   ├── report-formats.md
-│   └── capabilities.md                     ← capability catalog (без providers, D-CP)
-├── agents/                                 ← [Documentation Module] роли AI-агентов для claude-code и opencode (4 roles, slim)
-│   └── README.md                           ← overview capabilities, указатель на knowledge/capabilities.md
+│   └── capabilities.md                     ← capability catalog (without providers, D-CP)
+├── agents/                                 ← [Documentation Module] AI agent roles for claude-code and opencode (4 roles, slim)
+│   └── README.md                           ← capabilities overview, pointer to knowledge/capabilities.md
 ├── sops/                                   ← [Documentation Module] Standard Operating Procedures (YAML) + planner.mjs
-│   ├── planner.mjs                         ← печатает DAG (DAG-printer, не executor)
-│   ├── reality-audit.yaml                  ← v1.5: SOP использует Reality Engine
+│   ├── planner.mjs                         ← prints DAG (DAG-printer, not executor)
+│   ├── reality-audit.yaml                  ← v1.5: SOP uses Reality Engine
 │   └── *.yaml                              ← new-feature / bugfix / new-service / architecture-change / audit / release / incident / architecture-review / forensic-audit
-├── docs/                                   ← dogfood: собственная документация Runtime
+├── docs/                                   ← dogfood: Runtime's own documentation
 │   ├── adr/                                ← dogfood ADRs (001-agentic-layer-separation, 002-runtime-v1.2)
-│   ├── audits/                             ← value-proof кейсы (напр. Kordon/MegaDelta)
-│   └── specs/approved/                     ← спеки Runtime v1.x
+│   ├── audits/                             ← value-proof cases (e.g. Kordon/MegaDelta)
+│   └── specs/approved/                     ← Runtime v1.x specs
 └── .github/workflows/docs-validate.yml     ← CI guard + validate-runtime + knowledge/ validation
 ```
 
