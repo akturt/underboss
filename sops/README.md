@@ -15,7 +15,7 @@ A SOP describes **orchestration**, not validation logic. Validation is the respo
 
 ```
 sops/
-├── README.md              ← этот файл
+├── README.md ← this file
 ├── planner.mjs            ← prints DAG (parallel groups, capabilities, artifacts)
 ├── new-feature.yaml       ← v1.0
 ├── bugfix.yaml            ← v1.0

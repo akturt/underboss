@@ -75,7 +75,7 @@ docs/
 ├── audits/        # 5 files
 ├── backlog/       # 1 file
 ├── *.md           # 7 files — ops, deploy, ci/cd, secrets
-└── README.md      # навигация
+└── README.md # navigation
 ```
 
 The Naprolom-Docs 5-layer architecture:

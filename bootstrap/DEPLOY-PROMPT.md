@@ -15,8 +15,8 @@ priority: P0
 # Deploy Prompt for AI Agent
 
 > Give this prompt to any AI agent (opencode, Claude Code, Cursor, etc.) to install,
-> **update**, or **migrate** Documentation System Runtime v1.7 on any project. The agent
-> auto-detects the project context, handles fresh install, v1.0/v1.1→v1.7 migration, and
+> **update**, or **migrate** Documentation System Runtime v1.8 on any project. The agent
+> auto-detects the project context, handles fresh install, v1.0/v1.1→v1.8 migration, and
 > re-running on an existing install (update). After install it runs a post-install
 > architecture check (Reality Engine drift report) and reports where the architecture breaks.
 
@@ -25,7 +25,7 @@ priority: P0
 ## Prompt
 
 ```
-You are deploying (or updating) Documentation System Runtime (naprolom-docs v1.7) on the
+You are deploying (or updating) Documentation System Runtime (naprolom-docs v1.8) on the
 current project.
 
 ## Step 0 — Detect project context
@@ -56,9 +56,9 @@ echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" ||
 Report what you found and pick the path:
 - Fresh project (no Runtime) → go to Step 1A (Fresh install)
 - v1.0 installed (.context/runtime/) → go to Step 1B (Migrate from v1.0)
-- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (Migrate v1.1→v1.7)
+- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (Migrate v1.1→v1.8)
 - v1.2–v1.5 installed (registry.yaml exists, older runtime version) → go to Step 1C (auto-upgrade; registry-driven)
-- v1.7+ already installed (registry.yaml exists, runtime version 1.6) → go to Step 3B (UPDATE, no reinstall)
+- v1.8+ already installed (registry.yaml exists, runtime version 1.6) → go to Step 3B (UPDATE, no reinstall)
 
 ## Step 1A — Fresh install
 
@@ -70,12 +70,12 @@ mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: add Documentation System Runtime v1.7 via submodule"
+git commit -m "chore: add Documentation System Runtime v1.8 via submodule"
 ```
 
 ## Step 1B — Migrate from v1.0
 
-The old Runtime was mounted at `.context/runtime/naprolom-docs`. v1.7 mounts at `docs/.runtime/naprolom-docs`.
+The old Runtime was mounted at `.context/runtime/naprolom-docs`. v1.8 mounts at `docs/.runtime/naprolom-docs`.
 
 ```bash
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
@@ -87,17 +87,17 @@ git rm -f .context/runtime/naprolom-docs 2>/dev/null
 rm -rf .git/modules/.context/runtime/naprolom-docs 2>/dev/null
 rm -rf .context/runtime 2>/dev/null
 
-# Add in v1.7 location
+# Add in v1.8 location
 mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: migrate naprolom-docs v1.0→v1.7 (docs/.runtime/ path)"
+git commit -m "chore: migrate naprolom-docs v1.0→v1.8 (docs/.runtime/ path)"
 ```
 
-## Step 1C — Upgrade / migrate v1.1–v1.5 to v1.7 (AUTO-UPGRADE)
+## Step 1C — Upgrade / migrate v1.1–v1.5 to v1.8 (AUTO-UPGRADE)
 
-Bootstrap auto-upgrades any older installed version (v1.1, v1.2, v1.3, v1.4, v1.5) to v1.7.
+Bootstrap auto-upgrades any older installed version (v1.1, v1.2, v1.3, v1.4, v1.5) to v1.8.
 Just pull the latest submodule and run bootstrap — it detects the old version and upgrades.
 
 ```bash
@@ -147,9 +147,9 @@ What bootstrap creates:
 - `AGENTS.md` — Runtime instructions (only if file already exists, never create)
 - `.github/workflows/docs-validate.yml` — CI guard (includes Runtime dependency graph validation)
 
-## Step 3B — UPDATE existing v1.7+ installation
+## Step 3B — UPDATE existing v1.8+ installation
 
-When v1.7+ is already installed, do NOT reinstall. Updating means pulling the latest
+When v1.8+ is already installed, do NOT reinstall. Updating means pulling the latest
 Runtime submodule and re-running bootstrap (it is idempotent and regenerates stubs):
 
 ```bash
@@ -243,12 +243,12 @@ cd "$(git rev-parse --show-toplevel)"
 git add -A
 git status --short
 git diff --cached --stat
-git commit -m "docs: Documentation System Runtime v1.7 installed" || echo "nothing to commit"
+git commit -m "docs: Documentation System Runtime v1.8 installed" || echo "nothing to commit"
 ```
 
 Do NOT push. Report to user:
 1. Project path and repo
-2. Action taken (fresh install / migrated from v1.0 / upgraded v1.1–v1.5→v1.7 / updated v1.7+)
+2. Action taken (fresh install / migrated from v1.0 / upgraded v1.1–v1.5→v1.8 / updated v1.8+)
 3. Verification results (structure, root check, validation)
 4. Post-install architecture check results — drift items (ADR / documentation / spec / structure)
 5. Next steps: fill `.context/project.yml`, create first ADR, create `docs/architecture/README.md`,

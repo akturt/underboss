@@ -169,7 +169,7 @@ docs/specs/review/*         → review
 docs/specs/approved/*       → approved
 docs/specs/implemented/*    → implemented
 docs/specs/superseded/*     → superseded
-otherwise                        → нет lifecycle
+otherwise → no lifecycle
 ```
 
 CI/Portal computes lifecycle from the path. This removes drift between the path and the field. Never add `lifecycle:` to the frontmatter.
@@ -930,7 +930,7 @@ In case of conflicting information, read the canonical source.
 ```
 docs/backlog/active.md       ← rough basket (free-form)
          -> team: "slice the backlog into tasks"
-GitHub Issues                ← atomic tasks с acceptance criteria
+GitHub Issues <- atomic tasks with acceptance criteria
          -> after implementation
 Issue closes            ← backlog → Done section
 ```

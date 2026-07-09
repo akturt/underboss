@@ -670,8 +670,8 @@ D1. `sops/planner.mjs` — add step parser support for `capability:` (optional) 
 E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision describes the **5-layer model** (Knowledge / Role / Capability / SOP / Artifact), rationale, why `agents/` was not renamed to `roles/`, why output templates were folded into knowledge, why the capability catalog lives in `knowledge/capabilities.md`.
 E2. `README.md` — update layout diagram (+ `knowledge/`, including `capabilities.md`), What you get expand to 4 roles + 6 knowledge + 9 SOPs, Changelog add `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
 E3. `INSTALL.md` — architecture diagram with `knowledge/`.
-E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **NO inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]` и что path is resolved by Runtime); update layout.
-E5. `sops/README.md` — add 2 new SOPs; section on parametrized input (`entities`/`mechanisms` в forensic-audit) with example; clarifier 'SOP describes **orchestration**, not validation logic'; new section «Artifact contracts» with explanation of `consumes:`/`produces:` and difference between data-flow vs control-flow (`depends_on:`); note about `gate: manual` for human steps (D-HG, with backend-compat note on `role: human` in existing 7 SOPs v1.0).
+E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **NO inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]`, and path is resolved by Runtime); update layout.
+E5. `sops/README.md` — add 2 new SOPs; section on parametrized input (`entities`/`mechanisms` in forensic-audit) with example; clarifier 'SOP describes **orchestration**, not validation logic'; new section «Artifact contracts» with explanation of `consumes:`/`produces:` and difference between data-flow vs control-flow (`depends_on:`); note about `gate: manual` for human steps (D-HG, with backend-compat note on `role: human` in existing 7 SOPs v1.0).
 E6. `bootstrap/bootstrap.sh` — CLAUDE.md snippet +2 lines (idempotently, via `grep -q`).
 E7. `bootstrap/bootstrap.ps1` — mirror E6 PS syntax.
 
@@ -681,7 +681,7 @@ F1. `.github/workflows/docs-validate.yml` — add a second step:
    - name: Validate knowledge/ frontmatter
      run: ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
    ```
-F2. Smoke test locally: `ROOT=docs bash engine/validators/validate-frontmatter.sh` и `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — both must show OK.
+F2. Smoke test locally: `ROOT=docs bash engine/validators/validate-frontmatter.sh` and `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — both must show OK.
 F3. `node sops/planner.mjs forensic-audit --platform opencode` — prints DAG with data-flow arrows (consumes → produces), control-flow (depends_on), gate steps as `gate: manual`. **Planner must NOT read contents of `knowledge/`** (D-PL) — only roles (`agents/{platform}/` *.md FM), capabilities (per-role FM), SOP (`sops/*.yaml`).
 F4. `node sops/planner.mjs architecture-review --platform opencode` — prints sequential DAG (step 2 depends on step 1), step 5 as `gate: manual`.
 F5. Dogfood self-review: invoke `architecture-reviewer` on this spec; apply corrections from findings.
@@ -695,7 +695,7 @@ G3. Do NOT push. Show `git diff` to user for final review.
 
 All initial Open Questions resolved in §Decisions (D-1 ÷ D-9 + D-OT/D-P/D-C/D-A/D-CC/D-CP/D-KR/D-PL/D-HG). 2 secondary ones remain, not blocking:
 
-Q-1. After Phase E: treat the created `docs/adr/001-...` as a full canonical ADR (validate it via `validate-frontmatter.sh` on strict-CI)? Recommendation: **да** (it lives in `docs/adr/`, validator already covers it — this is the dogfood proof).
+Q-1. After Phase E: treat the created `docs/adr/001-...` as a full canonical ADR (validate it via `validate-frontmatter.sh` on strict-CI)? Recommendation: **yes** (it lives in `docs/adr/`, validator already covers it — this is the dogfood proof).
 
 Q-2. In `knowledge/capabilities.md` on v1.1 — publish per-capability entry with **consumes/produces** artifact contract (full contract) or is **description-only** enough? Recommendation: **full contract** (description + consumes + produces + artifacts) — without `provided by:` (see D-CP). Capabilities.md was created to be a contract, not a list of names.
 
@@ -710,11 +710,11 @@ Outside this spec, but proposed by the reviewer as future work. **Does not block
   runtime/   (engine, bootstrap, ...)
   agents/  knowledge/  sops/  docs/  .github/
   ```
-  **This does not affect the consumer** (in the consumer everything is already localized в `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
+  **This does not affect the consumer** (in the consumer everything is already localized in `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
   NOT in v1.1 — recorded here as a roadmap reference.
 
 ### Knowledge layer refactor
-- **Group `knowledge/` by domain**, rather than by origin from roles. Например:
+- **Group `knowledge/` by domain**, rather than by origin from roles. For example:
   ```
   knowledge/
     architecture/   (principles.md, anti-fragility.md, decision-making.md)
@@ -725,9 +725,9 @@ Outside this spec, but proposed by the reviewer as future work. **Does not block
   Why deferred: on v1.1 only 5 knowledge files (4 substantive + README), grouping is premature and complicates paths. When files > 10 — reconsider.
 
 ### SOP/Role contract
-- **Knowledge loading from SOP, not from Role.** v1.1 already introduced **short-id knowledge refs** in Role FM (D-KR): `knowledge: [architecture-principles]` — path is resolved by Runtime. Next step v1.2: декларировать `knowledge_refs:` на уровне SOP-шага, so the Role is fully portable (without knowledge of knowledge paths in FM). Invasive (requires rewriting Roles + extending the planner), deferred.
+- **Knowledge loading from SOP, not from Role.** v1.1 already introduced **short-id knowledge refs** in Role FM (D-KR): `knowledge: [architecture-principles]` — path is resolved by Runtime. Next step v1.2: declare `knowledge_refs:` at the SOP-step level, so the Role is fully portable (without knowledge of knowledge paths in FM). Invasive (requires rewriting Roles + extending the planner), deferred.
 - **Capability-only SOP steps (option 3).** For now the planner warns; in v1.2 — resolve capability → role via `knowledge/capabilities.md` automatically, with platform preference. On v1.1 the capabilities catalog is fully decoupled from providers (D-CP), which has already prepared the ground.
-- **SOP `forensic-audit.yaml` phases (Control Objects, Signal Inventory etc.) move to knowledge.** Currently 8 phases described as `name:`+`note:` in the SOP itself; their substantive description (what exactly to look for, which hypotheses to check) can live in `knowledge/forensic-audit-protocol.md` и подгружаться шагом. Deferred: on v1.1 `note:` fields are sufficient for the executor; if the SOP grows — move it out.
+- **SOP `forensic-audit.yaml` phases (Control Objects, Signal Inventory etc.) move to knowledge.** Currently 8 phases described as `name:`+`note:` in the SOP itself; their substantive description (what exactly to look for, which hypotheses to check) can live in `knowledge/forensic-audit-protocol.md` and loaded by the step. Deferred: on v1.1 `note:` fields are sufficient for the executor; if the SOP grows — move it out.
 
 ### Execution layer (Major — v2.0)
 - **executor** (retry/scheduler/parallel/resume/checkpoint). Explicitly rejected in D-3/D-P. If real need arises after dogfooding — this is v2.0 with its own architecture.

@@ -19,7 +19,7 @@ generate() {
 - Name: $(basename "$target_dir")
 - Domain: unknown
 - Stack: unknown
-- Runtime: naprolom v1.7
+- Runtime: naprolom v1.8
 
 ## Documentation Layout
 
