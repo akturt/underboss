@@ -15,7 +15,7 @@ refs: []
 depends_on: []
 implements: []
 supersedes: []
-tags: [install, submodule, consumer, onboarding, v1.4]
+tags: [install, submodule, consumer, onboarding, v1.5]
 priority: P0
 ---
 

@@ -15,15 +15,15 @@ priority: P0
 # Deploy Prompt for AI Agent
 
 > Give this prompt to any AI agent (opencode, Claude Code, Cursor, etc.) to install
-> Documentation System Runtime v1.4 on any project. The agent auto-detects the project
-> context and handles both fresh install, v1.0 migration, and v1.1→v1.4 auto-upgrade.
+> Documentation System Runtime v1.5 on any project. The agent auto-detects the project
+> context and handles both fresh install, v1.0 migration, and v1.1→v1.5 auto-upgrade.
 
 ---
 
 ## Prompt
 
 ```
-You are deploying Documentation System Runtime (naprolom-docs v1.4) on the current project.
+You are deploying Documentation System Runtime (naprolom-docs v1.5) on the current project.
 
 ## Step 0 — Detect project context
 
@@ -45,7 +45,7 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel)
 echo "=== .gitmodules ===" && cat "$PROJECT_ROOT/.gitmodules" 2>/dev/null || echo "none"
 echo "=== existing docs/ ===" && ls "$PROJECT_ROOT/docs/" 2>/dev/null | head -10 || echo "no docs/"
 echo "=== existing .context/runtime ===" && ls "$PROJECT_ROOT/.context/runtime/" 2>/dev/null | head -5 || echo "none"
-echo "=== Runtime version ===" && [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ] && echo "v1.4" || echo "v1.1 or earlier"
+echo "=== Runtime version ===" && [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ] && echo "v1.5" || echo "v1.1 or earlier"
 echo "=== CLAUDE.md ===" && [ -f "$PROJECT_ROOT/CLAUDE.md" ] && echo "exists" || echo "none"
 echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" || echo "none"
 ```
@@ -54,7 +54,7 @@ Report what you found:
 - Fresh project (no Runtime) → go to Step 1A
 - v1.0 installed (.context/runtime/) → go to Step 1B
 - v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (auto-upgrade will run)
-- v1.4+ already installed (docs/.runtime/naprolom-docs/runtime/registry.yaml exists) → skip to Step 3
+- v1.5+ already installed (docs/.runtime/naprolom-docs/runtime/registry.yaml exists) → skip to Step 3
 
 ## Step 1A — Fresh install
 
@@ -66,7 +66,7 @@ mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: add Documentation System Runtime v1.4 via submodule"
+git commit -m "chore: add Documentation System Runtime v1.5 via submodule"
 ```
 
 ## Step 1B — Migrate from v1.0
@@ -88,18 +88,18 @@ mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 
-git commit -m "chore: migrate naprolom-docs v1.0→v1.4 (docs/.runtime/ path)"
+git commit -m "chore: migrate naprolom-docs v1.0→v1.5 (docs/.runtime/ path)"
 ```
 
-## Step 1C — Upgrade from v1.1 to v1.4 (AUTO-UPGRADE)
+## Step 1C — Upgrade from v1.1 to v1.5 (AUTO-UPGRADE)
 
-Bootstrap now auto-upgrades v1.1 to v1.4. Just run bootstrap and it will pull the latest submodule automatically.
+Bootstrap now auto-upgrades v1.1 to v1.5. Just run bootstrap and it will pull the latest submodule automatically.
 
 ```bash
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
 cd "$PROJECT_ROOT"
 
-# Run bootstrap — it detects v1.1 and auto-upgrades to v1.4
+# Run bootstrap — it detects v1.1 and auto-upgrades to v1.5
 bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
@@ -192,12 +192,12 @@ cd "$(git rev-parse --show-toplevel)"
 git add -A
 git status --short
 git diff --cached --stat
-git commit -m "docs: Documentation System Runtime v1.4 installed" || echo "nothing to commit"
+git commit -m "docs: Documentation System Runtime v1.5 installed" || echo "nothing to commit"
 ```
 
 Do NOT push. Report to user:
 1. Project path and repo
-2. Install type (fresh / migrated from v1.0 / auto-upgraded from v1.1→v1.4 / already installed)
+2. Install type (fresh / migrated from v1.0 / auto-upgraded from v1.1→v1.5 / already installed)
 3. Verification results (structure, root check, validation)
 4. Next steps: fill `.context/project.yml`, create first ADR, create `docs/architecture/README.md`
 

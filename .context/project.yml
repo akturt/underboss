@@ -1,0 +1,35 @@
+---
+name: naprolom-docs
+domain: unknown
+stack: unknown
+backend: 
+database: 
+infrastructure: 
+maintainer: unknown
+
+repository:
+  owner: owner
+  name: naprolom-docs
+  branch: main
+
+boundaries:
+  pristine:
+    - /mnt/e/Projects/Naprolom/naprolom-docs/
+    - /mnt/e/Projects/Naprolom/naprolom-docs/src/
+    - /mnt/e/Projects/Naprolom/naprolom-docs/tests/
+    - /mnt/e/Projects/Naprolom/naprolom-docs/docs/
+  generated:
+    - node_modules/
+    - dist/
+    - docs/.runtime/
+  secrets:
+    - .env
+    - .env.*
+    - *.key
+    - *.pem
+    - secrets/
+
+reality:
+  status: fresh
+  lastCheck: null
+  drift: []

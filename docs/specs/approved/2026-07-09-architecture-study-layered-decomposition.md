@@ -1,7 +1,8 @@
 ---
+schema: 1
 id: architecture-study-layered-decomposition
 type: spec
-status: draft
+status: approved
 date: 2026-07-09
 owners: [naprolom]
 entity_refs: [runtime, registry, state-machine, capabilities]

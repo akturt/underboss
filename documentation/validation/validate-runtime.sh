@@ -49,12 +49,27 @@ echo "validate-runtime: checking $RUNTIME_ROOT"
 
 # extract_section <section_name> — extracts list items from registry section
 # Sections are at 2-space indent under components:, items at 4-space indent
+# Handles both old format (- name) and new format (- name: / - path:)
 extract_section() {
   local section="$1"
   awk -v sec="  $section:" '
     $0 == sec { found=1; next }
     found && /^  [a-zA-Z]/ { exit }
     found && /^    - / { sub(/^    - /, ""); print }
+  ' "$REGISTRY"
+}
+
+# extract_section_field <section_name> <field> — extracts specific field from list items
+# e.g. extract_section_field "templates" "path" → gets path values
+extract_section_field() {
+  local section="$1" field="$2"
+  awk -v sec="  $section:" -v fld="$field:" '
+    $0 == sec { found=1; next }
+    found && /^  [a-zA-Z]/ { exit }
+    found && $0 ~ "    - " { in_item=1; next }
+    found && in_item && /^[[:space:]]*$0/ { next }
+    found && in_item && /^    - / { in_item=1; next }
+    found && in_item && $0 ~ "      " fld { sub("^      " fld "[[:space:]]*", ""); print }
   ' "$REGISTRY"
 }
 
@@ -93,18 +108,33 @@ while IFS= read -r sop; do
 done < <(extract_section "sops")
 ok
 
-# Check templates
+# Check templates (supports both old format: "- name" and new format: "- name: / - path:")
 while IFS= read -r tmpl; do
-  if [ ! -f "$RUNTIME_ROOT/documentation/templates/$tmpl.md" ]; then
-    error "Registry template '$tmpl' has no matching file documentation/templates/$tmpl.md"
+  [ -z "$tmpl" ] && continue
+  # If it's a path (contains /), use it directly; otherwise append .md
+  if echo "$tmpl" | grep -qF "/"; then
+    if [ ! -f "$RUNTIME_ROOT/$tmpl" ]; then
+      error "Registry template path '$tmpl' has no matching file"
+    fi
+  else
+    if [ ! -f "$RUNTIME_ROOT/documentation/templates/$tmpl.md" ]; then
+      error "Registry template '$tmpl' has no matching file documentation/templates/$tmpl.md"
+    fi
   fi
 done < <(extract_section "templates")
 ok
 
-# Check validators
+# Check validators (supports both old format: "- name" and new format: "- name: / - path:")
 while IFS= read -r val; do
-  if [ ! -f "$RUNTIME_ROOT/documentation/validation/$val.sh" ]; then
-    error "Registry validator '$val' has no matching file documentation/validation/$val.sh"
+  [ -z "$val" ] && continue
+  if echo "$val" | grep -qF "/"; then
+    if [ ! -f "$RUNTIME_ROOT/$val" ]; then
+      error "Registry validator path '$val' has no matching file"
+    fi
+  else
+    if [ ! -f "$RUNTIME_ROOT/documentation/validation/$val.sh" ]; then
+      error "Registry validator '$val' has no matching file documentation/validation/$val.sh"
+    fi
   fi
 done < <(extract_section "validators")
 ok
@@ -112,11 +142,42 @@ ok
 # Check engine components (collectors, analyzers, reporters)
 for component_type in collectors analyzers reporters; do
   while IFS= read -r comp; do
+    [ -z "$comp" ] && continue
     if [ ! -f "$RUNTIME_ROOT/engine/reality-engine/$component_type/$comp.sh" ]; then
       error "Registry engine $component_type '$comp' has no matching file engine/reality-engine/$component_type/$comp.sh"
     fi
   done < <(extract_section "$component_type")
 done
+ok
+
+# Check generators (new in v1.5)
+while IFS= read -r gen; do
+  [ -z "$gen" ] && continue
+  if echo "$gen" | grep -qF "/"; then
+    if [ ! -f "$RUNTIME_ROOT/$gen" ]; then
+      error "Registry generator path '$gen' has no matching file"
+    fi
+  else
+    if [ ! -f "$RUNTIME_ROOT/bootstrap/generators/$gen.sh" ]; then
+      error "Registry generator '$gen' has no matching file bootstrap/generators/$gen.sh"
+    fi
+  fi
+done < <(extract_section "generators")
+ok
+
+# Check detectors (new in v1.5)
+while IFS= read -r det; do
+  [ -z "$det" ] && continue
+  if echo "$det" | grep -qF "/"; then
+    if [ ! -f "$RUNTIME_ROOT/$det" ]; then
+      error "Registry detector path '$det' has no matching file"
+    fi
+  else
+    if [ ! -f "$RUNTIME_ROOT/bootstrap/detectors/$det.sh" ]; then
+      error "Registry detector '$det' has no matching file bootstrap/detectors/$det.sh"
+    fi
+  fi
+done < <(extract_section "detectors")
 ok
 
 # ─── 3. Role → Capability: every capabilities: entry exists in capabilities.md ─

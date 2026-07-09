@@ -1,5 +1,5 @@
 runtime:
-  version: "1.4"
+  version: "1.5"
 
 schema:
   version: 1
@@ -21,7 +21,7 @@ compatibility:
 
 composition:
   core:
-    description: "Infrastructure layer: registry, state machine, contracts, bootstrap, reality engine"
+    description: "Infrastructure layer: registry, state machine, contracts, bootstrap engine, reality engine"
     directories:
       - runtime/
       - bootstrap/
@@ -38,9 +38,120 @@ composition:
 
 entrypoints:
   bootstrap: bootstrap/bootstrap.sh
-  bootstrap_ps: bootstrap/bootstrap.ps1
   installer: bootstrap/install.sh
   validator: documentation/validation/validate-runtime.sh
+
+directories:
+  docs:
+    - path: architecture/
+      description: "topology, invariants, domain model"
+      required: false
+    - path: adr/
+      description: "Architecture Decision Records"
+      required: false
+    - path: specs/drafts/
+      description: "specifications in draft"
+      required: false
+    - path: specs/review/
+      description: "specifications under review"
+      required: false
+    - path: specs/approved/
+      description: "approved specifications"
+      required: false
+    - path: specs/implemented/
+      description: "implemented specifications"
+      required: false
+    - path: specs/superseded/
+      description: "superseded specifications"
+      required: false
+    - path: audits/
+      description: "audit reports and reality checks"
+      required: false
+    - path: backlog/
+      description: "backlog items"
+      required: false
+    - path: api/
+      description: "API documentation"
+      required: false
+
+  context:
+    - path: project.yml
+      description: "project metadata (stack, domain, maintainer)"
+      required: true
+    - path: boundaries.yml
+      description: "boundary definitions (pristine, editable, generated, secret)"
+      required: true
+    - path: agent-entry.md
+      description: "agent entry protocol"
+      required: true
+
+templates:
+  - name: architecture
+    type: architecture
+    path: documentation/templates/architecture.md
+  - name: adr
+    type: adr
+    path: documentation/templates/adr.md
+  - name: spec
+    type: spec
+    path: documentation/templates/spec.md
+  - name: audit
+    type: audit
+    path: documentation/templates/audit.md
+  - name: runbook
+    type: runbook
+    path: documentation/templates/runbook.md
+  - name: backlog
+    type: backlog
+    path: documentation/templates/backlog.md
+
+validators:
+  - name: validate-frontmatter
+    path: documentation/validation/validate-frontmatter.sh
+  - name: validate-runtime
+    path: documentation/validation/validate-runtime.sh
+
+generators:
+  - name: architecture-readme
+    path: bootstrap/generators/architecture-readme.sh
+    description: "Auto-generate docs/architecture/README.md from project structure"
+  - name: boundaries
+    path: bootstrap/generators/boundaries.sh
+    description: "Auto-generate .context/boundaries.yml from .gitignore"
+  - name: project-yml
+    path: bootstrap/generators/project-yml.sh
+    description: "Auto-generate .context/project.yml from lockfiles"
+  - name: claude-md
+    path: bootstrap/generators/claude-md.sh
+    description: "Generate CLAUDE.md snippet"
+  - name: ci-workflow
+    path: bootstrap/generators/ci-workflow.sh
+    description: "Generate .github/workflows/docs-validate.yml"
+
+scripts:
+  - name: migrate-legacy
+    path: engine/scripts/migrate-legacy.mjs
+    description: "Brownfield migration script (Node.js, zero deps)"
+
+detectors:
+  - name: node
+    path: bootstrap/detectors/node.sh
+    lockfile: package.json
+  - name: python
+    path: bootstrap/detectors/python.sh
+    lockfile: pyproject.toml
+  - name: go
+    path: bootstrap/detectors/go.sh
+    lockfile: go.mod
+  - name: rust
+    path: bootstrap/detectors/rust.sh
+    lockfile: Cargo.toml
+  - name: php
+    path: bootstrap/detectors/php.sh
+    lockfile: composer.json
+  - name: docker
+    path: bootstrap/detectors/docker.sh
+    lockfile: docker-compose.yml
 
 components:
   agents:
@@ -77,10 +188,6 @@ components:
       - boundaries
       - project-layout
 
-  validators:
-    - validate-frontmatter
-    - validate-runtime
-
   engine:
     collectors:
       - architecture-inventory
@@ -93,11 +200,3 @@ components:
       - spec-drift
     reporters:
       - reality-report
-
-  templates:
-    - architecture
-    - adr
-    - spec
-    - audit
-    - runbook
-    - backlog
