@@ -1,12 +1,12 @@
 #!/bin/bash
 # bootstrap/generators/ci-workflow.sh — Generate .github/workflows/docs-validate.yml
 #
-# Usage: generate_ci_workflow <target_dir>
+# API: generate TARGET REGISTRY
 
-generate_ci_workflow() {
-  local target_dir="$1"
+generate() {
+  local target_dir="$1" registry="$2"
+
   local workflow_dir="${target_dir}/.github/workflows"
-
   mkdir -p "$workflow_dir"
 
   if [ -f "${workflow_dir}/docs-validate.yml" ]; then

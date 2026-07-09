@@ -16,12 +16,12 @@ priority: P2
 # Backlog: <scope>
 
 ## Active
-<!-- Свободный формат: идеи, TODO, открытые вопросы. -->
-- [ ] <задача>
+<!-- Freeform: ideas, TODOs, open questions. -->
+- [ ] <task>
 
 ## In Progress
-- [ ] <задача> — @owner
+- [ ] <task> — @owner
 
 ## Done
-<!-- Архив выполненных идей, нарезанных в GitHub Issues и закрытых. -->
-- [x] <задача> → Issue #123
+<!-- Archive of completed ideas, sliced into GitHub Issues and closed. -->
+- [x] <task> → Issue #123

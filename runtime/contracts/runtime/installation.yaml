@@ -1,23 +1,17 @@
+# AUTO-SYNCED — structure is the single source of truth in registry.yaml.
+# Bootstrap reads docs/ and .context/ layout from registry.yaml at runtime;
+# do not duplicate the path list here. Change structure in registry.yaml only.
 installation:
   description: What bootstrap creates and what state it expects
   version: 1
 
+  source_of_truth: ../../runtime/registry.yaml#/directories
+
   creates:
     docs:
-      - docs/architecture/
-      - docs/adr/
-      - docs/specs/drafts/
-      - docs/specs/review/
-      - docs/specs/approved/
-      - docs/specs/implemented/
-      - docs/specs/superseded/
-      - docs/audits/
-      - docs/backlog/
-      - docs/api/
+      source: registry.yaml#/directories/docs
     context:
-      - .context/project.yml
-      - .context/boundaries.yml
-      - .context/agent-entry.md
+      source: registry.yaml#/directories/context
     root:
       - CLAUDE.md
     ci:

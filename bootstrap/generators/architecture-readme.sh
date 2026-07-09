@@ -1,11 +1,10 @@
 #!/bin/bash
 # bootstrap/generators/architecture-readme.sh — Auto-generate docs/architecture/README.md
 #
-# Usage: generate_architecture_readme <target_dir> <stack> <domain> <name> <backend> <database> <infrastructure>
+# API: generate TARGET REGISTRY
 
-generate_architecture_readme() {
-  local target_dir="$1" stack="$2" domain="$3" name="$4"
-  local backend="${5:-}" database="${6:-}" infrastructure="${7:-}"
+generate() {
+  local target_dir="$1" registry="$2"
 
   mkdir -p "${target_dir}/docs/architecture"
 
@@ -14,12 +13,18 @@ generate_architecture_readme() {
     return
   fi
 
+  # Read stack info from runtime/lib if available
+  local stack="" domain="" name="" backend="" database="" infrastructure=""
+  name=$(basename "$target_dir")
+
   cat > "${target_dir}/docs/architecture/README.md" << HEREDOC
 ---
-title: Architecture Overview
+schema: 1
+id: architecture-readme
 type: architecture
-domain: ${domain}
-created: $(date +%Y-%m-%d)
+status: active
+date: $(date +%Y-%m-%d)
+owners: [project-team]
 ---
 
 # Architecture Overview
@@ -27,8 +32,8 @@ created: $(date +%Y-%m-%d)
 ## Project Identity
 
 - Name: ${name}
-- Domain: ${domain}
-- Stack: ${stack}
+- Domain: ${domain:-TBD}
+- Stack: ${stack:-TBD}
 
 ## Stack
 
@@ -57,11 +62,6 @@ ${name}/
 ## Boundaries
 
 See \`.context/boundaries.yml\` for detailed boundary definitions.
-
-- **Pristine**: ${name}/, src/, tests/, docs/, .context/
-- **Editable**: docs/** (except runtime/)
-- **Generated**: docs/.runtime/, node_modules/
-- **Secret**: .env, *.key, *.pem
 
 ## See Also
 

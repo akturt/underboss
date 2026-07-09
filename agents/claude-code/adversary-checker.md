@@ -18,8 +18,8 @@ priority: P1
 
 # Claude Code Agent — Adversary Checker
 
-> Claim Validation Agent. Проверяет архитектурные claims других ревьюеров на соответствие данным.
-> Поместите этот файл в `.claude/agents/adversary-checker.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> Claim Validation Agent. Validates other reviewers' architectural claims against the actual data.
+> Place this file in `.claude/agents/adversary-checker.md` of your project (consumer repo) to activate the role.
 
 ---
 

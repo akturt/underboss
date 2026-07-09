@@ -27,7 +27,7 @@ priority: P2
 > Trigger: <...>
 
 ## Summary
-<!-- 1-2 предложения: что проверялось, что нашли -->
+<!-- 1-2 sentences: what was checked, what was found -->
 
 ## Findings
 | # | Severity | Finding | Evidence | Recommendation |
@@ -35,10 +35,10 @@ priority: P2
 | F-01 | ... | ... | ... | ... |
 
 ## Conflicts
-<!-- противоречия между находками (если есть) -->
+<!-- contradictions between findings (if any) -->
 
 ## Resolution
-<!-- как разрешили или plan разрешения -->
+<!-- how it was resolved or the resolution plan -->
 
 ## Delta
-<!-- что изменилось с прошлого аудита этой сущности -->
+<!-- what changed since the previous audit of this entity -->

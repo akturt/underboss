@@ -11,19 +11,19 @@ depends_on: []
 tags: []
 ---
 
-# ADR-NNN: <Название решения>
+# ADR-NNN: <Decision Title>
 
 ## Status
 [proposed | accepted | deprecated | superseded]
 
 ## Context
-Почему это решение необходимо? Какие альтернативы рассматривались?
+Why is this decision necessary? What alternatives were considered?
 
 ## Decision
-Что именно решили и почему.
+What exactly was decided and why.
 
 ## Consequences
-Позитивные и негативные последствия.
+Positive and negative consequences.
 
 ## Related
 - ADR-XXX (связанное решение)

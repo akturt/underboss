@@ -16,8 +16,8 @@ jobs:
   schema-v1:
     runs-on: ubuntu-latest
     env:
-      # Brownfield rollout: поставить "true" на период warn-only (см. playbook/migrate-legacy.md).
-      # Greenfield (этот репо): оставить пустым → strict с первого PR.
+      # Brownfield rollout: set "true" during the warn-only period (see playbook/migrate-legacy.md).
+      # Greenfield (this repo): leave empty → strict from the first PR.
       WARN_ONLY: ""
     steps:
       - uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
           ROOT=knowledge bash documentation/validation/validate-frontmatter.sh knowledge
       - name: Validate templates (canonical Schema v1 placeholders)
         run: |
-          # documentation/templates/ лежат вне docs/ → CI их не проверяет автоматически.
-          # Проверяем, что каждый template имеет schema: 1 и mandatory поля.
+          # documentation/templates/ live outside docs/ → CI does not check them automatically.
+          # Verify that every template has schema: 1 and the mandatory fields.
           for f in documentation/templates/*.md; do
             fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
             [ -n "$fm" ] || { echo "ERROR: $f: no frontmatter"; exit 1; }

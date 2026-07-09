@@ -1,11 +1,10 @@
 #!/bin/bash
 # bootstrap/generators/project-yml.sh — Auto-generate .context/project.yml
 #
-# Usage: generate_project_yml <target_dir> <stack> <domain> <name> <backend> <database> <infrastructure>
+# API: generate TARGET REGISTRY
 
-generate_project_yml() {
-  local target_dir="$1" stack="$2" domain="$3" name="$4"
-  local backend="${5:-}" database="${6:-}" infrastructure="${7:-}"
+generate() {
+  local target_dir="$1" registry="$2"
 
   mkdir -p "${target_dir}/.context"
 
@@ -14,14 +13,17 @@ generate_project_yml() {
     return
   fi
 
+  local name
+  name=$(basename "$target_dir")
+
   cat > "${target_dir}/.context/project.yml" << HEREDOC
 ---
 name: ${name}
-domain: ${domain}
-stack: ${stack}
-backend: ${backend:-}
-database: ${database:-}
-infrastructure: ${infrastructure:-}
+domain: unknown
+stack: unknown
+backend: unknown
+database: unknown
+infrastructure: unknown
 maintainer: ${GIT_COMMITTER_NAME:-$(git -C "$target_dir" config user.name 2>/dev/null || echo "unknown")}
 
 repository:
@@ -42,8 +44,8 @@ boundaries:
   secrets:
     - .env
     - .env.*
-    - *.key
-    - *.pem
+    - "*.key"
+    - "*.pem"
     - secrets/
 
 reality:

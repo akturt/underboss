@@ -3,7 +3,8 @@ set -euo pipefail
 trap 'echo "Error on line $LINENO" >&2' ERR
 
 # bootstrap.sh — naprolom Documentation System Runtime bootstrap orchestrator
-# v1.5 — Decomposed: lib modules + generator scripts. Reads all paths from registry.
+# v1.7 — Uses Runtime API (runtime/lib/) for all operations.
+#         No hardcoded paths, no awk/grep/sed parsing.
 #
 # Usage: ./bootstrap.sh [--target <path>]
 
@@ -19,40 +20,30 @@ while [[ $# -gt 0 ]]; do
 done
 TARGET="${TARGET:-$RUNTIME_ROOT}"
 
-# --- Source lib modules ---
-source "${RUNTIME_ROOT}/bootstrap/lib/registry.sh"
-source "${RUNTIME_ROOT}/bootstrap/lib/detect-state.sh"
-source "${RUNTIME_ROOT}/bootstrap/lib/detect-stack.sh"
-source "${RUNTIME_ROOT}/bootstrap/lib/verify.sh"
-
-# --- Source generators ---
-for gen in "${RUNTIME_ROOT}"/bootstrap/generators/*.sh; do
-  [ -f "$gen" ] && source "$gen"
-done
+# --- Source Runtime API (unified internal SDK) ---
+source "${RUNTIME_ROOT}/runtime/lib/api.sh"
 
 # --- Detect state ---
-read -r STATE VERSION <<< "$(detect_install_state)"
+read -r STATE VERSION <<< "$(detect_state)"
 
-# --- Detect stack ---
-BACKEND="" DATABASE="" INFRASTRUCTURE="" PROJECT_NAME="" STACK="" DOMAIN=""
-detect_stack
-STACK="${BACKEND:-unknown}"
-DOMAIN="${DOMAIN:-unknown}"
-PROJECT_NAME="${PROJECT_NAME:-$(basename "$TARGET")}"
+# --- Determine runtime mode (NORMAL when registry.yaml is present) ---
+if registry_exists; then MODE="NORMAL"; else MODE="DEGRADED"; fi
 
 # --- Print header ---
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
 echo "║  naprolom Documentation System Runtime           ║"
-echo "║  Module Decomposition — Bootstrap v1.5           ║"
+echo "║  Runtime API — Bootstrap v1.7                    ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 echo "Target: ${TARGET}"
 echo "Runtime version: ${VERSION}"
+echo "Bootstrap Engine: $(yaml_get "${RUNTIME_ROOT}/runtime/registry.yaml" "bootstrap.engine_version" 2>/dev/null || echo unknown)"
+echo "Runtime mode: ${MODE:-unknown}"
 echo ""
 
 # --- State messages ---
-get_state_message "$STATE" "$VERSION"
+state_message "$STATE" "$VERSION"
 
 # --- Auto-upgrade ---
 if [ "$STATE" = "legacy" ]; then
@@ -65,32 +56,47 @@ if [ "$STATE" = "legacy" ]; then
   fi
 fi
 
-# --- Create docs/ skeleton ---
-echo "  → Ensuring docs/ skeleton..."
-for dir in architecture adr; do
-  mkdir -p "$TARGET/docs/$dir"
-done
-mkdir -p "$TARGET/docs/specs/drafts" "$TARGET/docs/specs/review" "$TARGET/docs/specs/approved" \
-         "$TARGET/docs/specs/implemented" "$TARGET/docs/specs/superseded" "$TARGET/docs/audits" \
-         "$TARGET/docs/backlog" "$TARGET/docs/api"
+# --- Create directories from registry ---
+echo "  → Creating directories from registry..."
+if [ "$MODE" = "NORMAL" ]; then
+  # Read directory paths from registrydirectories.docs
+  while IFS= read -r dir; do
+    [ -z "$dir" ] && continue
+    mkdir -p "$TARGET/docs/$dir"
+  done < <(registry_list_directories "docs")
 
-# --- Generate components ---
+  # .context stubs
+  while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    mkdir -p "$TARGET/.context"
+    [ -f "$TARGET/.context/$file" ] || touch "$TARGET/.context/$file"
+  done < <(registry_list_directories "context")
+else
+  # DEGRADED mode: registry.yaml absent — use built-in fallback layout.
+  echo "  ⚠ Runtime mode: DEGRADED (registry.yaml not found — using built-in fallback layout)"
+  mkdir -p "$TARGET/docs/architecture" "$TARGET/docs/adr" "$TARGET/docs/specs/drafts" \
+           "$TARGET/docs/specs/review" "$TARGET/docs/specs/approved" "$TARGET/docs/specs/implemented" \
+           "$TARGET/docs/specs/superseded" "$TARGET/docs/audits" "$TARGET/docs/backlog" "$TARGET/docs/api"
+fi
+
+# --- Detect stack ---
+detect_all "$TARGET"
+
+# --- Run generators from registry ---
 echo ""
 echo "=== Generating from registry ==="
-
-generate_architecture_readme "$TARGET" "$STACK" "$DOMAIN" "$PROJECT_NAME" "$BACKEND" "$DATABASE" "$INFRASTRUCTURE"
-generate_boundaries "$TARGET" "$DOMAIN" "$PROJECT_NAME"
-generate_project_yml "$TARGET" "$STACK" "$DOMAIN" "$PROJECT_NAME" "$BACKEND" "$DATABASE" "$INFRASTRUCTURE"
-generate_claude_md "$TARGET"
-generate_ci_workflow "$TARGET"
+run_all_generators "$TARGET"
 
 # --- Registry summary ---
 echo ""
 echo "=== Registry ==="
-echo "  Agents:          $(extract_section agents components | wc -w | tr -d ' ') roles"
-echo "  Contracts:       $(extract_nested contracts runtime | wc -w | tr -d ' ') runtime + $(extract_nested contracts consumer | wc -w | tr -d ' ') consumer"
-echo "  Validators:      $(list_generators | wc -w | tr -d ' ') validators"
+echo "  Agents:          $(registry_list_agents | wc -l | tr -d ' ') roles"
+echo "  Contracts:       $(registry_list_contracts runtime | wc -l | tr -d ' ') runtime + $(registry_list_contracts consumer | wc -l | tr -d ' ') consumer"
+echo "  Generators:      $(registry_list_generators | wc -l | tr -d ' ')"
+echo "  Detectors:       $(registry_list_detectors | wc -l | tr -d ' ')"
 echo "  Schemas:         documentation/schemas/frontmatter.schema.json"
 
 # --- Verify ---
-verify_components
+echo ""
+echo "=== Checking components ==="
+components_verify || true

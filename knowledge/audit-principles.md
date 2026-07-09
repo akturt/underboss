@@ -14,63 +14,63 @@ priority: P1
 
 # Audit Principles
 
-5-Stage Validation Protocol, Verdict System и Confidence Model для `adversary-checker`.
+5-Stage Validation Protocol, Verdict System, and Confidence Model for `adversary-checker`.
 
 ## 5-Stage Validation Protocol
 
-Каждый claim из `architecture-findings` проходит 5 этапов:
+Every claim from `architecture-findings` passes through 5 stages:
 
 ### Stage 1: Claim Decomposition
-Разбить каждый finding на отдельные, проверяемые claims:
-- **Factual claim** — "файл X существует / не существует"
-- **Causal claim** — "изменение Y привело к Z"
-- **Normative claim** — "следует сделать X" (только factual часть проверяется)
+Break each finding into separate, verifiable claims:
+- **Factual claim** — "file X exists / does not exist"
+- **Causal claim** — "change Y led to Z"
+- **Normative claim** — "X should be done" (only the factual part is verified)
 
 ### Stage 2: Evidence Hunt
-Для каждого claim найти подтверждающие или опровергающие данные:
+For each claim, find corroborating or refuting data:
 - Level 1-2 evidence (verified/direct) — strongest
 - Level 3-5 evidence (derived/inferred) — contextual
-- Absence of evidence — не evidence of absence
+- Absence of evidence — is not evidence of absence
 
 ### Stage 3: Verdict Assignment
-Каждый claim получает вердикт:
+Each claim receives a verdict:
 
-| Verdict | Определение |
-|---------|-------------|
-| **SUSTAINED** | Claim подтверждён Level 1-2 evidence |
-| **WEAKENED** | Claim частично подтверждён, но есть противоречия Level 3-4 |
-| **REFUTED** | Claim опровергнут Level 1-3 evidence |
-| **INSUFFICIENT_EVIDENCE** | Недостаточно данных для вердикта (Level 5-7) |
+| Verdict | Definition |
+|---------|------------|
+| **SUSTAINED** | Claim confirmed by Level 1-2 evidence |
+| **WEAKENED** | Claim partially confirmed, but there are Level 3-4 contradictions |
+| **REFUTED** | Claim refuted by Level 1-3 evidence |
+| **INSUFFICIENT_EVIDENCE** | Insufficient data for a verdict (Level 5-7) |
 
 ### Stage 4: Confidence Matrix
-Для каждого verdict — confidence level:
+For each verdict — confidence level:
 
-| Confidence | Критерий |
-|------------|----------|
-| **HIGH** | Level 1-2 evidence, keine contradictory data |
+| Confidence | Criterion |
+|------------|-----------|
+| **HIGH** | Level 1-2 evidence, no contradictory data |
 | **MEDIUM** | Level 3-4 evidence, minor contradictions |
 | **LOW** | Mixed levels, significant gaps, or Level 5+ reliance |
 
 ### Stage 5: Synthesis
-Объединить individual verdicts в общий отчёт:
-- Общий verdict по каждому finding
+Combine individual verdicts into an overall report:
+- Overall verdict per finding
 - Confidence matrix (finding × verdict × confidence)
 - Open questions (INSUFFICIENT_EVIDENCE items)
-- Contradictions между findings
+- Contradictions between findings
 
 ## Verdict System
 
 ### Per-Finding Verdict
-Каждый finding из architecture-review получает:
+Each finding from the architecture-review receives:
 - **Verdict**: SUSTAINED / WEAKENED / REFUTED / INSUFFICIENT_EVIDENCE
 - **Confidence**: HIGH / MEDIUM / LOW
 - **Evidence chain**: sources used for this verdict
-- **Reasoning**: как evidence приводит к verdict
+- **Reasoning**: how the evidence leads to the verdict
 
 ### Aggregate Verdict
-Общий результат adversary-check:
+Overall result of the adversary-check:
 - **All SUSTAINED** → findings validated, proceed
-- **Mixed** → report конкретную ситуацию, human decides
+- **Mixed** → report the specific situation, human decides
 - **Any REFUTED** → findings need revision
 - **Any INSUFFICIENT** → more data needed
 
@@ -90,10 +90,10 @@ priority: P1
 
 ## Behavioral Constraints
 
-1. **No new claims** — adversary-checker проверяет claims других, не генерирует новые.
-2. **No recommendations** — verdict + confidence, без предложений по исправлению.
-3. **Read-only** — не редактирует файлы, не запускает команды (webfetch разрешён для fact-checking).
-4. **Stalemate Protocol** — если adversary-checker не может определить verdict (insufficient evidence) — пометить как `INSUFFICIENT_EVIDENCE` и передать human, НЕ угадывать.
-5. **Proportional scrutiny** — high-impact findings проверяются строже, low-impact — быстрее.
-6. **Source attribution** — каждый verdict указывает конкретные evidence sources.
-7. **No appeal to authority** — "author said so" ≠ evidence. Только данные.
+1. **No new claims** — the adversary-checker verifies others' claims, it does not generate new ones.
+2. **No recommendations** — verdict + confidence, without suggestions for fixes.
+3. **Read-only** — does not edit files, does not run commands (webfetch is allowed for fact-checking).
+4. **Stalemate Protocol** — if the adversary-checker cannot determine a verdict (insufficient evidence), mark it as `INSUFFICIENT_EVIDENCE` and hand off to a human; do NOT guess.
+5. **Proportional scrutiny** — high-impact findings are checked more strictly, low-impact ones faster.
+6. **Source attribution** — every verdict points to specific evidence sources.
+7. **No appeal to authority** — "the author said so" ≠ evidence. Data only.

@@ -13,13 +13,13 @@ touches: []
 docs: [../README.md, ../INSTALL.md, ../playbook/playbook-v2.md]
 refs: []
 depends_on: []
-tags: [agents, roles, index, v1.5, capabilities, knowledge]
+tags: [agents, roles, index, v1.7, capabilities, knowledge]
 priority: P1
 ---
 
-# agents/ — Репозитарий ролей AI-агентов
+# agents/ — Repository of AI agent roles
 
-Runtime v1.5 содержит 4 роли, каждая — готовый промпт-конфигурация для конкретной платформы (Claude Code, opencode).
+Runtime v1.7 contains 4 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
 
 ## Roles
 
@@ -85,21 +85,21 @@ agents/
     └── adversary-checker.md
 ```
 
-## Подключение
+## Integration
 
-Файлы ролей — готовые дескрипторы агента. Скопируйте их в configuration directory вашей платформы:
+Role files are ready-to-use agent descriptors. Copy them into your platform's configuration directory:
 
 - **Claude Code**: `.claude/agents/<role>.md`
 - **opencode**: `.opencode/agents/<role>.md`
 
-Или используйте `CLAUDE.md` snippet из `INSTALL.md`.
+Or use the `CLAUDE.md` snippet from `INSTALL.md`.
 
-## Использование через SOP
+## Usage via SOP
 
-Роли вызываются **по имени** из декларативных SOP (`../sops/*.yaml`). Каждый YAML ссылается на роль через `role: <name>` или `capability: <name>` + `role: <name>`. Planner печатает DAG с указанием ролей и артефактов.
+Roles are invoked **by name** from declarative SOPs (`../sops/*.yaml`). Each YAML references a role via `role: <name>` or `capability: <name>` + `role: <name>`. The planner prints a DAG listing roles and artifacts.
 
-Human-шаги помечаются `gate: manual` (D-HG). Существующие SOP v1.0 с `role: human` backward-compatible — planner treat как alias для `gate: manual`.
+Human steps are marked with `gate: manual` (D-HG). Existing SOP v1.0 with `role: human` are backward-compatible — the planner treats them as an alias for `gate: manual`.
 
-## Расширение
+## Extending
 
-Для кастомных ролей (например, `tf-reviewer.md`) — создайте в consumer-репо в `.claude/agents/` или `.opencode/agents/`. Когда роль станет универсальной — предложите в `naprolom-docs` через PR.
+For custom roles (e.g., `tf-reviewer.md`), create them in your consumer repo under `.claude/agents/` or `.opencode/agents/`. Once a role becomes generally useful, propose it to `naprolom-docs` via a PR.

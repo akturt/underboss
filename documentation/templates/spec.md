@@ -17,26 +17,26 @@ tags: []
 priority: P0
 ---
 
-# Spec: <название>
+# Spec: <name>
 
 ## Goal
-Одно предложение: что получаем в результате.
+One sentence: what we get as a result.
 
 ## Context
-Почему сейчас? Что блокирует?
+Why now? What is blocking?
 
 ## Scope
 ### Included
 ### Excluded
 
 ## Technical approach
-Конкретные файлы, эндпоинты, таблицы.
+Specific files, endpoints, tables.
 
 ## Affected files (predicted)
 - path/to/file.py
 
 ## Open questions
-- Вопрос 1
+- Question 1
 
 ---
 

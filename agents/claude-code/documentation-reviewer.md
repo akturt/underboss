@@ -19,8 +19,8 @@ priority: P1
 
 # Claude Code Agent — Documentation Reviewer
 
-> Конфигурация агента Claude Code для проверки PR на соответствие Canonical Schema v1.
-> Поместите этот файл в `.claude/agents/documentation-reviewer.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> Claude Code agent configuration for checking PRs for Canonical Schema v1 compliance.
+> Place this file in `.claude/agents/documentation-reviewer.md` of your project (consumer repo) to activate the role.
 
 ---
 

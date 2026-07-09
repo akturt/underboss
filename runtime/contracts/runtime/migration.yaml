@@ -105,6 +105,30 @@ migration:
         - description: "validate-runtime.sh updated for new registry structure"
           paths: ["documentation/validation/validate-runtime.sh"]
 
+    - from: "1.5"
+      to: "1.6"
+      requires_bootstrap: false
+      requires_manual_actions: false
+      requires_consumer_changes: false
+      breaking: false
+      changes:
+        - description: "Runtime API extracted: runtime/lib/yaml.sh, registry.sh, state.sh, detectors.sh, generators.sh, components.sh"
+          paths: ["runtime/lib/"]
+        - description: "Internal YAML parser replaces awk/grep/sed for registry parsing"
+          paths: ["runtime/lib/yaml.sh"]
+        - description: "Bootstrap reads directories from registry (no hardcoded mkdir)"
+          paths: ["bootstrap/bootstrap.sh"]
+        - description: "install.sh reads entrypoints from registry"
+          paths: ["bootstrap/install.sh"]
+        - description: "Generator API standardized: generate TARGET REGISTRY"
+          paths: ["bootstrap/generators/"]
+        - description: "Detector API standardized: detect() outputs backend|database|infrastructure"
+          paths: ["bootstrap/detectors/"]
+        - description: "Generators registered in registry with entry: field"
+          paths: ["runtime/registry.yaml"]
+        - description: "validate-runtime.sh uses Runtime API for all registry parsing"
+          paths: ["documentation/validation/validate-runtime.sh"]
+
   breaking_changes:
     - version: "1.0 → 1.1"
       description: "Submodule path changed. Consumers on v1.0 must migrate."

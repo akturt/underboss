@@ -1,7 +1,7 @@
 name: release
-description: Релиз новой версии — от prep до verify и опционального post-release audit
+description: Release of a new version — from prep to verify and optional post-release audit
 triggers:
-  - milestone complete (N задач из backlog закрыты)
+  - milestone complete (N tasks from backlog closed)
   - release branch created
   - security patch required
 
@@ -32,56 +32,56 @@ steps:
     name: Architecture Review — pre-release readiness
     role: architecture-reviewer
     platform: any
-    produces: "проверка что все approved ADR включены; критические инварианты подтверждены; нет pending architectural decisions"
+    produces: "verify all approved ADRs are included; critical invariants confirmed; no pending architectural decisions"
     depends_on: []
 
   - id: 2
     name: Documentation Review — pre-release docs sanity
     role: documentation-reviewer
     platform: any
-    produces: "все .md в docs/ валидные по Schema v1; runbooks актуальны; secrets doc up-to-date"
+    produces: "all .md in docs/ valid per Schema v1; runbooks up-to-date; secrets doc up-to-date"
     depends_on: []
 
   - id: 3
     name: Tests green (full suite)
     role: human
-    produces: "unit + integration + e2e tests зелёные локально и в CI"
+    produces: "unit + integration + e2e tests green locally and in CI"
     depends_on: [1, 2]
 
   - id: 4
     name: Update changelog + version
     role: human
-    produces: "CHANGELOG.md (или эквивалент) обновлён; version bump выполнен согласно semver"
+    produces: "CHANGELOG.md (or equivalent) updated; version bump performed per semver"
     depends_on: [3]
 
   - id: 5
     name: Tag release
     role: human
-    produces: "git tag v<version>; tag annotated; release notes приложены"
+    produces: "git tag v<version>; tag annotated; release notes attached"
     depends_on: [4]
 
   - id: 6
     name: Deploy (staging → prod)
     role: human
-    produces: "artifact опубликован; deploy в prod выполнен по runbook"
+    produces: "artifact published; deploy to prod performed per runbook"
     depends_on: [5]
 
   - id: 7
     name: Verify — smoke tests prod
     role: human
-    produces: "prod smoke-tests зелёные; key endpoints отвечают; метрики в норме"
+    produces: "prod smoke-tests green; key endpoints respond; metrics within normal range"
     depends_on: [6]
 
   - id: 8
     name: Promote spec approved→implemented
     role: human
-    produces: "git mv → docs/specs/implemented/; frontmatter status=implemented; заполнен ## Result"
+    produces: "git mv → docs/specs/implemented/; frontmatter status=implemented; ## Result filled"
     depends_on: [7]
 
   - id: 9
     name: Post-release audit (для major или security релизов)
     role: human
     platform: any
-    produces: "docs/audits/YYYY-MM-DD-release-<version>.md (status=completed): что прошло хорошо/плохо, уроки"
+    produces: "docs/audits/YYYY-MM-DD-release-<version>.md (status=completed): what went well/badly, lessons learned"
     depends_on: [8]
     condition: "if major OR security release"

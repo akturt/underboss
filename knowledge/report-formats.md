@@ -132,4 +132,4 @@ Evidence: <file path / line / diff snippet>
 ```
 
 ### Terminal Artifact
-Forensic report сохраняется как `docs/audits/YYYY-MM-DD-forensic-<topic>.md`.
+The forensic report is saved as `docs/audits/YYYY-MM-DD-forensic-<topic>.md`.

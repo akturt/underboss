@@ -6,7 +6,7 @@ status: active
 date: 2026-07-08
 owners: [naprolom-team]
 
-description: Claim Validation Agent — проверяет архитектурные claims других ревьюеров на соответствие данным
+description: Claim Validation Agent — validates other reviewers' architectural claims against the actual data
 mode: subagent
 permission:
   read: allow
@@ -28,8 +28,8 @@ priority: P1
 
 # opencode Agent — Adversary Checker
 
-> Claim Validation Agent. Проверяет архитектурные claims других ревьюеров на соответствие данным.
-> Поместите этот файл в `.opencode/agents/adversary-checker.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> Claim Validation Agent. Validates other reviewers' architectural claims against the actual data.
+> Place this file in `.opencode/agents/adversary-checker.md` of your project (consumer repo) to activate the role.
 
 ---
 

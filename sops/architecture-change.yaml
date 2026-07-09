@@ -1,10 +1,10 @@
 name: architecture-change
-description: Изменение архитектуры — от proposal до accepted ADR с обновлением docs/architecture/
+description: Architecture change — from proposal to accepted ADR with docs/architecture/ update
 triggers:
-  - proposal нового ADR в docs/adr/
-  - PR меняет topology (новый балансировщик, новая БД, замена очереди)
-  - PR меняет data model (новая схема, новый тип индекса)
-  - PR меняет security model (RBAC, ACL, authn/authz)
+  - proposal of a new ADR in docs/adr/
+  - PR changes topology (new load balancer, new DB, queue replacement)
+  - PR changes data model (new schema, new index type)
+  - PR changes security model (RBAC, ACL, authn/authz)
 
 input:
   required:
@@ -20,37 +20,37 @@ output:
   - type: architecture_doc
     path: docs/architecture/<topic>.md
     status: active
-    note: "обновляется только если меняется topology/data-model/invariants"
+    note: "updated only if topology/data-model/invariants change"
   - type: spec
-    note: "опционально: если архитектурное решение требует implementation spec"
+    note: "optional: if the architectural decision requires an implementation spec"
     final_path: docs/specs/approved/YYYY-MM-DD-<slug>.md
     status: approved
 
 steps:
   - id: 1
-    name: Architecture Review — валидация ADR
+    name: Architecture Review — ADR validation
     role: architecture-reviewer
     platform: any
-    produces: "ADR canonical form verified; body has 4 sections; status=proposed; supersedes (если есть) корректно оформлен"
+    produces: "ADR canonical form verified; body has 4 sections; status=proposed; supersedes (if any) correctly formatted"
     depends_on: []
 
   - id: 2
     name: Security Review
     role: human
-    produces: "подтверждение что security model не нарушена; помечает ADR security-sensitive если да"
+    produces: "confirmation that security model is not violated; marks ADR security-sensitive if so"
     depends_on: [1]
     condition: "if security-impact"
 
   - id: 3
     name: Acceptance — promote ADR proposed→accepted
     role: human
-    produces: "frontmatter status=accepted; ADR body остаётся byte-for-byte неизменным (только FM переход)"
+    produces: "frontmatter status=accepted; ADR body remains byte-for-byte unchanged (only FM transition)"
     depends_on: [1, 2]
 
   - id: 4
     name: Update architecture docs
     role: human
-    produces: "docs/architecture/README.md Critical Invariants обновлён; соответствующий docs/architecture/<topic>.md обновлён (не новая версия, обновление существующего)"
+    produces: "docs/architecture/README.md Critical Invariants updated; corresponding docs/architecture/<topic>.md updated (not a new version, update of existing)"
     depends_on: [3]
     condition: "if topology or invariants changed"
 
@@ -58,21 +58,21 @@ steps:
     name: Documentation Review — validate affected docs
     role: documentation-reviewer
     platform: any
-    produces: "все затронутые .md корректные по Schema v1; новые entity_refs ссылаются на существующие id в docs/architecture/"
+    produces: "all affected .md are valid per Schema v1; new entity_refs reference existing ids in docs/architecture/"
     depends_on: [4]
     condition: "if docs changed"
 
   - id: 6
-    name: Optional — создать implementation spec
+    name: Optional — create implementation spec
     role: human
-    produces: "опционально: docs/specs/drafts/YYYY-MM-DD-<slug>.md (если архитектурное решение требует явной имплементации)"
+    produces: "optional: docs/specs/drafts/YYYY-MM-DD-<slug>.md (if the architectural decision requires explicit implementation)"
     depends_on: [3, 5]
     condition: "if implementation work needed"
 
   - id: 7
-    name: Audit (если архитектурный change high-impact)
+    name: Audit (if architectural change is high-impact)
     role: human
     platform: any
-    produces: "docs/audits/YYYY-MM-DD-<slug>.md (status=completed) — оценка post-implementation"
+    produces: "docs/audits/YYYY-MM-DD-<slug>.md (status=completed) — post-implementation assessment"
     depends_on: [3]
     condition: "if high-impact change"

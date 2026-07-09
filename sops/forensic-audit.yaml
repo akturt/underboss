@@ -2,7 +2,7 @@ name: forensic-audit
 description: 8-step multi-pass forensic audit pipeline (replaces ad-hoc forensic agent)
 triggers:
   - manual invocation for deep architectural forensic
-  - после инцидента с архитектурной причиной
+  - after an incident with an architectural root cause
 input:
   required:
     - type: spec|adr|audit

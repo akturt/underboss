@@ -1,15 +1,15 @@
 # sops/ — Standard Operating Procedures
 
-> Декларативные описания процессов разработки. Не исполнение — описание. Оркестратором выступает человек или простой planner-скрипт.
+> Declarative descriptions of development processes. Not execution — description. The orchestrator is a human or a simple planner script.
 
-## Что это
+## What this is
 
-SOP — YAML-описание типового процесса разработки (New Feature, Bugfix, Release, Architecture Review...) в виде:
-1. **Input** — какие документы/артефакты должны существовать до старта.
-2. **Steps** — последовательность шагов, каждому назначена роль из `agents/` или `gate: manual`.
-3. **Output** — артефакты, которые должны появиться по завершении.
+A SOP is a YAML description of a standard development process (New Feature, Bugfix, Release, Architecture Review...) consisting of:
+1. **Input** — which documents/artifacts must exist before starting.
+2. **Steps** — a sequence of steps, each assigned a role from `agents/` or `gate: manual`.
+3. **Output** — the artifacts that should appear upon completion.
 
-SOP описывает **оркестрацию**, не validation logic. Validation — ответственность роли.
+A SOP describes **orchestration**, not validation logic. Validation is the responsibility of the role.
 
 ## Layout
 
@@ -92,7 +92,7 @@ input:
 
 The `entities` and `mechanisms` are NOT hardcoded in SOP — consumer provides them at invocation time.
 
-## Использование
+## Usage
 
 ```bash
 node sops/planner.mjs --list                    # list available SOPs
@@ -101,12 +101,12 @@ node sops/planner.mjs forensic-audit --platform opencode  # platform-specific
 node sops/planner.mjs incident --hide-human     # hide manual gates
 ```
 
-## Расширение
+## Extension
 
-Добавить новый SOP — создать `sops/<name>.yaml`. Planner подхватит автоматически.
+Add a new SOP — create `sops/<name>.yaml`. The planner will pick it up automatically.
 
-## Что НЕ входит (намеренно)
+## What is NOT included (intentionally)
 
-- **Нет runtime state.** SOP не хранит прогресс между запусками.
-- **Нет execution engine.** Не Temporal, не Airflow. YAML + planner.
-- **Нет встроенных валидаторов.** Validation logic — ответственность роли (D-3).
+- **No runtime state.** A SOP does not store progress between runs.
+- **No execution engine.** Not Temporal, not Airflow. YAML + planner.
+- **No built-in validators.** Validation logic is the responsibility of the role (D-3).

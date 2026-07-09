@@ -1,11 +1,10 @@
 #!/bin/bash
 # bootstrap/generators/claude-md.sh — Generate CLAUDE.md snippet
 #
-# Usage: generate_claude_md <target_dir>
+# API: generate TARGET REGISTRY
 
-generate_claude_md() {
-  local target_dir="$1"
-  local docs_root="${target_dir}/docs"
+generate() {
+  local target_dir="$1" registry="$2"
 
   if [ -f "${target_dir}/CLAUDE.md" ]; then
     echo "  → CLAUDE.md already exists, skipping."
@@ -17,10 +16,10 @@ generate_claude_md() {
 
 ## Project Identity
 
-- Name: ${name:-unknown}
-- Domain: ${domain:-unknown}
-- Stack: ${stack:-unknown}
-- Runtime: naprolom v1.5
+- Name: $(basename "$target_dir")
+- Domain: unknown
+- Stack: unknown
+- Runtime: naprolom v1.7
 
 ## Documentation Layout
 

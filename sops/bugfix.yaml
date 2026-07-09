@@ -1,8 +1,8 @@
 name: bugfix
-description: Исправление бага — от репродукции до закрытия баг-репорта с минимальной бюрократией
+description: Bug fix — from reproduction to closing the bug report with minimal bureaucracy
 triggers:
-  - Открыт GitHub Issue с label bug
-  - PR помечен как hotfix
+  - Opened GitHub Issue with label bug
+  - PR marked as hotfix
 
 input:
   required:
@@ -12,7 +12,7 @@ input:
     - type: spec
       path_pattern: docs/specs/drafts/YYYY-MM-DD-bugfix-<slug>.md
       status: draft
-      note: "spec создаётся только если фикс — не тривиальный (затрагивает контракт, модель данных, security); otherwise commit message + PR description достаточно"
+      note: "spec is created only if the fix is non-trivial (touches contract, data model, security); otherwise commit message + PR description is sufficient"
 
 output:
   - type: pr
@@ -28,13 +28,13 @@ steps:
   - id: 1
     name: Reproduce
     role: human
-    produces: "локально воспроизведённый баг или обоснование «not reproducible»"
+    produces: "bug reproduced locally or a rationale of «not reproducible»"
     depends_on: []
 
   - id: 2
     name: Triage — нужна ли spec?
     role: human
-    produces: "решение тривиальный-фикс vs не-тривиальный. Для нетривиального — создать spec в docs/specs/drafts/"
+    produces: "decision trivial-fix vs non-trivial. For non-trivial — create a spec in docs/specs/drafts/"
     depends_on: [1]
 
   - id: 3
@@ -48,34 +48,34 @@ steps:
   - id: 4
     name: Fix code
     role: human
-    produces: "PR с фиксом и тестами"
+    produces: "PR with the fix and tests"
     depends_on: [2]
 
   - id: 5
     name: Tests green
     role: human
-    produces: "локально и CI тесты зелёные"
+    produces: "local and CI tests green"
     depends_on: [4]
 
   - id: 6
     name: Architecture Review (если фикс архитектурно-чувствительный)
     role: architecture-reviewer
     platform: any
-    produces: "ACK или ADR если фикс меняет топологию/модель/контракт"
+    produces: "ACK or ADR if the fix changes topology/model/contract"
     depends_on: [4]
     condition: "if architectural impact"
 
   - id: 7
     name: Documentation update (если затронуты docs)
     role: human
-    produces: "docs/architecture/, runbook, secrets обновлены по необходимости"
+    produces: "docs/architecture/, runbook, secrets updated as needed"
     depends_on: [5]
 
   - id: 8
     name: Audit (только для hotfix/security)
     role: human
     platform: any
-    produces: "docs/audits/YYYY-MM-DD-bugfix-<slug>.md если фикс—hotfix или security"
+    produces: "docs/audits/YYYY-MM-DD-bugfix-<slug>.md if the fix is a hotfix or security-related"
     depends_on: [5, 7]
     condition: "if hotfix OR security"
 

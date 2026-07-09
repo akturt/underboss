@@ -1,5 +1,8 @@
 runtime:
-  version: "1.5"
+  version: "1.7"
+
+bootstrap:
+  engine_version: "2.0"
 
 schema:
   version: 1
@@ -114,19 +117,28 @@ validators:
 generators:
   - name: architecture-readme
     path: bootstrap/generators/architecture-readme.sh
+    entry: generate
     description: "Auto-generate docs/architecture/README.md from project structure"
   - name: boundaries
     path: bootstrap/generators/boundaries.sh
+    entry: generate
     description: "Auto-generate .context/boundaries.yml from .gitignore"
   - name: project-yml
     path: bootstrap/generators/project-yml.sh
+    entry: generate
     description: "Auto-generate .context/project.yml from lockfiles"
   - name: claude-md
     path: bootstrap/generators/claude-md.sh
+    entry: generate
     description: "Generate CLAUDE.md snippet"
   - name: ci-workflow
     path: bootstrap/generators/ci-workflow.sh
+    entry: generate
     description: "Generate .github/workflows/docs-validate.yml"
+  - name: invariants
+    path: bootstrap/generators/invariants.sh
+    entry: generate
+    description: "Auto-generate docs/architecture/invariants.md from template"
 
 scripts:
   - name: migrate-legacy

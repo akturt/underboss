@@ -1,7 +1,11 @@
 #!/bin/bash
 # bootstrap/detectors/node.sh — Node.js stack detector
 #
-# Output format: backend|database|infrastructure
+# CONTRACT:
+#   Function: detect()
+#   Output: backend|database|infrastructure (pipe-separated, any field may be empty)
+#   Exit: 0 = success (even if nothing detected)
+#   Env: TARGET must be set to project root
 
 detect() {
   local backend="" database="" infrastructure=""

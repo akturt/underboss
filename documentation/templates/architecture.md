@@ -18,7 +18,7 @@ priority: P0
 # <Topic>
 
 ## What is this
-[1 абзац]
+[1 paragraph]
 
 ## Key Invariants
 | ID | Rule | Where enforced |

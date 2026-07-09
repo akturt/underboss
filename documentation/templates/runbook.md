@@ -20,19 +20,19 @@ priority: P1
 # <Topic>
 
 ## When to use
-[Описание ситуации]
+[Description of the situation]
 
 ## Prerequisites
-- [Требование 1]
-- [Требование 2]
+- [Requirement 1]
+- [Requirement 2]
 
 ## Steps
-1. Шаг 1
-2. Шаг 2
-3. Шаг 3
+1. Step 1
+2. Step 2
+3. Step 3
 
 ## Verification
-[Как проверить что всё работает]
+[How to verify everything works]
 
 ## Rollback
-[Что делать если пошло не так]
+[What to do if something goes wrong]

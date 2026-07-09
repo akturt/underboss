@@ -1,10 +1,12 @@
 #!/bin/bash
 # bootstrap/generators/boundaries.sh — Auto-generate .context/boundaries.yml
 #
-# Usage: generate_boundaries <target_dir> <domain> <name>
+# API: generate TARGET REGISTRY
+#   TARGET — project root directory
+#   REGISTRY — path to registry.yaml
 
-generate_boundaries() {
-  local target_dir="$1" domain="$2" name="$3"
+generate() {
+  local target_dir="$1" registry="$2"
 
   mkdir -p "${target_dir}/.context"
 

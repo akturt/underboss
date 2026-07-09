@@ -1,4 +1,4 @@
-# bootstrap/bootstrap.ps1
+﻿# bootstrap/bootstrap.ps1
 #
 # Minimal Documentation System Runtime bootstrap (Windows / PowerShell).
 # Creates docs/ skeleton + .context/ stubs + drops CLAUDE.md snippet into the
@@ -46,19 +46,27 @@ if (Test-Path $gitmodules) {
   }
 }
 
-$dirs = @(
-  "docs\architecture",
-  "docs\adr",
-  "docs\specs\drafts",
-  "docs\specs\review",
-  "docs\specs\approved",
-  "docs\specs\implemented",
-  "docs\specs\superseded",
-  "docs\audits",
-  "docs\backlog",
-  "docs\api"
-)
+function Get-RegistryDirectories($scope) {
+  $reg = Join-Path $RuntimeRoot "runtime\registry.yaml"
+  if (-not (Test-Path $reg)) { return $null }
+  $lines = Get-Content -Path $reg
+  $inDirs = $false; $inScope = $false; $result = @()
+  foreach ($line in $lines) {
+    if ($line -match '^directories:') { $inDirs = $true; continue }
+    if ($inDirs -and $line -match '^[a-z]') { $inDirs = $false; $inScope = $false; continue }
+    if ($inDirs -and $line -match ('^  ' + $scope + '\s*:')) { $inScope = $true; continue }
+    if ($inScope -and $line -match '^(  )?[a-z]') { $inScope = $false; continue }
+    if ($inScope -and $line -match '^\s*- path:\s*(.+?)\s*$') { $result += $Matches[1] }
+  }
+  return $result
+}
+$dirs = Get-RegistryDirectories "docs"
+if (-not $dirs) {
+  Write-Host "WARNING: runtime/registry.yaml not found; using built-in fallback list." 2>&1
+  $dirs = "architecture","adr","specs\drafts","specs\review","specs\approved","specs\implemented","specs\superseded","audits","backlog","api"
+}
 foreach ($d in $dirs) {
+  $d = "docs\" + ($d -replace '/', '\')
   New-Item -ItemType Directory -Force -Path (Join-Path $ProjectPath $d) | Out-Null
 }
 foreach ($keep in @("docs\architecture","docs\adr","docs\audits","docs\backlog","docs\api")) {
@@ -157,7 +165,7 @@ if (Test-Path $claude) {
   Write-Host "-> Created CLAUDE.md with Documentation Runtime snippet"
 }
 
-# AGENTS.md — same content, only if file already exists (Cursor, Windsurf, etc.)
+# AGENTS.md — same content, only if the file already exists (Cursor, Windsurf, etc.)
 $agents = Join-Path $ProjectPath "AGENTS.md"
 if (Test-Path $agents) {
   $existing = Get-Content -Path $agents -Raw -ErrorAction SilentlyContinue

@@ -18,8 +18,8 @@ priority: P1
 
 # Claude Code Agent — Reality Auditor
 
-> Project State Reconstruction Agent. Восстанавливает реальное состояние проекта из кода, конфигов и документов.
-> Поместите этот файл в `.claude/agents/reality-auditor.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> Project State Reconstruction Agent. Reconstructs the project's actual state from code, configs, and documents.
+> Place this file in `.claude/agents/reality-auditor.md` of your project (consumer repo) to activate the role.
 
 ---
 

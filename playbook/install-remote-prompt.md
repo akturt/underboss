@@ -16,42 +16,42 @@ tags: [install, remote, agent-prompt, ubuntu]
 priority: P0
 ---
 
-# Универсальный промпт для удалённой установки naprolom-docs как Git Submodule
+# Universal prompt for installing naprolom-docs as a Git Submodule on a remote host
 
-> **Self-contained prompt** для AI-агента на Linux-сервере (Ubuntu) на подключение naprolom-docs Runtime в существующий репозиторий проекта. Запусти этот промпт как есть.
+> **Self-contained prompt** for an AI agent on a Linux server (Ubuntu) to connect the naprolom-docs Runtime into an existing project repository. Run this prompt as-is.
 
 ---
 
-## Роль агента
+## Agent role
 
-Ты — DevOps-агент, у которого есть доступ к git-репозиторию проекта на удалённом Linux-сервере. Твоя задача — подключить Documentation System Runtime `naprolom-docs` как Git Submodule и подготовить структуру проекта к совместной работе с Documentation Schema v1.
+You are a DevOps agent with access to the project's git repository on a remote Linux server. Your task is to connect the Documentation System Runtime `naprolom-docs` as a Git Submodule and prepare the project structure for working with Documentation Schema v1.
 
-Пиши на русском, докладывай на каждом checkpoint'е, не переходи к следующему без подтверждения (если этого требует конкретный шаг). Команды bash копируй дословно, не «перефразируй».
+Report at every checkpoint, and do not proceed to the next step without confirmation (if the specific step requires it). Copy bash commands verbatim, do not "rephrase" them.
 
-## Входные условия
+## Preconditions
 
-- На сервере установлен `git >= 2.20` и `node >= 18` (для `engine/scripts/migrate-legacy.mjs` и `sops/planner.mjs`).
-- У тебя есть SSH-доступ к репозиторию проекта (через `git@github.com:akturt/<project>.git` или эквивалент) или HTTPS PAT ключом.
-- Рабочая директория — корень клона проекта.
+- The server has `git >= 2.20` and `node >= 18` installed (for `engine/scripts/migrate-legacy.mjs` and `sops/planner.mjs`).
+- You have SSH access to the project repository (via `git@github.com:akturt/<project>.git` or equivalent) or an HTTPS PAT key.
+- The working directory is the root of the project clone.
 
-## Переменные проекта
+## Project variables
 
-| Переменная | Пример | Заменить на |
+| Variable | Example | Replace with |
 |---|---|---|
-| `PROJECT_NAME` | `kordon` | Имя consumer-проекта (slug, lowercase) |
-| `PROJECT_REPO_URL` | `git@github.com:akturt/kordon.git` | SSH или HTTPS URL репозитория |
-| `PROJECT_REPOS_REMOTE` | `origin` | Стандартное имя remote (обычно `origin`) |
-| `PROJECT_BRANCH` | `main` или `master` | Рабочая ветка, на которой делаем интеграцию |
-| `AI_PLATFORM` | `opencode` или `claude-code` | Что установлено на сервере (если оба — `opencode` для Linux) |
-| `TEAM_NAME` | `naprolom-team` | Кто будет owner документов в frontmatter |
+| `PROJECT_NAME` | `kordon` | Consumer project name (slug, lowercase) |
+| `PROJECT_REPO_URL` | `git@github.com:akturt/kordon.git` | SSH or HTTPS URL of the repository |
+| `PROJECT_REPOS_REMOTE` | `origin` | Standard remote name (usually `origin`) |
+| `PROJECT_BRANCH` | `main` or `master` | Working branch on which we do the integration |
+| `AI_PLATFORM` | `opencode` or `claude-code` | What is installed on the server (if both — `opencode` for Linux) |
+| `TEAM_NAME` | `naprolom-team` | Who will be the owner of documents in the frontmatter |
 
-## Контекст-урл (используй для инструкций внутри SOP и промптов)
+## Context URL (use for instructions inside SOPs and prompts)
 
-Runtime submodule монтируется в `docs/.runtime/naprolom-docs/`. Все дальнейшие пути consumer-side относительные от него.
+The Runtime submodule is mounted at `docs/.runtime/naprolom-docs/`. All further consumer-side paths are relative to it.
 
 ---
 
-## Step 1 — Клон проекта (если ещё не склонирован на сервере)
+## Step 1 — Clone the project (if not yet cloned on the server)
 
 ```bash
 cd ~                                          # или /opt / /srv — где должен жить проект
@@ -61,63 +61,63 @@ git checkout <PROJECT_BRANCH>
 git status                                     # убедись что ветка чистая, без uncommitted
 ```
 
-**Checkpoint 1:** доклади:
-- путь к клону
-- текущую ветку
-- наличие `docs/`, `.context/`, `CLAUDE.md`, `.github/workflows/` через `ls -la`
+**Checkpoint 1:** report:
+- path to the clone
+- current branch
+- presence of `docs/`, `.context/`, `CLAUDE.md`, `.github/workflows/` via `ls -la`
 
 ---
 
-## Step 2 — Проверка brownfield vs greenfield
+## Step 2 — Check brownfield vs greenfield
 
-Система установки отличается в зависимости от того, есть ли уже `docs/` с `.md`:
+The installation system differs depending on whether `docs/` with `.md` already exists:
 
 ```bash
 ls docs/ 2>/dev/null && echo "DOCS_EXISTS" || echo "NO_DOCS"
 find docs/ -name "*.md" 2>/dev/null | wc -l
 ```
 
-**Правило:**
-- `NO_DOCS` или `0 .md файлов` → **Greenfield path** → переходи к Step 3.
-- Есть `.md` файлы в `docs/` → **Brownfield path** → переходи к Step 4.
+**Rule:**
+- `NO_DOCS` or `0 .md files` → **Greenfield path** → go to Step 3.
+- There are `.md` files in `docs/` → **Brownfield path** → go to Step 4.
 
-Не делай переход дальше без подтверждения оператором, если count `.md` > 30 — там, скорее всего, legacy документация; нужна миграция.
+Do not proceed further without operator confirmation if the `.md` count > 30 — there, most likely, is legacy documentation; migration is needed.
 
 ---
 
-## Step 3 — Greenfield path: подключить submodule
+## Step 3 — Greenfield path: attach the submodule
 
-Только если в Step 2 — `NO_DOCS` (нет существующей документации).
+Only if in Step 2 — `NO_DOCS` (no existing documentation).
 
 ```bash
 mkdir -p docs/.runtime
 git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git submodule update --init --recursive
-ls -la docs/.runtime/naprolom-docs/        # должно показать содержимое Runtime
+ls -la docs/.runtime/naprolom-docs/        # should show Runtime contents
 ```
 
-Bootstrap создаст skeleton + CLAUDE.md snippet + workflow:
+Bootstrap will create the skeleton + CLAUDE.md snippet + workflow:
 
 ```bash
 bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
+**What should appear:**
 
-**Что должно появиться:**
-- `docs/{architecture,adr,specs/{drafts,review,approved,implemented,superseded},audits,backlog,api}/` — 5-слойная структура.
+- `docs/{architecture,adr,specs:{drafts,review,approved,implemented,superseded},audits,backlog,api}/` — the 5-layer structure.
 - `.context/{project.yml,boundaries.yml,agent-entry.md}` — stubs.
-- `CLAUDE.md` — snippet из 6 строк про Documentation Runtime (приложен к существующему или создан).
-- `.github/workflows/docs-validate.yml` — CI guard.
+- `CLAUDE.md` — a 6-line snippet about the Documentation Runtime (appended to existing or created).
+- `.github/workflows/docs-validate.yml` — the CI guard.
 
-Переходи к Step 5.
+Proceed to Step 5.
 
 ---
 
-## Step 4 — Brownfield path: подключить submodule без перезаписи
+## Step 4 — Brownfield path: attach the submodule without overwriting
 
-Только если в Step 2 — существующая `docs/` с `.md`.
+Only if in Step 2 — an existing `docs/` with `.md`.
 
-### 4a — Подключить submodule
+### 4a — Attach the submodule
 
 ```bash
 mkdir -p docs/.runtime
@@ -126,15 +126,15 @@ git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git submodule update --init --recursive
 ```
 
-### 4b — Сгенерировать только .context/ stubs (НЕ трогать существующий docs/)
+### 4b — Generate only the .context/ stubs (DO NOT touch the existing docs/)
 
-Bootstrap идемпотентен: он не перезаписывает существующие файлы. Но безопаснее — явно скопировать stubs отдельно, а потом — при необходимости отредактировать.
+Bootstrap is idempotent: it does not overwrite existing files. But it is safer to explicitly copy the stubs separately, and then — if needed — edit them.
 
 ```bash
-# Создаём .context/ без вызова bootstrap (чтобы не задеть существующие .github/workflows/docs-validate.yml)
+# Creating .context/ without calling bootstrap (to avoid touching existing .github/workflows/docs-validate.yml)
 mkdir -p .context
 
-# Создаём stubs, не перезаписывая существующие
+# Creating stubs, not overwriting existing ones
 [ -f .context/project.yml ] || cat > .context/project.yml << 'YML'
 project:
   name: <PROJECT_NAME>
@@ -182,28 +182,28 @@ Before creating any .md in docs/:
 MD
 ```
 
-### 4c — Проверить состояние legacy frontmatter (без записи)
+### 4c — Check the legacy frontmatter state (without writing)
 
 ```bash
 node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run --owner <TEAM_NAME> 2>&1 | head -40
 ```
 
-Сохраняй вывод для отчёта оператору: сколько `.md` было бы изменено, сколько с `TODO_ENTITY_REF` (требуют manual review).
+Save the output for the operator's report: how many `.md` would be changed, how many have `TODO_ENTITY_REF` (require manual review).
 
-### 4d — Запустить миграцию (только если оператор подтвердил)
+### 4d — Run the migration (only if the operator confirmed)
 
-**Не запускай без явного подтверждения.** Миграция перезаписывает все `.md` в `docs/` canonical Schema v1.
+**Do not run without explicit confirmation.** The migration overwrites all `.md` in `docs/` to canonical Schema v1.
 
 ```bash
 node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <TEAM_NAME>
 ```
 
 **Exit codes:**
-- `0` — миграция прошла чисто.
-- `1` — есть `TODO_ENTITY_REF` marкеры. Не блокирующе, но требует manual review.
-- `2` — `docs/` root не найден (что-то не так).
+- `0` — migration completed cleanly.
+- `1` — there are `TODO_ENTITY_REF` markers. Non-blocking, but requires manual review.
+- `2` — `docs/` root not found (something is wrong).
 
-### 4e — Установить CI guard в warn-only режиме (период миграции)
+### 4e — Set the CI guard in warn-only mode (migration period)
 
 ```bash
 mkdir -p .github/workflows
@@ -227,58 +227,58 @@ jobs:
 YML
 ```
 
-**Checkpoint 4:** доложи:
-- сколько файлов мигрировало
-- сколько `TODO_ENTITY_REF` маркеров осталось
-- что warn-only CI конфигурация создана
+**Checkpoint 4:** report:
+- how many files migrated
+- how many `TODO_ENTITY_REF` markers remain
+- that the warn-only CI configuration was created
 
 ---
 
-## Step 5 — Заполнить project.yml и boundaries.yml под проект
+## Step 5 — Fill in project.yml and boundaries.yml for the project
 
-Отредактируй `.context/project.yml` вручную или через heredoc, подставив реальный стек проекта:
+Edit `.context/project.yml` manually or via heredoc, substituting the real project stack:
 
 ```bash
 cat > .context/project.yml << 'YML'
 project:
   name: <PROJECT_NAME>
-  description: "<читай README проекта, запиши 1 предложение>"
+  description: "<read project README, write 1 sentence>"
   domain: example.com
   maintainer: <TEAM_NAME>
   repository: <PROJECT_REPO_URL>
 
 stack:
-  backend: [<читай package.json / requirements.txt / go.mod - запиши языки и фреймворки>]
-  database: [<читай конфиги миграций / docker-compose / .env.example>]
+  backend: [<read package.json / requirements.txt / go.mod — write languages and frameworks>]
+  database: [<read migration configs / docker-compose / .env.example>]
   infrastructure: [<Docker Compose / Kubernetes / Terraform / Ansible>]
 
 directories:
   key:
-    src/: "Основной код"
-    docs/: "Документация"
-    infra/: "Инфраструктура"
+    src/: "Main source code"
+    docs/: "Documentation"
+    infra/: "Infrastructure"
 YML
 ```
 
-Расширь `.context/boundaries.yml` под реальную структуру проекта:
+Expand `.context/boundaries.yml` to match the real project structure:
 
 ```bash
-# Найди директории с кодом, конфигами, секретами
+# Find directories with code, configs, secrets
 ls -la
 find . -maxdepth 2 -type d -not -path "./.git*" -not -path "./node_modules*"
 ```
 
-Заполни в `.context/boundaries.yml`:
-- `pristine` — то, что НЕ трогать (vendor/, third-party, docs/.runtime/naprolom-docs/).
-- `editable` — где можно менять (src/, docs/, infra/).
-- `generated` — то, что создают скрипты.
-- `secret` — файлы с секретами (.env, *.key, *.pem).
+Fill in `.context/boundaries.yml`:
+- `pristine` — what NOT to touch (vendor/, third-party, docs/.runtime/naprolom-docs/).
+- `editable` — where changes are allowed (src/, docs/, infra/).
+- `generated` — what scripts create.
+- `secret` — files containing secrets (.env, *.key, *.pem).
 
 ---
 
-## Step 6 — CLAUDE.md snippet (для AI-агента)
+## Step 6 — CLAUDE.md snippet (for the AI agent)
 
-Если `CLAUDE.md` уже есть — проверь наличие секции «## Documentation Runtime»:
+If `CLAUDE.md` already exists — check for the presence of the "## Documentation Runtime" section:
 
 ```bash
 if [ -f CLAUDE.md ]; then
@@ -288,37 +288,37 @@ else
 fi
 ```
 
-Для `NEED_APPEND` или `NEED_CREATE` — вызови bootstrap (он идемпотентен, не перезапишет) или скопируй snippet вручную:
+For `NEED_APPEND` or `NEED_CREATE` — call bootstrap (it is idempotent, will not overwrite) or copy the snippet manually:
 
 ```bash
 bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
-Если залоговые создаются — `agent-entry.md` перезапишется только если он не существует (проверь через `bootstrap.sh` идемпотентность).
+If the stub files are created — `agent-entry.md` will be overwritten only if it does not already exist (verify idempotency via `bootstrap.sh`).
 
-**Альтернатива для других AI entry-files:**
+**Alternative for other AI entry-files:**
 
-Для opencode создай symlink или копию:
+For opencode, create a symlink or a copy:
 ```bash
 [ -f AGENTS.md ] || ln -s CLAUDE.md AGENTS.md 2>/dev/null || cp CLAUDE.md AGENTS.md
 ```
 
 ---
 
-## Step 7 — Скопировать роли агентов под платформу сервера
+## Step 7 — Copy the agent roles for the server platform
 
-Игнорируй если `<AI_PLATFORM>` не указан — пропусти этот шаг.
+Ignore if `<AI_PLATFORM>` is not set — skip this step.
 
-### Для `opencode`
+### For `opencode`
 
 ```bash
 mkdir -p .opencode/agents
 cp docs/.runtime/naprolom-docs/agents/opencode/*.md .opencode/agents/
 ls -la .opencode/agents/
-# должно показать: architecture-reviewer.md, documentation-reviewer.md
+# should show: architecture-reviewer.md, documentation-reviewer.md
 ```
 
-### Для `claude-code`
+### For `claude-code`
 
 ```bash
 mkdir -p .claude/agents
@@ -326,49 +326,49 @@ cp docs/.runtime/naprolom-docs/agents/claude-code/*.md .claude/agents/
 ls -la .claude/agents/
 ```
 
-### Для обеих платформ одновременно
+### For both platforms at once
 
-Просто скопируй оба набора. `CLAUDE.md` snippet остаётся общим — обе платформы читают его.
+Simply copy both sets. The `CLAUDE.md` snippet stays shared — both platforms read it.
 
 ---
 
-## Step 8 — Создать первый архитектурный документ (опционально, по указанию оператора)
+## Step 8 — Create the first architecture document (optional, per operator instruction)
 
 ```bash
 PROJECT_NAME_KEBAB=$(echo "<PROJECT_NAME>" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-bootstrap-documentation-runtime.md
-# Отредактируй frontmatter (id, date, owners) и body (Context про подключение naprolom-docs, Decision про submodule+branch=master, Consequences)
+# Edit frontmatter (id, date, owners) and body (Context about integrating naprolom-docs, Decision regarding submodule+branch=master, Consequences)
 $EDITOR docs/adr/001-bootstrap-documentation-runtime.md 2>/dev/null || true
 ```
 
-Заполни в body минимально:
-- **Context:** «Проект <PROJECT_NAME> не имеет формализованной документационной системы. Документация растёт хаотично, новых агентов и разработчиков сложно онбордингнуть.»
-- **Decision:** «Принять naprolom-docs как Documentation System Runtime, подключенный как Git Submodule, пиненный за ветку master в .gitmodules.»
-- **Consequences:** «Все .md в docs/ обязаны соответствовать Canonical Schema v1. CI guard следит. Процессы разработки следуют декларативным SOP из sops/.»
+Fill in the body minimally:
+- **Context:** "Project <PROJECT_NAME> has no formalized documentation system. Documentation grows chaotically, and onboarding new agents and developers is hard."
+- **Decision:** "Adopt naprolom-docs as the Documentation System Runtime, connected as a Git Submodule, pinned to the master branch in .gitmodules."
+- **Consequences:** "All .md in docs/ must conform to Canonical Schema v1. The CI guard watches. Development processes follow the declarative SOPs in sops/."
 - **Status:** accepted
 
 ---
 
-## Step 9 — Запустить validator перед коммитом
+## Step 9 — Run the validator before committing
 
 ```bash
 # strict mode (greenfield)
 bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 
-# warn-only (если brownfield и миграция ещё не завершена)
+# warn-only (if brownfield and migration not yet complete)
 WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
-**Ожидаемый вывод:**
+**Expected output:**
 ```
 docs-validate: OK
 ```
 
-Если есть ошибки (`ERROR: <file>: ...`) — не коммить; доложи оператору список файлов и что именно нарушено.
+If there are errors (`ERROR: <file>: ...`) — do not commit; report to the operator the list of files and exactly what is violated.
 
 ---
 
-## Step 10 — Закоммитить и запушить
+## Step 10 — Commit and push
 
 ```bash
 git add -A
@@ -390,12 +390,12 @@ git push <PROJECT_REPOS_REMOTE> <PROJECT_BRANCH>
 
 ---
 
-## Step 11 — Финальный отчёт оператору
+## Step 11 — Final report to the operator
 
-После пуша предоставь сводку:
+After the push, provide a summary:
 
 ```
-## Подключение naprolom-docs Runtime to <PROJECT_NAME>
+## Connecting naprolom-docs Runtime to <PROJECT_NAME>
 
 Repository: <PROJECT_REPO_URL>
 Branch: <PROJECT_BRANCH>
@@ -418,11 +418,11 @@ Files created/changed:
 
 Validator result: docs-validate: OK (or WARN count: <N> if brownfield warn-only)
 Next steps for operator:
-  1. Review .context/project.yml — замени TODO на реальный стек
-  2. Review .context/boundaries.yml — классифицируй файлы проекта
+  1. Review .context/project.yml — replace TODOs with real stack
+  2. Review .context/boundaries.yml — classify project files
   3. First SOP run: node docs/.runtime/naprolom-docs/sops/planner.mjs --list
   4. <IF BROWNFIELD> outline cleanup: ~<N> docs with TODO_ENTITY_REF need manual entity_refs
-  5. <IF BROWNFIELD> после cleanup переключить CI на strict: WARN_ONLY="" в .github/workflows/docs-validate.yml
+  5. <IF BROWNFIELD> after cleanup switch CI to strict: WARN_ONLY="" в .github/workflows/docs-validate.yml
 ```
 
 ---
@@ -431,19 +431,19 @@ Next steps for operator:
 
 ### Git-version < 2.20
 
-`git submodule add --branch master <url> docs/.runtime/naprolom-docs` — поддерживается, но если git старый, вручную добавь `branch = master` в `.gitmodules` после `add`.
+`git submodule add --branch master <url> docs/.runtime/naprolom-docs` — supported, but if git is old, manually add `branch = master` to `.gitmodules` after `add`.
 
-### Node.js не установлен
+### Node.js not installed
 
-Установи через `apt-get install -y nodejs` или через nvm (`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && nvm install --lts`). Без node — `engine/scripts/migrate-legacy.mjs` и `sops/planner.mjs` не работают. Validator (`validate-frontmatter.sh`) — работает (POSIX awk).
+Install via `apt-get install -y nodejs` or via nvm (`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash && nvm install --lts`). Without node — `engine/scripts/migrate-legacy.mjs` and `sops/planner.mjs` do not work. The Validator (`validate-frontmatter.sh`) — works (POSIX awk).
 
-### Submodule не включается в clone у других участников
+### Submodule not included in other contributors' clones
 
-Подскажи им `git clone --recurse-submodules <url>` или `git submodule update --init --recursive` в существующем клоне. Это фикс на .gitmodules, не на твоей стороне.
+Tell them to use `git clone --recurse-submodules <url>` or `git submodule update --init --recursive` in the existing clone. This is a fix in .gitmodules, not on your side.
 
-### `git submodule update --remote` не тянет master
+### `git submodule update --remote` does not pull master
 
-Проверь `.gitmodules` содержит:
+Check that `.gitmodules` contains:
 ```
 [submodule "docs/.runtime/naprolom-docs"]
     path = docs/.runtime/naprolom-docs
@@ -451,7 +451,7 @@ Next steps for operator:
     branch = master
 ```
 
-Если строки `branch = master` нет — добавь:
+If the `branch = master` line is missing — add it:
 ```bash
 git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 git add .gitmodules && git commit -m "chore: pin submodule to master branch"
@@ -459,52 +459,52 @@ git add .gitmodules && git commit -m "chore: pin submodule to master branch"
 
 ### `WARN_ONLY=true` — workflow fail
 
-`WARN_ONLY` должен быть в `env:` секции job, не в `steps:`. Проверь:
+`WARN_ONLY` must be in the `env:` section of the job, not in `steps:`. Check:
 ```yaml
 jobs:
   schema-v1:
     runs-on: ubuntu-latest
-    env:                              # ← вот тут, не в steps
+    env:                              # ← here, not in steps
       WARN_ONLY: "true"
 ```
 
-### Что НЕ делать
+### What NOT to do
 
-- ❌ Не редактируй файлы в `docs/.runtime/naprolom-docs/` in-place. Это submodule.
-- ❌ Не запускай bootstrap дважды на brownfield с существующим `.github/workflows/docs-validate.yml` — bootstrap создаёт только если файл отсутствует.
-- ❌ Не включай strict CI (`WARN_ONLY=""`) сразу на brownfield. Сначала пройди полный cleanup забытых архивов, потом переключай.
-- ❌ Не создавай `.md` в `docs/` без `cp docs/.runtime/naprolom-docs/documentation/templates/<type>.md docs/<type>/...` — canonical frontmatter сложно написать «из головы».
+- ❌ Do not edit files in `docs/.runtime/naprolom-docs/` in-place. It is a submodule.
+- ❌ Do not run bootstrap twice on a brownfield with an existing `.github/workflows/docs-validate.yml` — bootstrap only creates it if the file is absent.
+- ❌ Do not enable strict CI (`WARN_ONLY=""`) immediately on brownfield. First complete the full cleanup of forgotten archives, then switch.
+- ❌ Do not create `.md` in `docs/` without `cp docs/.runtime/naprolom-docs/documentation/templates/<type>.md docs/<type>/...` — canonical frontmatter is hard to write "from memory".
 
 ---
 
-## После подключения — как оператор будет запускать работу
+## After connecting — how the operator will run the work
 
-Подключённый consumer проект начинает использовать Runtime так:
+The connected consumer project starts using the Runtime like this:
 
 ```bash
-# Список доступных SOP
+# List of available SOPs
 node docs/.runtime/naprolom-docs/sops/planner.mjs --list
 
-# План выполнения для new-feature (с указанием платформы)
+# Execution plan for new-feature (specifying platform)
 node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --platform opencode
 
-# Только то, что нужно вызвать агентов (без manual human steps)
+# Only what needs to invoke the agents (without manual human steps)
 node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
 
-# Создать новый документ из template
+# Create a new document from template
 cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/002-<decision>.md
 
-# Перед коммитом запустить validator
+# Run validator before committing
 bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
-Запуск ролей ai-агентом (для opencode):
+Invoking agent roles (for opencode):
 ```
-@architecture-reviewer проверь PR #123
+@architecture-reviewer review PR #123
 @documentation-reviewer validate-PR #123
 ```
 
-Запуск ролей в Claude Code:
+Invoking roles in Claude Code:
 ```
 /architecture-reviewer
 /documentation-reviewer
@@ -512,6 +512,6 @@ bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.s
 
 ---
 
-## Финальный аккорд
+## Final note
 
-Если что-то идёт не так — останавливайся и спрашивай оператора. Не додумывай. Лучше недоделать явно, чем доделать неправильно и оставить дрейф.
+If something goes wrong — stop and ask the operator. Do not improvise. It is better to leave something explicitly unfinished than to finish it incorrectly and leave drift behind.

@@ -2,9 +2,7 @@
 # documentation/validation/validate-runtime.sh
 #
 # Validates Runtime's own integrity as a complete dependency graph.
-# Checks: Role→Capability, Capability→Knowledge, Knowledge exists, Registry consistency,
-# Contract consistency, Bootstrap consistency, Workflow consistency, Template conformance,
-# Internal links, Engine components.
+# Uses Runtime API (runtime/lib/) for all registry parsing.
 #
 # Exit codes:
 #   0 — all OK
@@ -12,7 +10,6 @@
 #
 # Usage:
 #   ./validation/validate-runtime.sh [runtime-root]
-#   RUNTIME_ROOT=/path/to/naprolom-docs ./validation/validate-runtime.sh
 
 set -u
 
@@ -25,6 +22,11 @@ if [ ! -d "$RUNTIME_ROOT" ]; then
   exit 0
 fi
 
+# Source Runtime API (unified internal SDK)
+source "${RUNTIME_ROOT}/runtime/lib/api.sh"
+
+REGISTRY="$RUNTIME_ROOT/runtime/registry.yaml"
+
 error() {
   echo "ERROR: $1"
   fail=1
@@ -36,7 +38,6 @@ ok() {
 
 # ─── 1. Registry exists ──────────────────────────────────────────────────────
 
-REGISTRY="$RUNTIME_ROOT/runtime/registry.yaml"
 if [ ! -f "$REGISTRY" ]; then
   error "runtime/registry.yaml not found"
   exit 1
@@ -47,34 +48,9 @@ echo "validate-runtime: checking $RUNTIME_ROOT"
 
 # ─── 2. Registry consistency: every component has a matching file on disk ────
 
-# extract_section <section_name> — extracts list items from registry section
-# Sections are at 2-space indent under components:, items at 4-space indent
-# Handles both old format (- name) and new format (- name: / - path:)
-extract_section() {
-  local section="$1"
-  awk -v sec="  $section:" '
-    $0 == sec { found=1; next }
-    found && /^  [a-zA-Z]/ { exit }
-    found && /^    - / { sub(/^    - /, ""); print }
-  ' "$REGISTRY"
-}
-
-# extract_section_field <section_name> <field> — extracts specific field from list items
-# e.g. extract_section_field "templates" "path" → gets path values
-extract_section_field() {
-  local section="$1" field="$2"
-  awk -v sec="  $section:" -v fld="$field:" '
-    $0 == sec { found=1; next }
-    found && /^  [a-zA-Z]/ { exit }
-    found && $0 ~ "    - " { in_item=1; next }
-    found && in_item && /^[[:space:]]*$0/ { next }
-    found && in_item && /^    - / { in_item=1; next }
-    found && in_item && $0 ~ "      " fld { sub("^      " fld "[[:space:]]*", ""); print }
-  ' "$REGISTRY"
-}
-
-# Check agents (agents have name: field, not plain list)
+# Check agents
 while IFS= read -r agent; do
+  [ -z "$agent" ] && continue
   found=0
   for platform in claude-code opencode; do
     if [ -f "$RUNTIME_ROOT/agents/$platform/$agent.md" ]; then
@@ -85,99 +61,101 @@ while IFS= read -r agent; do
   if [ "$found" -eq 0 ]; then
     error "Registry agent '$agent' has no matching file in agents/{claude-code,opencode}/"
   fi
-done < <(awk '
-  $0 == "  agents:" { found=1; next }
-  found && /^  [a-zA-Z]/ { exit }
-  found && /^    - name: / { sub(/^    - name: /, ""); print }
-' "$REGISTRY")
+done < <(registry_list_agents)
 ok
 
 # Check knowledge
 while IFS= read -r k; do
+  [ -z "$k" ] && continue
   if [ ! -f "$RUNTIME_ROOT/knowledge/$k.md" ]; then
     error "Registry knowledge '$k' has no matching file knowledge/$k.md"
   fi
-done < <(extract_section "knowledge")
+done < <(registry_list_knowledge)
 ok
 
 # Check SOPs
 while IFS= read -r sop; do
+  [ -z "$sop" ] && continue
   if [ ! -f "$RUNTIME_ROOT/sops/$sop.yaml" ]; then
     error "Registry SOP '$sop' has no matching file sops/$sop.yaml"
   fi
-done < <(extract_section "sops")
+done < <(registry_list_sops)
 ok
 
-# Check templates (supports both old format: "- name" and new format: "- name: / - path:")
+# Check templates
 while IFS= read -r tmpl; do
   [ -z "$tmpl" ] && continue
-  # If it's a path (contains /), use it directly; otherwise append .md
-  if echo "$tmpl" | grep -qF "/"; then
-    if [ ! -f "$RUNTIME_ROOT/$tmpl" ]; then
-      error "Registry template path '$tmpl' has no matching file"
+  tpath=$(registry_get_template_path "$tmpl")
+  if [ -n "$tpath" ]; then
+    if [ ! -f "$RUNTIME_ROOT/$tpath" ]; then
+      error "Registry template '$tmpl' path '$tpath' has no matching file"
     fi
   else
+    # Fallback: try name.md
     if [ ! -f "$RUNTIME_ROOT/documentation/templates/$tmpl.md" ]; then
-      error "Registry template '$tmpl' has no matching file documentation/templates/$tmpl.md"
+      error "Registry template '$tmpl' has no matching file"
     fi
   fi
-done < <(extract_section "templates")
+done < <(registry_list_templates)
 ok
 
-# Check validators (supports both old format: "- name" and new format: "- name: / - path:")
+# Check validators
 while IFS= read -r val; do
   [ -z "$val" ] && continue
-  if echo "$val" | grep -qF "/"; then
-    if [ ! -f "$RUNTIME_ROOT/$val" ]; then
-      error "Registry validator path '$val' has no matching file"
+  vpath=$(registry_get_validator_path "$val")
+  if [ -n "$vpath" ]; then
+    if [ ! -f "$RUNTIME_ROOT/$vpath" ]; then
+      error "Registry validator '$val' path '$vpath' has no matching file"
     fi
   else
     if [ ! -f "$RUNTIME_ROOT/documentation/validation/$val.sh" ]; then
-      error "Registry validator '$val' has no matching file documentation/validation/$val.sh"
+      error "Registry validator '$val' has no matching file"
     fi
   fi
-done < <(extract_section "validators")
+done < <(registry_list_validators)
 ok
 
-# Check engine components (collectors, analyzers, reporters)
+# Check engine components
 for component_type in collectors analyzers reporters; do
   while IFS= read -r comp; do
     [ -z "$comp" ] && continue
     if [ ! -f "$RUNTIME_ROOT/engine/reality-engine/$component_type/$comp.sh" ]; then
       error "Registry engine $component_type '$comp' has no matching file engine/reality-engine/$component_type/$comp.sh"
     fi
-  done < <(extract_section "$component_type")
+  done < <(registry_list_engine "$component_type")
 done
 ok
 
-# Check generators (new in v1.5)
+# Check generators
 while IFS= read -r gen; do
   [ -z "$gen" ] && continue
-  if echo "$gen" | grep -qF "/"; then
-    if [ ! -f "$RUNTIME_ROOT/$gen" ]; then
-      error "Registry generator path '$gen' has no matching file"
+  gpath=$(registry_get_generator_path "$gen")
+  if [ -n "$gpath" ]; then
+    if [ ! -f "$RUNTIME_ROOT/$gpath" ]; then
+      error "Registry generator '$gen' path '$gpath' has no matching file"
     fi
   else
     if [ ! -f "$RUNTIME_ROOT/bootstrap/generators/$gen.sh" ]; then
-      error "Registry generator '$gen' has no matching file bootstrap/generators/$gen.sh"
+      error "Registry generator '$gen' has no matching file"
     fi
   fi
-done < <(extract_section "generators")
+done < <(registry_list_generators)
 ok
 
-# Check detectors (new in v1.5)
+# Check detectors
 while IFS= read -r det; do
   [ -z "$det" ] && continue
-  if echo "$det" | grep -qF "/"; then
-    if [ ! -f "$RUNTIME_ROOT/$det" ]; then
-      error "Registry detector path '$det' has no matching file"
+  dpath=$(registry_get_detector_path "$det")
+  if [ -n "$dpath" ]; then
+    if [ ! -f "$RUNTIME_ROOT/$dpath" ]; then
+      error "Registry detector '$det' path '$dpath' has no matching file"
     fi
   else
     if [ ! -f "$RUNTIME_ROOT/bootstrap/detectors/$det.sh" ]; then
-      error "Registry detector '$det' has no matching file bootstrap/detectors/$det.sh"
+      error "Registry detector '$det' has no matching file"
     fi
   fi
-done < <(extract_section "detectors")
+done < <(registry_list_detectors)
 ok
 
 # ─── 3. Role → Capability: every capabilities: entry exists in capabilities.md ─
@@ -189,7 +167,6 @@ if [ -f "$CAPABILITIES_FILE" ]; then
       [ -f "$agent_file" ] || continue
       agent_name=$(basename "$agent_file" .md)
 
-      # Extract capabilities from frontmatter
       fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$agent_file")
       caps=$(echo "$fm" | grep -E "^capabilities:" | sed -E 's/^capabilities:[[:space:]]*\[//' | sed -E 's/\].*//' | tr ',' '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
@@ -233,13 +210,7 @@ for level in runtime consumer; do
     if [ ! -f "$RUNTIME_ROOT/runtime/contracts/$level/$contract.yaml" ]; then
       error "Registry contract '$level/$contract' has no matching file runtime/contracts/$level/$contract.yaml"
     fi
-  done < <(awk -v lvl="      $level:" '
-    $0 == "  contracts:" { in_contracts=1; next }
-    in_contracts && /^  [a-zA-Z]/ { exit }
-    in_contracts && $0 == lvl { in_level=1; next }
-    in_level && /^    [a-zA-Z]/ { exit }
-    in_level && /^      - / { sub(/^      - /, "", $0); print }
-  ' "$REGISTRY")
+  done < <(registry_list_contracts "$level")
 done
 ok
 
@@ -249,12 +220,11 @@ for sop_file in "$RUNTIME_ROOT/sops/"*.yaml; do
   [ -f "$sop_file" ] || continue
   sop_name=$(basename "$sop_file" .yaml)
 
-  # Extract role: references from steps
   roles=$(grep -E "^\s+role:" "$sop_file" | sed -E 's/^\s+role:[[:space:]]*//' | sort -u)
 
   for role in $roles; do
     [ -z "$role" ] && continue
-    [ "$role" = "human" ] && continue  # human is not a role
+    [ "$role" = "human" ] && continue
     found=0
     for platform in claude-code opencode; do
       if [ -f "$RUNTIME_ROOT/agents/$platform/$role.md" ]; then
@@ -267,7 +237,6 @@ for sop_file in "$RUNTIME_ROOT/sops/"*.yaml; do
     fi
   done
 
-  # Extract capability: references and check they exist in capabilities.md
   if [ -f "$CAPABILITIES_FILE" ]; then
     caps=$(grep -E "^\s+capability:" "$sop_file" | sed -E 's/^\s+capability:[[:space:]]*//' | sort -u)
     for cap in $caps; do
@@ -302,52 +271,35 @@ ok
 
 # ─── 8. Internal links: entity_refs resolve to existing id: fields ───────────
 
-# Collect all id: fields from FM (also collect registry component names, knowledge short-ids,
-# agent names, validator names — these are implicit entities in the Runtime graph).
-# Initialize with concept entities to avoid empty variable with set -u.
 all_ids=$(printf '%s\n' "runtime-agentic-layer" "agent-role-separation" "sop-dag" "schema-v1" "canonical-frontmatter" "lifecycle-spec" "lifecycle-adr" "capabilities" "runtime" "registry" "state-machine" "reality-engine")
 
-# a) Explicit id: fields from docs/ and knowledge/
 all_ids="$all_ids
 $(find "$RUNTIME_ROOT/docs" "$RUNTIME_ROOT/knowledge" "$RUNTIME_ROOT/documentation" -name "*.md" -type f 2>/dev/null | while read -r f; do
   awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f && /^id:/{gsub(/^id:[[:space:]]*/, ""); print}' "$f"
 done)"
 
-# b) Registry component names (agents, knowledge, sops, templates, validators, contracts)
-if [ -f "$REGISTRY" ]; then
-  # agent names
+# Registry component names
+all_ids="$all_ids
+$(registry_list_agents 2>/dev/null)"
+all_ids="$all_ids
+$(registry_list_knowledge 2>/dev/null)"
+all_ids="$all_ids
+$(registry_list_sops 2>/dev/null)"
+all_ids="$all_ids
+$(registry_list_templates 2>/dev/null)"
+all_ids="$all_ids
+$(registry_list_validators 2>/dev/null)"
+for level in runtime consumer; do
   all_ids="$all_ids
-$(awk '
-    $0 == "  agents:" { found=1; next }
-    found && /^  [a-zA-Z]/ { exit }
-    found && /^    - name: / { sub(/^    - name: /, ""); print }
-  ' "$REGISTRY")"
-  # knowledge, sops, templates, validators (flat lists)
-  for key in knowledge sops templates validators; do
-    all_ids="$all_ids
-$(extract_section "$key")"
-  done
-  # contract names (runtime + consumer)
-  for level in runtime consumer; do
-    all_ids="$all_ids
-$(awk -v lvl="      $level:" '
-      $0 == "  contracts:" { in_contracts=1; next }
-      in_contracts && /^  [a-zA-Z]/ { exit }
-      in_contracts && $0 == lvl { in_level=1; next }
-      in_level && /^    [a-zA-Z]/ { exit }
-      in_level && /^      - / { sub(/^      - /, "", $0); print }
-    ' "$REGISTRY")"
-  done
-  # engine component names (collectors, analyzers, reporters)
-  for component_type in collectors analyzers reporters; do
-    all_ids="$all_ids
-$(awk "/^  ${component_type}:/,/^[^ ]/" "$REGISTRY" | grep "^    - " | sed 's/^    - //')"
-  done
-fi
+$(registry_list_contracts "$level" 2>/dev/null)"
+done
+for component_type in collectors analyzers reporters; do
+  all_ids="$all_ids
+$(registry_list_engine "$component_type" 2>/dev/null)"
+done
 
 all_ids=$(echo "$all_ids" | sort -u)
 
-# Check entity_refs against collected ids
 while IFS= read -r f; do
   [ -f "$f" ] || continue
   fm=$(awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f")
@@ -369,11 +321,9 @@ for sop_file in "$RUNTIME_ROOT/sops/"*.yaml; do
   [ -f "$sop_file" ] || continue
   sop_name=$(basename "$sop_file" .yaml)
 
-  # Check if SOP uses engine
   if grep -qE "^engine:" "$sop_file"; then
     engine=$(grep -E "^engine:" "$sop_file" | sed -E 's/^engine:[[:space:]]*//')
 
-    # Check engine_step: references
     engine_steps=$(grep -E "^\s+engine_step:" "$sop_file" | sed -E 's/^\s+engine_step:[[:space:]]*//')
     for step_path in $engine_steps; do
       if [ ! -f "$RUNTIME_ROOT/engine/$engine/$step_path" ]; then

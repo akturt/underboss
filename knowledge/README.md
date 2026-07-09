@@ -14,34 +14,34 @@ priority: P1
 
 # Knowledge Layer
 
-Знания, которыми пользуются Roles. Загружаются в контекст по **short-id** из Role FM:
+Knowledge used by Roles. Loaded into context by **short-id** from the Role FM:
 
 ```yaml
 knowledge: [architecture-principles, report-formats]
 ```
 
-Runtime резолвит путь: `knowledge/<short-id>.md`. Позволяет менять структуру `knowledge/` без переписывания Roles.
+The Runtime resolves the path: `knowledge/<short-id>.md`. This allows restructuring `knowledge/` without rewriting Roles.
 
 ## Contained
 
-| Short-id | File | Описание |
-|----------|------|----------|
-| `architecture-principles` | `architecture-principles.md` | 14 принципов + 3 мета-паттерна анализа |
-| `evidence-model` | `evidence-model.md` | Trust Hierarchy (7 уровней) + 4 evidence-класса |
+| Short-id | File | Description |
+|----------|------|-------------|
+| `architecture-principles` | `architecture-principles.md` | 14 principles + 3 meta-patterns of analysis |
+| `evidence-model` | `evidence-model.md` | Trust Hierarchy (7 levels) + 4 evidence classes |
 | `audit-principles` | `audit-principles.md` | 5-stage validation + verdict system + confidence model |
-| `report-formats` | `report-formats.md` | Выходные форматы 4 ревьюеров |
-| `capabilities` | `capabilities.md` | Capability Catalog — контракт capabilities |
+| `report-formats` | `report-formats.md` | Output formats of the 4 reviewers |
+| `capabilities` | `capabilities.md` | Capability Catalog — capability contract |
 
-## Как используют Roles
+## How Roles use it
 
 - **architecture-reviewer** → `architecture-principles`, `report-formats`
 - **documentation-reviewer** → `report-formats`
 - **reality-auditor** → `evidence-model`, `report-formats`
 - **adversary-checker** → `audit-principles`, `report-formats`
 
-## Правила
+## Rules
 
-1. Знания **не выполняются** — загружаются в контекст как справочный материал.
-2. Roles **не дублируют** содержимое knowledge inline — ссылаются по short-id.
-3. SOP-шаги **не читают** knowledge напрямую — это ответственность Role при исполнении шага.
-4. Новые knowledge-файлы добавляются через PR с `type: guide, kind: index`.
+1. Knowledge is **not executed** — it is loaded into context as reference material.
+2. Roles **do not duplicate** knowledge content inline — they reference it by short-id.
+3. SOP steps **do not read** knowledge directly — that is the Role's responsibility when executing the step.
+4. New knowledge files are added via PR with `type: guide, kind: index`.

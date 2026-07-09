@@ -14,35 +14,35 @@ priority: P1
 
 # Architecture Principles
 
-14 принципов архитектурного анализа + 3 мета-паттерна. Используются `architecture-reviewer` при ревью.
+14 principles of architectural analysis + 3 meta-patterns. Used by `architecture-reviewer` during review.
 
 ## Basic Principles (7)
 
-1. **Single Source of Truth** — каждый архитектурный факт имеет ровно одно место хранения. Дублирование = drift risk.
-2. **Explicit Dependencies** — зависимости между модулями декларируются явно (imports, APIs, events), неявно через shared state.
-3. **Invariants Over Implementation** — критические инварианты системы фиксируются в `docs/architecture/README.md` и проверяются при каждом review. Реализация может меняться; инварианты — нет.
-4. **ADR Before Code** — архитектурное решение оформляется как ADR (`docs/adr/`) до merge кода, реализующего это решение.
-5. **Path-Status Contract** — lifecycle-позиция документа (draft/review/approved/implemented) определяется директорией + `status:` FM. Несоответствие = ошибка.
-6. **Immutability After Acceptance** — тело ADR с `status: accepted` неизменяемо. Только FM-транзиции (`status:` переход). Нарушение = REJECT.
-7. **Entity Refs Integrity** — `entity_refs` в spec/audit указывают на реально существующие `id:` в `docs/architecture/`. Broken ref = warning.
+1. **Single Source of Truth** — every architectural fact has exactly one place of storage. Duplication = drift risk.
+2. **Explicit Dependencies** — dependencies between modules are declared explicitly (imports, APIs, events), not implicitly via shared state.
+3. **Invariants Over Implementation** — critical system invariants are fixed in `docs/architecture/README.md` and verified on every review. Implementation may change; invariants do not.
+4. **ADR Before Code** — an architectural decision is recorded as an ADR (`docs/adr/`) before merging the code that implements it.
+5. **Path-Status Contract** — a document's lifecycle position (draft/review/approved/implemented) is determined by its directory + `status:` FM. Mismatch = error.
+6. **Immutability After Acceptance** — the body of an ADR with `status: accepted` is immutable. Only FM transitions (`status:` change) are allowed. Violation = REJECT.
+7. **Entity Refs Integrity** — `entity_refs` in spec/audit point to actually existing `id:` values in `docs/architecture/`. Broken ref = warning.
 
 ## Operational Principles (7)
 
-8. **Schema v1 Compliance** — каждый `.md` в `docs/` обязан иметь Schema v1 frontmatter с 6 mandatory fields. CI проверяет это автоматически.
-9. **Template-First Creation** — новые документы создаются через `cp documentation/templates/<type>.md`, не «из головы». Шаблон гарантирует canonical structure.
-10. **Append-Only Audits** — тело audit с `status: completed` неизменяемо. Новый аудит того же объекта = новый файл с новой датой.
-11. **Separation of Concerns** — Role = идентичность (кто я), Knowledge = знания (что знаю), SOP = процесс (когда применяю), Capability = навык (что умею). Не смешивать.
-12. **DRY Knowledge** — общие знания живут в `knowledge/`, не дублируются inline в Roles. Roles ссылаются по short-id.
-13. **Artifact Contracts** — DAG соединяется через артефакты (`consumes:`/`produces:`), не через неявный depends_on. Data flow ≠ control flow.
-14. **Gate: Manual** — human-шаги в SOP помечаются `gate: manual`, не `role: human`. Human — не роль Runtime.
+8. **Schema v1 Compliance** — every `.md` in `docs/` must have Schema v1 frontmatter with 6 mandatory fields. CI checks this automatically.
+9. **Template-First Creation** — new documents are created via `cp documentation/templates/<type>.md`, not "from scratch". The template guarantees canonical structure.
+10. **Append-Only Audits** — the body of an audit with `status: completed` is immutable. A new audit of the same object = a new file with a new date.
+11. **Separation of Concerns** — Role = identity (who I am), Knowledge = knowledge (what I know), SOP = process (when I apply it), Capability = skill (what I can do). Do not mix them.
+12. **DRY Knowledge** — shared knowledge lives in `knowledge/`, not duplicated inline in Roles. Roles reference it by short-id.
+13. **Artifact Contracts** — the DAG is connected via artifacts (`consumes:`/`produces:`), not via implicit depends_on. Data flow ≠ control flow.
+14. **Gate: Manual** — human steps in SOP are marked with `gate: manual`, not `role: human`. Human is not a Runtime role.
 
 ## Meta-Patterns (3)
 
 ### Stratification by Time
-Архитектурные решения имеют разные горизонты изменения: topology (months), data model (weeks), implementation (days). Review должен учитывать горизонт изменения при оценке impact.
+Architectural decisions have different change horizons: topology (months), data model (weeks), implementation (days). Review must account for the change horizon when assessing impact.
 
 ### Semantic Density
-Критические инварианты должны быть «плотными» — одно предложение, однозначная интерпретация, проверяемый факт. Размытые инварианты = невалидные инварианты.
+Critical invariants must be "dense" — one sentence, unambiguous interpretation, verifiable fact. Vague invariants = invalid invariants.
 
 ### Asymptotic Complexity of Changes
-Каждое архитектурное решение увеличивает когнитивную сложность системы. При review оценивай: ослабляет ли изменение общую архитектуру или укрепляет? Чем больше компонентов затронуто — тем строже review.
+Every architectural decision increases the cognitive complexity of the system. During review, assess: does the change weaken or strengthen the overall architecture? The more components affected, the stricter the review.

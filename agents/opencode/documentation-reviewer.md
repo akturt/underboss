@@ -19,10 +19,10 @@ priority: P1
 
 # opencode Agent — Documentation Reviewer
 
-> Конфигурация агента opencode для проверки PR на соответствие Canonical Schema v1.
-> Поместите этот файл в `.opencode/agents/documentation-reviewer.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> opencode agent configuration for checking PRs for Canonical Schema v1 compliance.
+> Place this file in `.opencode/agents/documentation-reviewer.md` of your project (consumer repo) to activate the role.
 
-> Содержание роли идентично `claude-code/documentation-reviewer.md`. Разница — только в формате дескриптора агента и путях конфигурации. opencode использует `.opencode/` вместо `.claude/`.
+> The role's content is identical to `claude-code/documentation-reviewer.md`. The only difference is the agent descriptor format and configuration paths. opencode uses `.opencode/` instead of `.claude/`.
 
 ---
 

@@ -19,153 +19,153 @@ priority: P1
 
 # Migration Prompt: Brownfield Repository → Canonical Schema v1
 
-> Agent-ready протокол миграции существующего репозитория (brownfield) в целевую модель Documentation System v2 (Canonical Schema v1).
-> Целевая модель описана в [`playbook-v2.md`](playbook-v2.md) (Greenfield Playbook). Этот гайд не часть модели — это **способ попасть в неё**.
+> Agent-ready protocol for migrating an existing repository (brownfield) to the target Documentation System v2 model (Canonical Schema v1).
+> The target model is described in [`playbook-v2.md`](playbook-v2.md) (Greenfield Playbook). This guide is not part of the model — it is a **way to get into it**.
 >
-> **Когда использовать:** существующий репозиторий уже содержит `.md`-файлы (legacy frontmatter или отсутствие оного).
-> **Когда НЕ использовать:** новый (greenfield) репозиторий — используйте `bootstrap/bootstrap.sh` прямо из `playbook-v2.md`.
+> **When to use:** the existing repository already contains `.md` files (legacy frontmatter or none at all).
+> **When NOT to use:** a new (greenfield) repository — use `bootstrap/bootstrap.sh` directly from `playbook-v2.md`.
 
 ---
 
-## Роль агента
+## Agent role
 
-Этот документ — **готовый промпт** для AI-агента (Claude Code, opencode), которому поручена миграция документации существующего проекта в Canonical Schema v1. Агент выполняет шаги по порядку, докладывает на каждом checkpoint'е и не переходит к следующему шагу без подтверждения от оператора (или без явного флага `--auto`).
+This document is a **ready-made prompt** for an AI agent (Claude Code, opencode) tasked with migrating the documentation of an existing project to Canonical Schema v1. The agent performs the steps in order, reports at each checkpoint, and does not proceed to the next step without confirmation from the operator (or without the explicit `--auto` flag).
 
-## Входные требования
+## Prerequisites
 
-- Submodule `naprolom-docs` уже подключён по адресу `docs/.runtime/naprolom-docs/` (см. `../../INSTALL.md`).
-- В репозитории уже запущен `bootstrap/bootstrap.sh` (`.context/`, `docs/` skeleton, `CLAUDE.md` snippet созданы).
-- Node.js 18+ доступен для `engine/scripts/migrate-legacy.mjs`.
+- The `naprolom-docs` submodule is already attached at `docs/.runtime/naprolom-docs/` (see `../../INSTALL.md`).
+- The repository has already run `bootstrap/bootstrap.sh` (`.context/`, `docs/` skeleton, `CLAUDE.md` snippet created).
+- Node.js 18+ is available for `engine/scripts/migrate-legacy.mjs`.
 
-## Стратегия rollout
+## Rollout strategy
 
 ```
 Audit legacy → Run migration script → Manual review
-            → Warn-only CI (несколько дней)
-            → Manual cleanup забытых документов
+            → Warn-only CI (several days)
+            → Manual cleanup of forgotten documents
             → Strict CI
 ```
 
-Greenfield — strict с первого PR. Brownfield проходит через `Warn → Strict`. Никогда не включайте strict CI сразу на brownfield — забытые `docs/archive/`, `docs/old/`, `docs/wiki/` сломают все PR.
+Greenfield — strict from the first PR. Brownfield goes through `Warn → Strict`. Never enable strict CI immediately on brownfield — forgotten `docs/archive/`, `docs/old/`, `docs/wiki/` would break every PR.
 
 ---
 
-## Step 1 — Аудит legacy (1–2 часа)
+## Step 1 — Legacy audit (1–2 hours)
 
-**Цель:** понять объём миграции до её начала.
+**Goal:** understand the scope of the migration before starting it.
 
 ```bash
-# Сколько .md-файлов в проекте (вне submodule)?
+# How many .md files in the project (outside submodule)?
 find docs/ -name "*.md" -not -path "*/docs/.runtime/*" | wc -l
 
-# Какие фронматтеры уже есть?
+# What frontmatter fields are present?
 grep -rE "^(schema:|author:|title:|created:|lifecycle:|type:|status:)" docs/ \
   | awk -F: '{print $3}' | sort | uniq -c
 
-# Какие legacy-поля присутствуют в frontmatter (только FM, через awk)?
+# What legacy fields are present in frontmatter (FM only, via awk)?
 for f in $(find docs/ -name "*.md"); do
   awk 'NR==1 && $0=="---"{f=1; next} f && $0=="---"{exit} f{print}' "$f" \
     | grep -E "^(author|title|created|lifecycle|referenced_by|supersedes_adr|excludes-from-scope):"
 done
 
-# Какие директории не попадают в 5-слойную модель?
+# What directories don't fit the 5-layer model?
 find docs/ -type d -not -path "*/docs/.runtime/*" \
   | grep -E "archive|old|wiki|tmp|legacy|draft|misc" || true
 ```
 
-**Checkpoint 1:** доложи оператору:
-- Сколько всего `.md`.
-- Какие типы frontmatter (canonical vs legacy vs none).
-- Какие «забытые» директории присутствуют.
-- Оценка времени миграции (1 файл ≈ 30 секунд в скрипте + 1–2 минуты manual review на 10–20% файлов).
+**Checkpoint 1:** report to the operator:
+- How many `.md` files total.
+- What frontmatter types (canonical vs legacy vs none).
+- What "forgotten" directories are present.
+- Migration time estimate (1 file ≈ 30 seconds in the script + 1–2 minutes manual review per 10–20% of files).
 
-**Не переходи к Step 2 без подтверждения оператора.**
+**Do not proceed to Step 2 without operator confirmation.**
 
 ---
 
-## Step 2 — Приоритизация (5–10 минут)
+## Step 2 — Prioritization (5–10 minutes)
 
-Разбей все `.md`-файлы на 3 корзины:
+Split all `.md` files into 3 buckets:
 
-| Корзина | Критерий | Действие |
+| Bucket | Criterion | Action |
 |---------|---------|----------|
-| **Active** | Используется сейчас, на него ссылаются из кода / docs / issues | Мигрировать в первую очередь |
-| **Archive** | Старая версия, неактуальная, историческая | Оставить в `docs/archive/` **без** canonical FM, исключить из CI (warn-only период перехватит) |
-| **Orphan** | Ни на что не ссылается, > 1 года без обновлений | Удалить или переместить в `docs/archive/` — решает оператор |
+| **Active** | Used right now, referenced from code / docs / issues | Migrate first |
+| **Archive** | Old version, outdated, historical | Leave in `docs/archive/` **without** canonical FM, exclude from CI (the warn-only period will catch it) |
+| **Orphan** | References nothing, > 1 year without updates | Delete or move to `docs/archive/` — operator decides |
 
-**Checkpoint 2:** предъяви оператору список файлов по корзинам. Удаляй только с явного подтверждения (`Orphan → delete`).
+**Checkpoint 2:** present the operator the list of files by bucket. Delete only with explicit confirmation (`Orphan → delete`).
 
-**Не переходи к Step 3 без подтверждения оператора.**
+**Do not proceed to Step 3 without operator confirmation.**
 
 ---
 
-## Step 3 — Runnable migration (5–30 минут)
+## Step 3 — Runnable migration (5–30 minutes)
 
-Запусти миграционный скрипт из Runtime:
+Run the migration script from the Runtime:
 
 ```bash
-# Dry-run: покажет что было бы изменено, без записи
+# Dry-run: shows what would change, without writing
 node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
 
-# Реальный прогон
+# Real run
 node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <team-name>
 
-# Тихий режим (только summary)
+# Quiet mode (summary only)
 node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
 ```
+**What the script does:**
 
-**Что делает скрипт:**
-- Добавляет `schema: 1`, `id` (из filename), `type` (из path), `status` (из path / lifecycle), `date` (из `created` или filename), `owners` (из `author` или `--owner`).
-- Ставит `updated: <today>` на всех изменённых файлах.
-- Для `spec`/`audit`: если `entity_refs` пуст → ставит `TODO_ENTITY_REF` маркер для manual review.
-- Удаляет legacy-поля: `author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`.
-- Если legacy `title:` существовал → превращает его в `# <title>` в body (H1, как требует Schema v1).
-- Идемпотентен. Повторный запуск на уже-canonical файлах — no-op.
+- Adds `schema: 1`, `id` (from filename), `type` (from path), `status` (from path / lifecycle), `date` (from `created` or filename), `owners` (from `author` or `--owner`).
+- Sets `updated: <today>` on all changed files.
+- For `spec`/`audit`: if `entity_refs` is empty → sets a `TODO_ENTITY_REF` marker for manual review.
+- Removes legacy fields: `author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`.
+- If a legacy `title:` existed → turns it into `# <title>` in the body (H1, as Schema v1 requires).
+- Idempotent. Re-running on already-canonical files is a no-op.
 
 **Exit codes:**
-- `0` — все файлы мигрированы чисто.
-- `1` — есть файлы с `TODO_ENTITY_REF` — нужен manual review (Step 4).
-- `2` — `docs/` root не найден.
 
-**Checkpoint 3:** после прогона доложи:
-- Сколько файлов изменено.
-- Сколько файлов с `TODO_ENTITY_REF` (перейдут в Step 4).
-- Какие директории не тронуты (Archive).
+- `0` — all files migrated cleanly.
+- `1` — there are files with `TODO_ENTITY_REF` — manual review needed (Step 4).
+- `2` — `docs/` root not found.
 
-**Не переходи к Step 4 без подтверждения оператора.**
+**Checkpoint 3:** after the run, report:
+- How many files changed.
+- How many files with `TODO_ENTITY_REF` (will go to Step 4).
+- Which directories were untouched (Archive).
 
+**Do not proceed to Step 4 without operator confirmation.**
 ---
 
-## Step 4 — Manual review (10–20% файлов, ~30 минут на 50 файлов)
+## Step 4 — Manual review (10–20% of files, ~30 minutes per 50 files)
 
-Скрипт помечает `TODO_ENTITY_REF` те `spec`/`audit`, для которых не удалось инферить доменную сущность. Твоя задача — определить real entity refs:
+The script marks `TODO_ENTITY_REF` on those `spec`/`audit` files for which it could not infer the domain entity. Your task is to determine the real entity refs:
 
 ```bash
-# Список всех файлов, требующих review
+# List of all files requiring review
 grep -rl "TODO_ENTITY_REF" docs/
 ```
 
-Для каждого:
-1. Открой файл, прочитай body.
-2. Определи доменную сущность (одну или несколько), которую документ описывает.
-3. Проверь существует ли соответствующий `id:` в `docs/architecture/` (entity catalog).
-4. Замени `TODO_ENTITY_REF` на реальный `id` сущности (kebab-case, ≥ 2 символа).
-5. Если сущность не определена — создай её (architecture-документ или ADR) и **затем** ссылайся.
+For each:
+1. Open the file, read the body.
+2. Identify the domain entity (one or several) the document describes.
+3. Check whether a corresponding `id:` exists in `docs/architecture/` (entity catalog).
+4. Replace `TODO_ENTITY_REF` with the real entity `id` (kebab-case, ≥ 2 characters).
+5. If the entity is not defined — create it (an architecture document or an ADR) and **then** reference it.
 
-Дополнительно проверить в manual review:
-- Правильно ли автоматически выведен `type:`? (Например, файл в `docs/adr/` — действительно ADR, а не spec.)
-- Правильно ли выведен `status:`? (Например, ADR `proposed` может на самом деле `accepted`.)
-- Нет ли потери информации при удалении `lifecycle:` — если значение `lifecycle` нестандартное, добавь его как комментарий или в `tags:`.
+Additionally verify during manual review:
+- Is the auto-derived `type:` correct? (For example, a file in `docs/adr/` — is it really an ADR, not a spec.)
+- Is the derived `status:` correct? (For example, an ADR `proposed` may in fact be `accepted`.)
+- Is there any information loss when removing `lifecycle:` — if the `lifecycle` value is non-standard, add it as a comment or in `tags:`.
 
-**Checkpoint 4:** покажи оператору список всех изменений manual review.
+**Checkpoint 4:** show the operator the list of all manual-review changes.
 
-**Не переходи к Step 5 без подтверждения оператора.**
+**Do not proceed to Step 5 without operator confirmation.**
 
 ---
 
-## Step 5 — Warn-only CI (несколько дней)
+## Step 5 — Warn-only CI (several days)
 
-Включи CI guard в warn-only режиме на период rollout. В `.github/workflows/docs-validate.yml` (созданном bootstrap):
+Enable the CI guard in warn-only mode for the rollout period. In `.github/workflows/docs-validate.yml` (created by bootstrap):
 
 ```yaml
 jobs:
@@ -174,49 +174,49 @@ jobs:
       WARN_ONLY: "true"   # brownfield rollout: WARNING вместо FAIL
 ```
 
-Запушь изменения. CI будет печатать предупреждения, но не падать. Это «мягкий» период, в течение которого забытые `docs/archive/`, `docs/old/`, `docs/wiki/`, `docs/tmp/` не ломают PR.
+Push the changes. CI will print warnings but will not fail. This is a "soft" period during which forgotten `docs/archive/`, `docs/old/`, `docs/wiki/`, `docs/tmp/` do not break PRs.
 
-В этом режиме локальная проверка:
+In this mode, local validation:
 
 ```bash
-# Что скажет polity CI в warn-only
+# What warn-only CI reports
 WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
 ```
 
-Длительность warn-only: 3–7 дней или до тех пор, пока в нескольких PR подряд не будет ни одного warning'а.
+Warn-only duration: 3–7 days, or until several PRs in a row show no warnings.
 
-**Checkpoint 5:** уверен что warn-only включён и CI зелёный.
+**Checkpoint 5:** confirm that warn-only is enabled and CI is green.
 
 ---
 
-## Step 6 — Cleanup забытых директорий
+## Step 6 — Cleanup of forgotten directories
 
-За warn-only период вычисти нестандартные документы:
+During the warn-only period, clean up non-standard documents:
 
-- `docs/archive/` → либо дописать canonical FM, либо удалить (решает оператор).
-- `docs/old/` → мигрировать с `engine/scripts/migrate-legacy.mjs` либо удалить.
-- `docs/wiki/` → перенести релевантное в `docs/architecture/` / `docs/adr/`, остальное удалить.
-- `docs/tmp/` → удалить (это обычно сессионные файлы, не документация).
-- `*.log`, `PHASE_*_REPORT.md`, `*_verification_*.md` → удалить из `docs/`.
+- `docs/archive/` → either add canonical FM, or delete (operator decides).
+- `docs/old/` → migrate with `engine/scripts/migrate-legacy.mjs` or delete.
+- `docs/wiki/` → move what is relevant to `docs/architecture/` / `docs/adr/`, delete the rest.
+- `docs/tmp/` → delete (these are usually session files, not documentation).
+- `*.log`, `PHASE_*_REPORT.md`, `*_verification_*.md` → delete from `docs/`.
 
 ```bash
-# Найти забытые директории
+# Find forgotten directories
 find docs/ -type d -not -path "*/docs/.runtime/*" \
   | grep -E "archive|old|wiki|tmp|misc"
 
-# Найти сессионные файлы (обычно не документация)
+# Find session files (usually not documentation)
 find docs/ -name "*.log" -o -name "PHASE_*" -o -name "*_verification_*"
 ```
 
-Для каждого уточни у оператора: мигрировать (canonical FM по Schema v1) или удалить.
+For each, clarify with the operator: migrate (canonical FM per Schema v1) or delete.
 
-**Checkpoint 6:** warn-only CI не выдаёт ни одного warning.
+**Checkpoint 6:** warn-only CI emits no warnings.
 
 ---
 
 ## Step 7 — Switch to strict CI
 
-Когда warn-only несколько дней не выдаёт warnings — верни guard в strict режим:
+When warn-only has produced no warnings for several days — switch the guard back to strict mode:
 
 ```yaml
 jobs:
@@ -225,61 +225,61 @@ jobs:
       WARN_ONLY: ""   # greenfield-strict
 ```
 
-С этого момента brownfield репозиторий живёт по тем же strict-правилам, что и greenfield. Любой новый `.md` без canonical FM ломает PR.
+From this point the brownfield repository lives under the same strict rules as greenfield. Any new `.md` without canonical FM breaks the PR.
 
-**Checkpoint 7:** strict CI зелёный, rollback невозможен.
+**Checkpoint 7:** strict CI is green, rollback is impossible.
 
 ---
 
 ## Readiness Checklist
 
-Миграция завершена, когда:
+Migration is complete when:
 
-- [ ] `schema: 1` есть во всех `.md` в `docs/` (вне `docs/archive/`).
-- [ ] `id`, `type`, `status`, `date`, `owners` заполнены на всех `.md`.
-- [ ] `owners` ≠ `unassigned` для active-документов (только Archive может быть `unassigned`).
-- [ ] `updated` проставлен мигратором.
-- [ ] `entity_refs` заполнен (нет `TODO_ENTITY_REF`) для `spec`/`audit` (min 1 ref).
-- [ ] Нет legacy-полей в frontmatter (CI их запрещает).
+- [ ] `schema: 1` is present in all `.md` files in `docs/` (outside `docs/archive/`).
+- [ ] `id`, `type`, `status`, `date`, `owners` are filled in on all `.md`.
+- [ ] `owners` ≠ `unassigned` for active documents (only Archive may be `unassigned`).
+- [ ] `updated` was set by the migrator.
+- [ ] `entity_refs` is filled in (no `TODO_ENTITY_REF`) for `spec`/`audit` (min 1 ref).
+- [ ] No legacy fields in frontmatter (CI forbids them).
 - [ ] `.context/` bootstrapped (`project.yml`, `boundaries.yml`, `agent-entry.md`).
-- [ ] `docs/architecture/entity-catalog.md` создан.
-- [ ] Warn-only CI пройден, переключено на strict.
-- [ ] CI ни в одном PR не падает на frontmatter.
+- [ ] `docs/architecture/entity-catalog.md` created.
+- [ ] Warn-only CI passed, switched to strict.
+- [ ] CI never fails on frontmatter in any PR.
 
 ---
 
 ## Edge Cases
 
-### `title:` без H1 в body
+### `title:` without an H1 in the body
 
-Скрипт сам добавит `# <title>` в body. Проверь, что в body не было H1 — иначе будет дубль. Скрипт safe: проверяет перед вставкой.
+The script will add `# <title>` to the body itself. Check that the body had no H1 — otherwise there would be a duplicate. The script is safe: it checks before inserting.
 
-### Нестандартный `lifecycle:`
+### Non-standard `lifecycle:`
 
-Например, `lifecycle: rejected`. Скрипт для ADR мапит `rejected` → `status: deprecated`, для других типов → `status: active`. Если нестандартное значение критично — перенеси в `tags:`.
+For example, `lifecycle: rejected`. The script maps `rejected` → `status: deprecated` for ADRs, and → `status: active` for other types. If the non-standard value is critical — move it to `tags:`.
 
-### `excludes-from-scope:` содержал важную информацию
+### `excludes-from-scope:` contained important information
 
-Поле удаляется как anti-pattern. Если важно явно сказать «не про Z» — используй `tags: [not-X]` или раздел `## Scope / Excluded` в body.
+The field is removed as an anti-pattern. If it is important to state explicitly "not about Z" — use `tags: [not-X]` or a `## Scope / Excluded` section in the body.
 
 ### Orphan spec without entity
 
-Скрипт ставит `TODO_ENTITY_REF`. Если domain entity действительно не идентифицируется — это сигнал, что документ слишком общий или неактуальный. Раздели на несколько spec'ов или перемести в `docs/archive/`.
+The script sets `TODO_ENTITY_REF`. If the domain entity really cannot be identified — that is a signal that the document is too general or outdated. Split it into several specs or move it to `docs/archive/`.
 
-### ADR с `status: proposed` в body, но в FM отсутствует
+### ADR with `status: proposed` in the body, but missing from the FM
 
-Скрипт не парсит body. Проверь manual review: если в body `## Status: accepted` — поставь `status: accepted` в FM.
+The script does not parse the body. Check during manual review: if the body has `## Status: accepted` — set `status: accepted` in the FM.
 
 ---
 
-## Анти-паттерны
+## Anti-patterns
 
-| Ошибка | Почему плохо | Решение |
+| Mistake | Why it is bad | Solution |
 |--------|-------------|---------|
-| Включить strict CI сразу на brownfield | Забытые `docs/archive/` сломают все PR | Warn-only период обязателен |
-| `entity_refs: []` у spec/audit | Модель требует min 1 ref для spec/audit | Скрипт ставит `TODO_ENTITY_REF`, в Step 4 замени |
-| `updated` не проставлен | Документ реально изменился при миграции → свежесть не отслеживается | Скрипт ставит `updated = today` автоматически |
-| `excludes-from-scope:` оставлен | CI запрещает его; anti-pattern | Скрипт удаляет; заменяй на `tags: [not-X]` |
-| Мигрировать неактуальный архив | Тратишь время на dead docs | Оставить в `docs/archive/` без migration |
-| Удалять `docs/archive/` целиком | Теряешь историю решений | Только canonical FM добавлять или оставлять |
-| Manual review пропущен | Скрипт мог вывести `type`/`status`/`id` неточно | Обязательно 10–20% files просмотреть вручную |
+| Enable strict CI immediately on brownfield | Forgotten `docs/archive/` would break every PR | Warn-only period is mandatory |
+| `entity_refs: []` on spec/audit | The model requires min 1 ref for spec/audit | The script sets `TODO_ENTITY_REF`, replace it in Step 4 |
+| `updated` not set | The document really changed during migration → freshness not tracked | The script sets `updated = today` automatically |
+| `excludes-from-scope:` left in place | CI forbids it; anti-pattern | The script removes it; replace with `tags: [not-X]` |
+| Migrate an outdated archive | Wasting time on dead docs | Leave in `docs/archive/` without migration |
+| Delete `docs/archive/` entirely | Losing decision history | Only add canonical FM or leave it |
+| Manual review skipped | The script may have derived `type`/`status`/`id` imprecisely | Mandatory: review 10–20% of files manually |

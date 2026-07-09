@@ -1,8 +1,9 @@
 #!/bin/bash
 # engine/reality-engine/collectors/architecture-inventory.sh
 #
-# Extracts actual architecture from codebase.
-# Read-only investigation: modules, services, dependencies, ownership.
+# Real architecture inventory of a project (read-only investigation).
+# Detects stack via the Runtime API (detect_all) and inventories the
+# actual directory tree + file types.
 #
 # Usage:
 #   bash engine/reality-engine/collectors/architecture-inventory.sh [project-root]
@@ -12,32 +13,75 @@
 set -eu
 
 PROJECT_ROOT="${1:-.}"
+[ -d "$PROJECT_ROOT" ] || { echo "ERROR: project root '$PROJECT_ROOT' not found" >&2; exit 1; }
+PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd)"
 
-if [ ! -d "$PROJECT_ROOT" ]; then
-  echo "ERROR: project root '$PROJECT_ROOT' not found" >&2
-  exit 1
+# --- Runtime API (stack detection + expected structure) ---
+RUNTIME_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+if [ -f "${RUNTIME_ROOT}/runtime/lib/api.sh" ]; then
+  # shellcheck disable=SC1090
+  source "${RUNTIME_ROOT}/runtime/lib/api.sh"
 fi
 
-# Collect directory structure (top 2 levels)
-echo "{"
-echo '  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",'
-echo '  "project_root": "'"$PROJECT_ROOT"'",'
-echo '  "directories": ['
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-first=true
-find "$PROJECT_ROOT" -maxdepth 2 -type d -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.runtime/*" | sort | while read -r dir; do
+# --- stack detection ---
+BACKEND="" DATABASE="" INFRASTRUCTURE="" PROJECT_NAME=""
+if declare -f detect_all >/dev/null 2>&1; then
+  detect_all "$PROJECT_ROOT"
+fi
+
+# --- directory inventory (top 2 levels, exclude VCS/deps/runtime) ---
+EXCLUDE_GLOB=("${PROJECT_ROOT}/.git" "${PROJECT_ROOT}/node_modules" "${PROJECT_ROOT}/.runtime")
+dirs_json=""
+first=1
+while IFS= read -r dir; do
   rel="${dir#$PROJECT_ROOT}"
   [ -z "$rel" ] && rel="/"
-  if [ "$first" = true ]; then
-    first=false
-  else
-    echo ","
-  fi
-  printf '    {"path": "%s"}' "$rel"
+  cnt=$(find "$dir" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
+  entry=$(printf '    {"path": "%s", "files": %s}' "$rel" "$cnt")
+  if [ "$first" -eq 1 ]; then first=0; else entry=",$entry"; fi
+  dirs_json="$dirs_json$entry"
+done < <(find "$PROJECT_ROOT" -maxdepth 2 -type d \
+            -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.runtime/*" | sort)
+
+# --- file extensions ---
+declare -A ext_count
+while IFS= read -r f; do
+  base="$(basename "$f")"
+  if [[ "$base" == *.* ]]; then ext="${base##*.}"; else ext="(none)"; fi
+  ext_count["$ext"]=$(( ${ext_count["$ext"]:-0} + 1 ))
+done < <(find "$PROJECT_ROOT" -type f \
+            -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.runtime/*")
+ext_json=""
+first=1
+for e in $(printf '%s\n' "${!ext_count[@]}" | sort); do
+  entry=$(printf '      "%s": %s' "$e" "${ext_count[$e]}")
+  if [ "$first" -eq 1 ]; then first=0; else entry=",$entry"; fi
+  ext_json="$ext_json$entry"
 done
 
-echo ""
-echo "  ],"
-echo '  "files_count": '$(find "$PROJECT_ROOT" -type f -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.runtime/*" | wc -l)','
-echo '  "status": "stub"'
-echo "}"
+total=$(find "$PROJECT_ROOT" -type f \
+          -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.runtime/*" \
+          | wc -l | tr -d ' ')
+
+cat <<EOF
+{
+  "timestamp": "$TS",
+  "project_root": "$PROJECT_ROOT",
+  "project_name": "${PROJECT_NAME:-$(basename "$PROJECT_ROOT")}",
+  "stack": {
+    "backend": "${BACKEND:-unknown}",
+    "database": "${DATABASE:-unknown}",
+    "infrastructure": "${INFRASTRUCTURE:-unknown}"
+  },
+  "directories": [
+$dirs_json
+  ],
+  "files_by_extension": {
+$ext_json
+  },
+  "total_files": $total,
+  "status": "ok"
+}
+EOF

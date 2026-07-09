@@ -19,10 +19,10 @@ priority: P1
 
 # opencode Agent — Architecture Reviewer
 
-> Конфигурация агента opencode для архитектурного ревью изменений.
-> Поместите этот файл в `.opencode/agents/architecture-reviewer.md` вашего проекта (consumer-репо), чтобы активировать роль.
+> opencode agent configuration for architectural review of changes.
+> Place this file in `.opencode/agents/architecture-reviewer.md` of your project (consumer repo) to activate the role.
 
-> Содержание роли идентично `claude-code/architecture-reviewer.md`. Разница — только в формате дескриптора агента и путях конфигурации. opencode использует `.opencode/` вместо `.claude/`.
+> The role's content is identical to `claude-code/architecture-reviewer.md`. The only difference is the agent descriptor format and configuration paths. opencode uses `.opencode/` instead of `.claude/`.
 
 ---
 
@@ -66,7 +66,8 @@ This agent is invoked on:
    - Verify no legacy fields: `author`, `title`, `created`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`.
    - Verify `## Critical Invariants` table updated if topology/invariants changed.
    - Verify `## Module Index` updated if new subsystem added/removed.
-   - If entity references — verify each `entity_refs` id exists in `docs/architecture/` (architecture documents or entity-catalog.md).
+    - If entity references — verify each `entity_refs` id exists in `docs/architecture/` (architecture documents or entity-catalog.md).
+    - Always validate implementation against `docs/architecture/invariants.md` if the document exists (treat its invariants as hard constraints).
 
 5. **For code changes with architectural impact:**
    - If PR adds a new service / container / external dependency WITHOUT a corresponding ADR (proposed or accepted) — flag as `architectural-decision-not-recorded`.
