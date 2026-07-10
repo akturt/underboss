@@ -4,7 +4,7 @@ boundaries:
 
   pristine:
     - path: docs/.runtime/
-      reason: "Documentation System Runtime submodule (managed by git submodule update --remote)"
+      reason: "Underboss submodule (managed by git submodule update --remote)"
       owner: runtime
       immutable: true
 

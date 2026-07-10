@@ -6,7 +6,7 @@ kind: index
 status: active
 date: 2026-07-10
 updated: 2026-07-10
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer, schema-v1, canonical-frontmatter]
 touches: []
@@ -17,33 +17,34 @@ tags: [runtime, index, landing]
 priority: P0
 ---
 
-# naprolom-docs — Documentation System Runtime
+# Underboss — Runtime для проектов
 
-**Turns documentation into infrastructure**, not a dump of `.md` files.
+**Превращает документацию в инфраструктуру**, а не dump `.md`-файлов.
 Canonical Schema v1, lifecycle from path, 5-layer architecture, CI guard.
 
-Runtime v1.9 architecture: **Runtime Core** (runtime/, bootstrap/, engine/) +
+Underboss v2.0.0 architecture: **Runtime Core** (runtime/, bootstrap/, engine/) +
 **Documentation Module** (documentation/, knowledge/, agents/, sops/, playbook/).
-Connected as a Git Submodule — one runtime for the whole ecosystem.
+Connected as a Git Submodule — один runtime на весь ecosystem.
 
-> **Proof:** the Kordon/MegaDelta project — 141 chaotic files → 40 canonical in 30
-> minutes and one prompt. Onboarding reduced from 2–5 days to 5 minutes, LLM context
+> **Proof:** the Kordon/MegaDelta project — 141 chaotic files → 40 canonical in
+> 30 minutes and one prompt. Onboarding reduced from 2–5 days to 5 minutes, LLM context
 > 73% lighter, prompt cost 80% lower. See `docs/audits/`.
->
+
 > **To install:** give your AI agent the link to this repo
-> (`https://github.com/akturt/naprolom-docs`) and say:
-> **"Установи Documentation System Runtime."**
+> (`https://github.com/akturt/underboss`) and say:
+> **"Установи Underboss."**
 > The agent reads `bootstrap/DEPLOY-PROMPT.md` and does everything automatically.
 > Or run the one-liner:
-> `bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)`
+> `bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)`
 
 ---
 
 ## What this is
 
-`naprolom-docs` is a **Documentation System Runtime**: not a set of prompts and
-not a README template. It is a versioned engine that any of your projects connects
-as a Git Submodule and gets:
+**Underboss** is a **Project Conciergerie Runtime**: not a set of prompts and
+not a README template. It is a versioned engine that knows your project's architecture,
+rules, processes, invariants, and context. Documentation is one of its modules.
+Any project connects it as a Git Submodule and gets:
 
 - **Canonical Schema v1** — a single frontmatter format for all `.md` in `docs/`
   (6 required fields, zero legacy fields).
@@ -67,17 +68,17 @@ as a Git Submodule and gets:
 
 Give your AI agent the link to this repo and say:
 
-> **"Установи Documentation System Runtime на этот проект."**
+> **"Установи Underboss ."**
 
 That's it. The agent reads [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md),
-detects the current state (fresh install / v1.0 migration / v1.1–v1.8 auto-upgrade /
-v1.9 update), executes the correct path, runs all verifications, and reports back.
+detects the current state (fresh install / v1.0 migration / v1.1–v2.0.0 auto-upgrade /
+v2.0 update), executes the correct path, runs all verifications, and reports back.
 Works with opencode, Claude Code, Cursor, and any other agent that can run shell commands.
 
 ### Option 2 — One-liner
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)
 ```
 
 ### Option 3 — Manual
@@ -85,12 +86,12 @@ bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/boo
 ```bash
 # 1. Add submodule INSIDE docs/
 mkdir -p docs/.runtime
-git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
-git commit -m "chore: add Documentation System Runtime via submodule"
+git submodule add https://github.com/akturt/underboss.git docs/.runtime/underboss
+git config -f .gitmodules submodule."docs/.runtime/underboss".branch master
+git commit -m "chore: add Underboss Runtime via submodule"
 
 # 2. Run bootstrap
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 
 # 3. Fill in .context/project.yml and .context/boundaries.yml
 ```
@@ -106,23 +107,22 @@ Full details: [`INSTALL.md`](INSTALL.md).
 ## What is included (Runtime layout)
 
 ```
-naprolom-docs/ ← product repo
-├── README.md              ← this file
-├── INSTALL.md             ← consumer integration guide
-├── bootstrap/             ← Runtime Core: loader, install one-liner, deploy prompt
-├── runtime/               ← Runtime Core: registry, state machine, contracts, API
-├── engine/                ← Runtime Core: Reality Engine + migration script
-├── documentation/         ← Documentation Module: templates, validation, schemas
-├── knowledge/             ← Documentation Module: principles, capabilities
-├── agents/                ← Documentation Module: claude-code + opencode roles
-├── sops/                  ← Documentation Module: YAML process descriptions
-├── playbook/              ← Documentation Module: greenfield + brownfield guides
-├── docs/                  ← dogfood: Runtime's own audits, ADRs, specs
-└── .github/workflows/     ← CI guard
-```
+underboss/ ← product repo
+├── README.md ← this file
+├── INSTALL.md ← consumer integration guide
+├── bootstrap/ ← Runtime Core: loader, install one-liner, deploy prompt
+├── runtime/ ← Runtime Core: registry, state machine, contracts, API
+├── engine/ ← Runtime Core: Reality Engine + migration script
+├── documentation/ ← Documentation Module: templates, validation, schemas
+├── knowledge/ ← Documentation Module: principles, capabilities
+├── agents/ ← Documentation Module: claude-code + opencode roles
+├── sops/ ← Documentation Module: YAML process descriptions
+├── playbook/ ← Documentation Module: greenfield + brownfield guides
+├── docs/ ← dogfood: Runtime's own audits, ADRs, specs
+└── .github/workflows/ ← CI guard
 
 > **Note:** In consumer repos only `docs/` appears at the root.
-> Everything else lives inside `docs/.runtime/naprolom-docs/` (git submodule).
+> Everything else lives inside `docs/.runtime/underboss/` (git submodule).
 > See the Two-repo model in [`INSTALL.md`](INSTALL.md).
 
 ---
@@ -132,14 +132,14 @@ naprolom-docs/ ← product repo
 ```bash
 # Manually (five seconds, recommended)
 git submodule update --remote --merge
-git add docs/.runtime/naprolom-docs
-git commit -m "chore: update Documentation System Runtime"
+git add docs/.runtime/underboss
+git commit -m "chore: update Underboss"
 ```
 
 Or re-run bootstrap — it detects the current version and updates idempotently:
 
 ```bash
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 ```
 
 Details: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
@@ -148,10 +148,10 @@ Details: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 ## Changelog
 
-- **2026-07-10** — **v1.9 — Bash prefix in reality-report.sh + registry bugfix**.
+- **2026-07-10** — **v2.0.0 — Bash prefix in reality-report.sh + registry bugfix**.
   Fixed `reality-report.sh` calling collectors/analyzers without `bash` prefix
   (Permission denied on Linux/macOS). Fixed `registry_list_directories` returning
-  non-path YAML keys, which caused empty dirs in `docs/`. Bootstrap v1.9 creates
+  non-path YAML keys, which caused empty dirs in `docs/`. Bootstrap v2.0.0 creates
   no spurious empty directories.
 - **2026-07-09** — **v1.8 — Architecture Invariants Support**.
   Unified architecture invariants document; template + bootstrap generator;
@@ -174,7 +174,7 @@ Details: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 | Stage | State |
 |------|-------|
-| Runtime v1.0–v1.9 | ✅ implemented |
+| Runtime v1.0–v2.0.0 | ✅ implemented |
 | Playbook v2 (greenfield model) | ✅ implemented |
 | Migration Prompt (brownfield) | ✅ implemented |
 | Bootstrap (idempotent, POSIX + Windows) | ✅ implemented |

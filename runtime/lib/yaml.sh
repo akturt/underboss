@@ -1,5 +1,5 @@
 #!/bin/bash
-# runtime/lib/yaml.sh — Minimal YAML parser for naprolom registry
+# runtime/lib/yaml.sh — Minimal YAML parser for underboss registry
 #
 # NOT a general YAML parser. Handles only the registry format.
 # All functions take a file path as first argument.

@@ -5,7 +5,7 @@ type: spec
 status: approved
 date: 2026-07-08
 updated: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer, agent-role-separation, sop-dag, capabilities]
 touches: [agents, sops, knowledge, engine/templates, bootstrap, README, INSTALL]
@@ -19,13 +19,13 @@ tags: [agentic, roles, sops, knowledge, capabilities, layered-runtime, v1.1, upg
 priority: P0
 ---
 
-# Spec: Documentation System Runtime v1.1 — Agentic Layer
+# Spec: Underboss v1.1 — Agentic Layer
 
 > Revised edition. Incorporates reviewer feedback across 5 passes:
 > v1: removed output templates (merged into `knowledge/report-formats.md`), `planner.mjs` fixed as a DAG-printer (not executor), YAML SOP simplified (without `constraints:`), introduced the Capabilities layer.
 > v2: **Artifact — first-class entity** (`artifact:` field with canonical names, see §Artifact model), **Capability Catalog moved to `knowledge/capabilities.md`** (not in `agents/README.md`).
 > v3: Capability Catalog without providers (one-way Role→Capability). Knowledge refs via short-id (`knowledge: [architecture-principles]`). planner does not read knowledge (D-PL). `gate: manual` instead of `role: human` (D-HG).
-> v4 (current): **Bootstrap deploys the Runtime into `docs/.runtime/`, NOT into the consumer repo root** (D-BR). Clear separation: (a) the `naprolom-docs` repo = the product (directories at root are OK); (b) the consumer repo = uses only `docs/`, everything else goes into `docs/.runtime/`. The submodule mounts at `docs/.runtime/naprolom-docs/`, NOT at `.context/runtime/`. Affects: bootstrap scripts, INSTALL, playbook, the CLAUDE.md snippet, and paths in all SOPs/roles.
+> v4 (current): **Bootstrap deploys the Runtime into `docs/.runtime/`, NOT into the consumer repo root** (D-BR). Clear separation: (a) the `underboss` repo = the product (directories at root are OK); (b) the consumer repo = uses only `docs/`, everything else goes into `docs/.runtime/`. The submodule mounts at `docs/.runtime/underboss/`, NOT at `.context/runtime/`. Affects: bootstrap scripts, INSTALL, playbook, the CLAUDE.md snippet, and paths in all SOPs/roles.
 > Other improvements (grouping knowledge by domain, loading knowledge from SOP not from role) — deferred to the **v1.2 roadmap** (§Out-of-scope follow-up).
 
 ## Goal
@@ -42,14 +42,14 @@ This blocks scaling to new models (Gemini/GPT/Kimi/Qwen) and creates duplication
 
 ## Two-repo model (important v1.1 fix)
 
-> This section fixes the fundamental separation of two **different** repositories — the product and the consumer. Before v1.1 this was mixed in INSTALL/playbook/bootstrap: the submodule was mounted at `.context/runtime/naprolom-docs/` (outside `docs/`), which polluted the consumer repo root with service directories. v1.1 establishes a clear model.
+> This section fixes the fundamental separation of two **different** repositories — the product and the consumer. Before v1.1 this was mixed in INSTALL/playbook/bootstrap: the submodule was mounted at `.context/runtime/underboss/` (outside `docs/`), which polluted the consumer repo root with service directories. v1.1 establishes a clear model.
 
-### The `naprolom-docs` repository (product)
+### The `underboss` repository (product)
 
 Runtime sources. All directories at the root are **normal**:
 
 ```
-naprolom-docs/
+underboss/
 ├── README.md INSTALL.md
 ├── playbook/  engine/  bootstrap/  agents/  knowledge/  sops/  docs/  .github/
 ```
@@ -66,11 +66,11 @@ consumer-project/
 └── docs/
     ├── architecture/  adr/  specs/  audits/  backlog/  api/   ← user content
     └── .runtime/
-        └── naprolom-docs/         ← submodule mounts here (NOT in .context/runtime/)
+        └── underboss/         ← submodule mounts here (NOT in .context/runtime/)
             ├── engine/  bootstrap/  agents/  knowledge/  sops/  playbook/  INSTALL.md  ...
 ```
 
-Key invariant: **the consumer repo contains exactly one root directory — `docs/`**. All service directories of `naprolom-docs` (agents/, knowledge/, sops/, engine/, bootstrap/, playbook/, agents/, .github/) **do NOT appear in the consumer's root** — they are available **only** via the path `docs/.runtime/naprolom-docs/...`.
+Key invariant: **the consumer repo contains exactly one root directory — `docs/`**. All service directories of `underboss` (agents/, knowledge/, sops/, engine/, bootstrap/, playbook/, agents/, .github/) **do NOT appear in the consumer's root** — they are available **only** via the path `docs/.runtime/underboss/...`.
 
 ### Why this way
 
@@ -78,25 +78,25 @@ Key invariant: **the consumer repo contains exactly one root directory — `docs
 2. **Clear boundary:** `docs/.runtime/` is System-owned (updated via `git submodule update --remote`); `docs/architecture|adr|specs|audits|backlog|api` is User-owned (created and edited by the user).
 3. **Bootstrap idempotency:** the script creates/updates only the `docs/` subtree, leaving the root untouched.
 4. **Lean .gitignore:** a single line `docs/.runtime/` (if the user chooses to ignore the submodule in the working tree) instead of 7.
-5. **Single point for CI/CLI:** all paths are baked into `docs/.runtime/naprolom-docs/...` — compact in the workflow yml, runbooks, and CLAUDE.md snippet.
+5. **Single point for CI/CLI:** all paths are baked into `docs/.runtime/underboss/...` — compact in the workflow yml, runbooks, and CLAUDE.md snippet.
 
 ### What changes technically
 
 | Aspect | What was (v1.0) | What becomes (v1.1) |
 |--------|------------------|------------------------|
-| Git submodule mount point | `.context/runtime/naprolom-docs/` (outside `docs/`) | `docs/.runtime/naprolom-docs/` (inside `docs/`) |
-| `.gitmodules` path | `path = .context/runtime/naprolom-docs` | `path = docs/.runtime/naprolom-docs` |
-| Bootstrap invocation | `bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh` | `bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh` |
-| Validator path | `.context/runtime/naprolom-docs/engine/validators/...` | `docs/.runtime/naprolom-docs/engine/validators/...` |
-| Templates `cp` | `cp .context/runtime/naprolom-docs/engine/templates/spec.md ...` | `cp docs/.runtime/naprolom-docs/engine/templates/spec.md ...` |
-| Knowledge refs (Role → knowledge file) | `.context/runtime/naprolom-docs/knowledge/<id>.md` | `docs/.runtime/naprolom-docs/knowledge/<id>.md` (but roles use short-id — the Runtime resolves the path, D-KR) |
-| CLAUDE.md snippet (paths) | references like `.context/runtime/naprolom-docs/...` | references like `docs/.runtime/naprolom-docs/...` |
+| Git submodule mount point | `.context/runtime/underboss/` (outside `docs/`) | `docs/.runtime/underboss/` (inside `docs/`) |
+| `.gitmodules` path | `path = .context/runtime/underboss` | `path = docs/.runtime/underboss` |
+| Bootstrap invocation | `bash .context/runtime/underboss/bootstrap/bootstrap.sh` | `bash docs/.runtime/underboss/bootstrap/bootstrap.sh` |
+| Validator path | `.context/runtime/underboss/engine/validators/...` | `docs/.runtime/underboss/engine/validators/...` |
+| Templates `cp` | `cp .context/runtime/underboss/engine/templates/spec.md ...` | `cp docs/.runtime/underboss/engine/templates/spec.md ...` |
+| Knowledge refs (Role → knowledge file) | `.context/runtime/underboss/knowledge/<id>.md` | `docs/.runtime/underboss/knowledge/<id>.md` (but roles use short-id — the Runtime resolves the path, D-KR) |
+| CLAUDE.md snippet (paths) | references like `.context/runtime/underboss/...` | references like `docs/.runtime/underboss/...` |
 | CI workflow git checkout | `with: submodules: true` | unchanged (only paths in run: steps) |
 | Existing consumers v1.0 | n/a — migration for them is out-of-scope (see §Migration) | (migrate via a single `git mv` of the submodule + update paths in several files; it is so simple it is not worth formalizing as a SOP) |
 
 ### What does NOT change
 
-- **The internal structure of the `naprolom-docs` repo** — the root directories remain (`agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `docs/` dogfood). This is the **product**, its layout is our design.
+- **The internal structure of the `underboss` repo** — the root directories remain (`agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `docs/` dogfood). This is the **product**, its layout is our design.
 - The **names** and purpose of the directories inside the Runtime stay the same.
 - The **CLI interactions** (validate-frontmatter.sh, planner.mjs, migrate-legacy.mjs) stay the same; only the paths to them in the instructions change.
 - **Schema v1** frontmatter — no changes.
@@ -175,7 +175,7 @@ The current dogfooding-target Kordon is not rolled out yet — no migration need
 
 10. **CI validator extension** — extend the existing `engine/validators/validate-frontmatter.sh` with support for the `ROOT` parameter to apply it to `knowledge/` (see §Decisions D-6). In `.github/workflows/docs-validate.yml` add a second step `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge`. **No separate `validate-knowledge.sh`** — we reuse the existing one.
 
-11. **Dogfood: ADR-001 in the `naprolom-docs` repo itself** (see §Decisions D-2): create `docs/adr/001-agentic-layer-separation.md`, `status: accepted`, recording the move from monolithic agents to the 4-layer Role/Knowledge/SOP/Capability model. This illustrates the dogfood model and exercises our own architectural pipeline.
+11. **Dogfood: ADR-001 in the `underboss` repo itself** (see §Decisions D-2): create `docs/adr/001-agentic-layer-separation.md`, `status: accepted`, recording the move from monolithic agents to the 4-layer Role/Knowledge/SOP/Capability model. This illustrates the dogfood model and exercises our own architectural pipeline.
 
 ### Excluded
 
@@ -194,11 +194,11 @@ The current dogfooding-target Kordon is not rolled out yet — no migration need
 |----|--------|---------|-------------|
 | D-1 | `status` for output templates | N/A | Output templates as a separate kind are removed (D-OT). |
 | D-OT | Output templates as engine/templates/ | **Remove**, merge into `knowledge/report-formats.md` | This is not runtime infrastructure but knowledge about format. No one will `cp` them. A single markdown file is easier to maintain. |
-| D-2 | `docs/adr/001-agentic-layer.md` in naprolom-docs (dogfood) | **Yes** | This is the arch-combo "choosing between two good options" — the very reason ADRs exist. |
+| D-2 | `docs/adr/001-agentic-layer.md` in underboss (dogfood) | **Yes** | This is the arch-combo "choosing between two good options" — the very reason ADRs exist. |
 | D-3 | `constraints:` blocks in SOP YAML | **Remove** | A SOP answers only "who / after whom / what it produces". Validation logic belongs to the role, not the process description. |
 | D-P | `planner.mjs` role | **DAG-printer, not executor** | Otherwise in a month it grows into a small Airflow (retry/scheduler/parallel/resume/checkpoint). |
 | D-C | Capabilities layer | **Introduce as concept + convention** | Lets us tomorrow decouple the SOP from a specific role/model. Without a separate directory. |
-| D-4 | `playbook/playbook-v2.md` edits | **Do not touch** (max 1 reference) | Playbook = consumer-facing greenfield playbook, not naprolom-docs' own changelog. |
+| D-4 | `playbook/playbook-v2.md` edits | **Do not touch** (max 1 reference) | Playbook = consumer-facing greenfield playbook, not underboss' own changelog. |
 | D-5 | DAG `architecture-review.yaml` step 1→2 | **Sequential** | Reality → Architecture. Otherwise Architecture analyzes assumptions again, not reality. |
 | D-6 | Validation of `knowledge/` in CI | **Extend the existing validator via the `ROOT` env**, without a second script | `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — clean and DRY. |
 | D-7 | Attribution analysis role in `forensic-audit.yaml` | **`reality-auditor`** (not adversary-checker) | Attribution is reconstruction from signals, not refutation. Adversary checks others' finished conclusions. |
@@ -210,7 +210,7 @@ The current dogfooding-target Kordon is not rolled out yet — no migration need
 | D-KR | Knowledge refs format | **Short-id*, not hardcoded path | In the Role FM: `knowledge: [architecture-principles, report-formats]`. The path is resolved by the Runtime (convention: `knowledge/<id>.md`). Allows changing the structure of `knowledge/` without rewriting the roles. |
 | D-PL | planner.mjs scope | **Only roles + capabilities + SOP** (NOT knowledge) | Otherwise the planner gradually becomes the Runtime. Knowledge loading is the responsibility of the SOP/Role when executing a step, not the planner's. |
 | D-HG | Human steps in SOP | **`gate: manual`** (not `role: human`) | Human is not a Runtime role. The planner prints `gate: manual` explicitly. For backend-compat with v1.0 SOPs, the planner accepts `role: human` as an alias and visualizes it as `gate: manual`. The existing 7 v1.0 SOPs are left untouched. |
-| D-BR | Bootstrap deploy location in the consumer repo | **`docs/.runtime/naprolom-docs/`** (NOT `.context/runtime/...` at the root) | The user works only with `docs/`. The Runtime is localized inside `docs/.runtime/`, not scattered across the root. See §Two-repo model. Affects bootstrap paths, INSTALL, the playbook, the CLAUDE.md snippet, and all SOP/Role references to the Runtime. |
+| D-BR | Bootstrap deploy location in the consumer repo | **`docs/.runtime/underboss/`** (NOT `.context/runtime/...` at the root) | The user works only with `docs/`. The Runtime is localized inside `docs/.runtime/`, not scattered across the root. See §Two-repo model. Affects bootstrap paths, INSTALL, the playbook, the CLAUDE.md snippet, and all SOP/Role references to the Runtime. |
 
 ## Artifact model
 
@@ -270,10 +270,10 @@ Each step in `steps:` declares a **mandatory** `produces:` (artifact name) and a
 
 ### Target structure (VLAD — two edits: product + consumer)
 
-#### A. The `naprolom-docs` repository (product) — layout unchanged:
+#### A. The `underboss` repository (product) — layout unchanged:
 
 ```
-naprolom-docs/
+underboss/
 ├── README.md  INSTALL.md
 ├── playbook/              # Documentation Model layer (v1.0, don't touch layout, only paths inside files)
 ├── engine/
@@ -316,12 +316,12 @@ naprolom-docs/
 │   ├── audits/
 │   └── specs/drafts/
 │       └── 2026-07-08-agentic-layer.md   # /this/ spec
-└── .github/workflows/docs-validate.yml       # +1 step (ROOT=knowledge in naprolom-docs itself)
+└── .github/workflows/docs-validate.yml       # +1 step (ROOT=knowledge in underboss itself)
 ```
 
 > **Note:** `2026-07-08-agentic.md` (raw input) already removed at start of v3-revisions — marked done in Phase G1.
 
-#### B. Consumer repository (after `bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`) — NEW in v1.1 (D-BR):
+#### B. Consumer repository (after `bash docs/.runtime/underboss/bootstrap/bootstrap.sh`) — NEW in v1.1 (D-BR):
 
 ```
 consumer-project/
@@ -331,12 +331,12 @@ consumer-project/
     ├── architecture/  adr/  specs/  audits/  backlog/  api/   ← user content (created by user)
     ├── runbooks/  guides/  ...                                ← user content
     └── .runtime/                                              ← System-owned (updated from submodule)
-        └── naprolom-docs/                                     ← submodule mount point (D-BR)
+        └── underboss/                                     ← submodule mount point (D-BR)
             ├── engine/  bootstrap/  agents/  knowledge/  sops/  playbook/  INSTALL.md  README.md
-            └── (.github/ — only if consumer inherits workflow templates; usually not needed, CI workflow lives in consumer's .github/workflows/, refs to docs/.runtime/naprolom-docs/...)
+            └── (.github/ — only if consumer inherits workflow templates; usually not needed, CI workflow lives in consumer's .github/workflows/, refs to docs/.runtime/underboss/...)
 ```
 
-> **Invariant:** the consumer repo root contains **no** `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, or `.context/runtime/` directories. Everything related to the Runtime is available **only** via `docs/.runtime/naprolom-docs/...`.
+> **Invariant:** the consumer repo root contains **no** `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, or `.context/runtime/` directories. Everything related to the Runtime is available **only** via `docs/.runtime/underboss/...`.
 Frontmatter Schema v1, `type: guide`, `kind: index`, `status: active`. The content is markdown with numbered principles/classes/protocols, ready for inline reading by an AI agent. It is not executed, but loaded into the roles' context by reference.
 
 ### Capabilities convention
@@ -547,7 +547,7 @@ steps:
 After the existing 5 rules, add 2 (idempotently, via `grep -q`):
 ```
 6. If the task involves architectural review — see sops/architecture-review.yaml; foundation is reality-auditor BEFORE architecture-reviewer.
-7. Shared knowledge bases live in `docs/.runtime/naprolom-docs/knowledge/` (architecture-principles, evidence-model, audit-principles, report-formats, capabilities) — roles reference them by short-id, not inlined.
+7. Shared knowledge bases live in `docs/.runtime/underboss/knowledge/` (architecture-principles, evidence-model, audit-principles, report-formats, capabilities) — roles reference them by short-id, not inlined.
 ```
 
 ## Affected files
@@ -588,29 +588,29 @@ After the existing 5 rules, add 2 (idempotently, via `grep -q`):
 ## Work Plan
 
 ### Phase 0 — Bootstrap path migration (D-BR)
-**First — the fundamental fix**, then everything else. What changes is only **where bootstrap deploys Runtime in the consumer repo**:  from `.context/runtime/naprolom-docs/` to `docs/.runtime/naprolom-docs/`. Internal structure of `naprolom-docs` (the product) does NOT change.
+**First — the fundamental fix**, then everything else. What changes is only **where bootstrap deploys Runtime in the consumer repo**:  from `.context/runtime/underboss/` to `docs/.runtime/underboss/`. Internal structure of `underboss` (the product) does NOT change.
 0.1. `bootstrap/bootstrap.sh`:
-   - `RUNTIME_ROOT` (submodule mount path detection) — leave as-is (it is determined from the location of bootstrap.sh inside `naprolom-docs`, this does not depend on WHERE `naprolom-docs` itself is mounted).
-   - comments in header: update paths 'Run from the ROOT of the consumer project' — instead of `.context/runtime/naprolom-docs/bootstrap/bootstrap.sh` use `docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`.
-   - check_gitmodules_path(): new helper (idempotent), which checks that `.gitmodules` points to `docs/.runtime/naprolom-docs`, NOT `.context/runtime/naprolom-docs`. If v1.0 path found — warn-only on v1.1 (consumers can migrate themselves via `git mv`). This is an **advisory check**, does not block bootstrap.
-   - in `CLAUDE.md` snippet paths: `.context/runtime/naprolom-docs/...` → `docs/.runtime/naprolom-docs/...`.
+   - `RUNTIME_ROOT` (submodule mount path detection) — leave as-is (it is determined from the location of bootstrap.sh inside `underboss`, this does not depend on WHERE `underboss` itself is mounted).
+   - comments in header: update paths 'Run from the ROOT of the consumer project' — instead of `.context/runtime/underboss/bootstrap/bootstrap.sh` use `docs/.runtime/underboss/bootstrap/bootstrap.sh`.
+   - check_gitmodules_path(): new helper (idempotent), which checks that `.gitmodules` points to `docs/.runtime/underboss`, NOT `.context/runtime/underboss`. If v1.0 path found — warn-only on v1.1 (consumers can migrate themselves via `git mv`). This is an **advisory check**, does not block bootstrap.
+   - in `CLAUDE.md` snippet paths: `.context/runtime/underboss/...` → `docs/.runtime/underboss/...`.
 0.2. `bootstrap/bootstrap.ps1` — mirror 0.1 (PS syntax, single-quoted strings).
-0.3. `INSTALL.md` — all command examples (`git submodule add ...`, `git submodule update --remote`, `bash .context/runtime/naprolom-docs/...`, `.gitmodules` block) switch to `docs/.runtime/naprolom-docs/`. Architecture diagram — update consumer side: `docs/` contains user-content + `.runtime/`. Add new §«Two-repo model» subsection, explaining product vs consumer (D-BR mapping). **Large subsection on self-vs-consumer** for clear separation.
-0.4. `playbook/playbook-v2.md` — in §Bootstrap section update path to bootstrap.sh via `docs/.runtime/...`. In §Phase 1, §Phase 3, §Phase 4, §Canonical Source of Truth — all `cp .context/runtime/naprolom-docs/engine/templates/...` → `cp docs/.runtime/naprolom-docs/engine/templates/...`. In §CI Schema v1 Guard — `bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh`.
+0.3. `INSTALL.md` — all command examples (`git submodule add ...`, `git submodule update --remote`, `bash .context/runtime/underboss/...`, `.gitmodules` block) switch to `docs/.runtime/underboss/`. Architecture diagram — update consumer side: `docs/` contains user-content + `.runtime/`. Add new §«Two-repo model» subsection, explaining product vs consumer (D-BR mapping). **Large subsection on self-vs-consumer** for clear separation.
+0.4. `playbook/playbook-v2.md` — in §Bootstrap section update path to bootstrap.sh via `docs/.runtime/...`. In §Phase 1, §Phase 3, §Phase 4, §Canonical Source of Truth — all `cp .context/runtime/underboss/engine/templates/...` → `cp docs/.runtime/underboss/engine/templates/...`. In §CI Schema v1 Guard — `bash docs/.runtime/underboss/engine/validators/validate-frontmatter.sh`.
 0.5. `playbook/migrate-legacy.md` — if paths to migrate-legacy.mjs are mentioned — update to `docs/.runtime/...`. Check with grep.
 0.6. `playbook/install-remote-prompt.md` — verify/update paths in instructions for remote agent.
-0.7. `README.md` — Quick Start commands (`bash .context/runtime/naprolom-docs/...`) → `docs/.runtime/naprolom-docs/...`. Update consumer-side layout diagram.
+0.7. `README.md` — Quick Start commands (`bash .context/runtime/underboss/...`) → `docs/.runtime/underboss/...`. Update consumer-side layout diagram.
 0.8. `agents/README.md`, `sops/README.md` — any mentions of `.context/runtime/...` → `docs/.runtime/...`.
-0.9. Existiong agent role files (`agents/claude-code/*.md`, `agents/opencode/*.md`) — in operating protocol may have hardcoded `.context/runtime/...` paths (e.g. architecture-reviewer references `.context/runtime/naprolom-docs/playbook/playbook-v2.md`). Update all to `docs/.runtime/naprolom-docs/...`. This is part of Phase B refactor; paths are fixed here, so concerns don't overlap (slim refactor + path migration in one step).
-0.10. `.github/workflows/docs-validate.yml` — in `run:` block update the validator path to `docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh` (in the **naprolom-docs** repo itself — validator lives in `engine/`, path stays local; this is about the **consumer workflow** that install-remote-prompt copies into the consumer repo).
+0.9. Existiong agent role files (`agents/claude-code/*.md`, `agents/opencode/*.md`) — in operating protocol may have hardcoded `.context/runtime/...` paths (e.g. architecture-reviewer references `.context/runtime/underboss/playbook/playbook-v2.md`). Update all to `docs/.runtime/underboss/...`. This is part of Phase B refactor; paths are fixed here, so concerns don't overlap (slim refactor + path migration in one step).
+0.10. `.github/workflows/docs-validate.yml` — in `run:` block update the validator path to `docs/.runtime/underboss/engine/validators/validate-frontmatter.sh` (in the **underboss** repo itself — validator lives in `engine/`, path stays local; this is about the **consumer workflow** that install-remote-prompt copies into the consumer repo).
 0.11. `engine/validators/validate-frontmatter.sh` header — update example usage paths.
 0.12. `engine/scripts/migrate-legacy.mjs` header comments — update consumer invocation examples.
 
-> Phase 0 — this is a **sweep across all doc files**. grep for `.context/runtime` in `naprolom-docs` repo must return 0 matches after Phase 0 (except this spec file, where v4-changelog and §Two-repo model may mention old paths in historical comparison — this is OK).
+> Phase 0 — this is a **sweep across all doc files**. grep for `.context/runtime` in `underboss` repo must return 0 matches after Phase 0 (except this spec file, where v4-changelog and §Two-repo model may mention old paths in historical comparison — this is OK).
 
 ### Phase A — Knowledge layer (minimum, without over-engineering)
 A1. `knowledge/README.md` — index, explaining role knowledge refs.
-A2. `knowledge/architecture-principles.md` — extract from Appendix A `architecture-reviewer.md` §«Analysis Principles» (14 + 3 meta). FM: `type: guide, kind: index, status: active, owners: [naprolom-team]`, `id: knowledge-architecture-principles`.
+A2. `knowledge/architecture-principles.md` — extract from Appendix A `architecture-reviewer.md` §«Analysis Principles» (14 + 3 meta). FM: `type: guide, kind: index, status: active, owners: [underboss-team]`, `id: knowledge-architecture-principles`.
 A3. `knowledge/evidence-model.md` — from Appendix A `reality-auditor.md` §«Trust Hierarchy» + §«Evidence Classification» + §«Behavioral Rules». FM similarly.
 A4. `knowledge/audit-principles.md` — from Appendix A `adversary-checker.md` §«5-Stage Validation Protocol» + §«Verdict System» + §«Confidence Model» + §«Behavioral Constraints».
 A5. `knowledge/report-formats.md` — normalized description of output formats for 4 reviewers (architecture-review / reality-audit / adversary-report / forensic-report) from their inline blocks in Appendix A. One file.
@@ -667,7 +667,7 @@ C2. `sops/architecture-review.yaml` — sequential DAG (D-5), with artifact cont
 D1. `sops/planner.mjs` — add step parser support for `capability:` (optional) + `role:` (optional, but at least one of the two is required; otherwise warning). If a step specifies `capability:` without `role:` — warning. Also read `consumes:`/`produces:` and print them in DAG visualization next to control-flow `depends_on:` (data-flow arrows). No more than ~15 lines of code, no executor logic.
 
 ### Phase E — Documentation & dogfood
-E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [naprolom-team]`. Body: Status / Context / Decision / Consequences. Decision describes the **5-layer model** (Knowledge / Role / Capability / SOP / Artifact), rationale, why `agents/` was not renamed to `roles/`, why output templates were folded into knowledge, why the capability catalog lives in `knowledge/capabilities.md`.
+E1. `docs/adr/001-agentic-layer-separation.md` — dogfood ADR. FM: `id: adr-001-agentic-layer-separation, type: adr, status: accepted, date: 2026-07-08, owners: [underboss-team]`. Body: Status / Context / Decision / Consequences. Decision describes the **5-layer model** (Knowledge / Role / Capability / SOP / Artifact), rationale, why `agents/` was not renamed to `roles/`, why output templates were folded into knowledge, why the capability catalog lives in `knowledge/capabilities.md`.
 E2. `README.md` — update layout diagram (+ `knowledge/`, including `capabilities.md`), What you get expand to 4 roles + 6 knowledge + 9 SOPs, Changelog add `v1.1 — agentic layer: Knowledge/Role/Capability/SOP/Artifact separation`.
 E3. `INSTALL.md` — architecture diagram with `knowledge/`.
 E4. `agents/README.md` — extended roles table (4) with capabilities column (Role→Capability one-directional, this is the providers mapping — see D-CP); section «Capabilities» (overview + pointer to `knowledge/capabilities.md`, **NO inline capability definitions** — catalog lives there); section «Knowledge refs» (brief: explains short-id format in Role FM `knowledge: [...]`, and path is resolved by Runtime); update layout.
@@ -679,7 +679,7 @@ E7. `bootstrap/bootstrap.ps1` — mirror E6 PS syntax.
 F1. `.github/workflows/docs-validate.yml` — add a second step:
    ```yaml
    - name: Validate knowledge/ frontmatter
-     run: ROOT=knowledge bash docs/.runtime/naprolom-docs/engine/validators/validate-frontmatter.sh knowledge
+     run: ROOT=knowledge bash docs/.runtime/underboss/engine/validators/validate-frontmatter.sh knowledge
    ```
 F2. Smoke test locally: `ROOT=docs bash engine/validators/validate-frontmatter.sh` and `ROOT=knowledge bash engine/validators/validate-frontmatter.sh knowledge` — both must show OK.
 F3. `node sops/planner.mjs forensic-audit --platform opencode` — prints DAG with data-flow arrows (consumes → produces), control-flow (depends_on), gate steps as `gate: manual`. **Planner must NOT read contents of `knowledge/`** (D-PL) — only roles (`agents/{platform}/` *.md FM), capabilities (per-role FM), SOP (`sops/*.yaml`).
@@ -704,13 +704,13 @@ Q-2. In `knowledge/capabilities.md` on v1.1 — publish per-capability entry wit
 Outside this spec, but proposed by the reviewer as future work. **Does not block v1.1 release** — Runtime already working; these are polish.
 
 ### Structural
-- **`runtime/` wrapper inside naprolom-docs.** Inside the product repo — wrap `engine/` + `bootstrap/` into one `runtime/` dir so the product root becomes minimally clean:
+- **`runtime/` wrapper inside underboss.** Inside the product repo — wrap `engine/` + `bootstrap/` into one `runtime/` dir so the product root becomes minimally clean:
   ```
   README.md INSTALL.md
   runtime/   (engine, bootstrap, ...)
   agents/  knowledge/  sops/  docs/  .github/
   ```
-  **This does not affect the consumer** (in the consumer everything is already localized in `docs/.runtime/naprolom-docs/...` thanks to D-BR). Change only affects readability of `naprolom-docs` repo (the product). Low priority — product layout is already acceptable.
+  **This does not affect the consumer** (in the consumer everything is already localized in `docs/.runtime/underboss/...` thanks to D-BR). Change only affects readability of `underboss` repo (the product). Low priority — product layout is already acceptable.
   NOT in v1.1 — recorded here as a roadmap reference.
 
 ### Knowledge layer refactor

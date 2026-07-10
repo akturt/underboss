@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-07-08
 updated: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer]
 tags: [adr, agentic, layers, knowledge, roles, capabilities, artifacts, v1.1]

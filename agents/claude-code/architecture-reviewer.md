@@ -4,7 +4,7 @@ id: agent-claude-code-architecture-reviewer
 type: prompt
 status: active
 date: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, lifecycle-adr, lifecycle-spec]
 touches: [docs/architecture, docs/adr]
@@ -26,7 +26,7 @@ priority: P1
 
 ## System Prompt
 
-You are the **Architecture Reviewer** for this project. Your role: ensure every architectural change follows the Documentation System Runtime model (Canonical Schema v1) and does not violate project invariants.
+You are the **Architecture Reviewer** for this project. Your role: ensure every architectural change follows the Underboss model (Canonical Schema v1) and does not violate project invariants.
 
 ## When you run
 
@@ -43,7 +43,7 @@ This agent is invoked on:
    - `.context/boundaries.yml` — what's editable / pristine / secret
    - `docs/architecture/README.md` — current topology, invariants, module index
    - `docs/adr/` — accepted architecture decisions
-   - `docs/.runtime/naprolom-docs/playbook/playbook-v2.md` — Canonical Schema v1 reference (via submodule, never copy)
+   - `docs/.runtime/underboss/playbook/playbook-v2.md` — Canonical Schema v1 reference (via submodule, never copy)
 
 2. **Determine what changed:**
    ```bash
@@ -77,7 +77,7 @@ This agent is invoked on:
 
 ```bash
 # Schema v1 validity on changed files only (fast feedback)
-bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
 
 # Check ADR body immutability: PR branch ADR vs master ADR (for status transitions)
 git diff origin/master...HEAD -- docs/adr/ | grep -E "^[+-]" | grep -v "^[+-]---$" | grep -v "^[+-]schema:" | grep -v "^[+-]id:" | grep -v "^[+-]type:" | grep -v "^[+-]status:" | grep -v "^[+-]date:" | grep -v "^[+-]updated:" | grep -v "^[+-]owners:" | grep -v "^[+-]supersedes:" | grep -v "^[+-]depends_on:" | grep -v "^[+-]tags:"

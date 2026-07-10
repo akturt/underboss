@@ -1,12 +1,12 @@
 #!/bin/bash
-# runtime/lib/registry.sh вЂ” Registry API (SSOT reader)
+# runtime/lib/registry.sh — Registry API (SSOT reader)
 #
 # All Runtime components read from registry through this API.
-# No awk/grep/sed вЂ” uses yaml.sh for all parsing.
+# No awk/grep/sed — uses yaml.sh for all parsing.
 #
 # Requires: runtime/lib/yaml.sh
 
-# Lazy computation вЂ” RUNTIME_REGISTRY computed on first use
+# Lazy computation — RUNTIME_REGISTRY computed on first use
 RUNTIME_REGISTRY=""
 
 _registry_init() {
@@ -22,9 +22,24 @@ registry_exists() {
 
 # --- Scalar accessors ---
 
+registry_name() {
+  _registry_init
+  yaml_get "$RUNTIME_REGISTRY" "runtime.name"
+}
+
 registry_version() {
   _registry_init
-  yaml_get_version "$RUNTIME_REGISTRY" "runtime"
+  yaml_get "$RUNTIME_REGISTRY" "runtime.version"
+}
+
+registry_codename() {
+  _registry_init
+  yaml_get "$RUNTIME_REGISTRY" "runtime.codename"
+}
+
+registry_bootstrap_version() {
+  _registry_init
+  yaml_get "$RUNTIME_REGISTRY" "bootstrap.engine_version"
 }
 
 registry_schema_version() {
@@ -121,23 +136,23 @@ registry_list_directories() {
   _registry_init
   local scope="$1"
   awk -v scope="$scope" '
-    BEGIN { in_dirs=0; in_scope=0 }
-    /^[[:space:]]*directories:/ { in_dirs=1; next }
-    in_dirs && /^[a-z]/ { in_dirs=0; in_scope=0; next }
-    in_dirs && $0 ~ "^[[:space:]]*" scope ":" { in_scope=1; next }
-    in_scope && /^(  [a-z]|[a-z])/ { in_scope=0; next }
-    in_scope && /^[[:space:]]*-[[:space:]]*path:[[:space:]]*/ {
-      v=$0; sub(/^[[:space:]]*-[[:space:]]*path:[[:space:]]*/, "", v)
-      gsub(/^"/, "", v); gsub(/"$/, "", v)
-      print v; next
-    }
-in_scope && /^[[:space:]]*-[[:space:]]*/ {
-    v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v)
-    sub(/^path:[[:space:]]*/, "", v)
-    gsub(/^"/, "", v); gsub(/"$/, "", v)
-    print v
+BEGIN { in_dirs=0; in_scope=0 }
+/^[[:space:]]*directories:/ { in_dirs=1; next }
+in_dirs && /^[a-z]/ { in_dirs=0; in_scope=0; next }
+in_dirs && $0 ~ "^[[:space:]]*" scope ":" { in_scope=1; next }
+in_scope && /^( [a-z]|[a-z])/ { in_scope=0; next }
+in_scope && /^[[:space:]]*-[[:space:]]*path:[[:space:]]*/ {
+  v=$0; sub(/^[[:space:]]*-[[:space:]]*path:[[:space:]]*/, "", v)
+  gsub(/^"/, "", v); gsub(/"$/, "", v)
+  print v; next
 }
-  ' "$RUNTIME_REGISTRY"
+in_scope && /^[[:space:]]*-[[:space:]]*/ {
+  v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v)
+  sub(/^path:[[:space:]]*/, "", v)
+  gsub(/^"/, "", v); gsub(/"$/, "", v)
+  print v
+}
+' "$RUNTIME_REGISTRY"
 }
 
 # --- Maps ---

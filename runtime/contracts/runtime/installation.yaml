@@ -19,7 +19,7 @@ installation:
 
   expects:
     state: fresh | partial | legacy | broken
-    gitmodules: "path = docs/.runtime/naprolom-docs"
+    gitmodules: "path = docs/.runtime/underboss"
 
   sources: "bootstrap reads component paths from registry.yaml (composition: section)"
 

@@ -73,7 +73,7 @@ steps:
   - id: 8
     name: Write incident audit doc
     role: human
-    produces: "cp docs/.runtime/naprolom-docs/documentation/templates/audit.md → docs/audits/YYYY-MM-DD-incident-<slug>.md; fill frontmatter (status=draft, scope=incident, trigger=<alert source>, entity_refs=affected services)"
+    produces: "cp docs/.runtime/underboss/documentation/templates/audit.md → docs/audits/YYYY-MM-DD-incident-<slug>.md; fill frontmatter (status=draft, scope=incident, trigger=<alert source>, entity_refs=affected services)"
     depends_on: [5, 6, 7]
 
   - id: 9

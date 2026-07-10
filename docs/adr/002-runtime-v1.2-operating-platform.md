@@ -4,7 +4,7 @@ id: adr-002-runtime-v1.2-operating-platform
 type: adr
 status: accepted
 date: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer]
 tags: [adr, runtime, v1.2, registry, state-machine, contracts, reality-engine]

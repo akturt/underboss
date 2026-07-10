@@ -4,15 +4,15 @@ id: bootstrap-readme
 type: guide
 status: active
 date: 2026-07-09
-owners: [naprolom-team]
+owners: [underboss-team]
 entity_refs: [runtime, registry]
 ---
 
-# Bootstrap — naprolom Documentation System Runtime
+# Bootstrap — underboss Underboss
 
 ## Overview
 
-Bootstrap installs and configures the Documentation System Runtime into a consumer project. As of v1.6, the bootstrap is a thin orchestrator that drives the **Runtime API** (`runtime/lib/`) — it contains no business logic and no hardcoded paths. All structure and behaviour is read from `runtime/registry.yaml`.
+Bootstrap installs and configures the Underboss into a consumer project. As of v1.6, the bootstrap is a thin orchestrator that drives the **Runtime API** (`runtime/lib/`) — it contains no business logic and no hardcoded paths. All structure and behaviour is read from `runtime/registry.yaml`.
 
 ## Architecture (v1.6)
 

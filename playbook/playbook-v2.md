@@ -5,7 +5,7 @@ type: spec
 status: implemented
 date: 2026-07-07
 updated: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, agent-entry-protocol, lifecycle-spec, lifecycle-adr]
 touches: [docs, .context, .claude/rules, .github/workflows]
@@ -22,7 +22,7 @@ priority: P0
 # Documentation System Playbook v2 (Greenfield)
 
 > Guide to adopting the documentation system on any IaC / backend / frontend project **from scratch**.
-> Based on the naprolom-infra architecture (2026-06–07).
+> Based on the underboss-infra architecture (2026-06–07).
 > **Greenfield version 2 — Canonical Schema v1 from day one.**
 >
 > This playbook describes the **target greenfield model** of Documentation System v2.
@@ -465,7 +465,7 @@ id: architecture-readme
 type: architecture
 status: active
 date: YYYY-MM-DD
-owners: [naprolom-team]
+owners: [underboss-team]
 ---
 
 # Architecture Reference Index
@@ -492,7 +492,7 @@ id: architecture-system-overview
 type: architecture
 status: active
 date: YYYY-MM-DD
-owners: [naprolom-team]
+owners: [underboss-team]
 ---
 
 # System Overview
@@ -525,7 +525,7 @@ Create as needed:
 #### 3.1 Creating an ADR
 
 ```bash
-cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/NNN-<slug>.md
+cp docs/.runtime/underboss/documentation/templates/adr.md docs/adr/NNN-<slug>.md
 # NN — next free number (zero-padded to 3 digits)
 # slug — kebab-case, describes the decision (not the implementation)
 ```
@@ -558,7 +558,7 @@ Fill in:
 #### 4.1 Creating a spec
 
 ```bash
-cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
+cp docs/.runtime/underboss/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md
 # fill frontmatter: status: draft (must match the directory!)
 # fill body: Goal, Context, Scope, Technical approach, Affected files, Open questions
 ```
@@ -599,7 +599,7 @@ git mv docs/specs/approved/2026-07-06-feature.md docs/specs/superseded/
 
 #### 4.3 Rules
 
-- **Creation:** `cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+- **Creation:** `cp docs/.runtime/underboss/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 - **You cannot implement** a spec that is not in `approved/` (CI FAILS on a PR that changes code without the corresponding spec in `approved/`)
 - **After implementation:** fill in `## Result`, move it to `implemented/`, `status: implemented`
 - **Supersede:** if a new spec replaces an old one — move the old one to `superseded/` with `status: superseded`, and in the new one specify `supersedes: [<old-id>]`
@@ -626,7 +626,7 @@ id: runbook-<slug>
 type: runbook
 status: active
 date: YYYY-MM-DD
-owners: [naprolom-team]
+owners: [underboss-team]
 kind: deploy | cicd | ops | troubleshoot | secrets | integration
 ---
 
@@ -697,7 +697,7 @@ applies-to: path("docs/specs/**")
 
 Creation:
 
-1. `cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/underboss/documentation/templates/spec.md docs/specs/drafts/YYYY-MM-DD-<slug>.md`
 2. fill FM:
    - `id`: `<slug>` (no date, stable)
    - `status`: `draft` (mandatory — matches the drafts/ directory)
@@ -737,7 +737,7 @@ applies-to: path("docs/audits/**")
 
 When creating a new audit:
 
-1. Copy `docs/.runtime/naprolom-docs/documentation/templates/audit.md` to `docs/audits/YYYY-MM-DD-<slug>.md`
+1. Copy `docs/.runtime/underboss/documentation/templates/audit.md` to `docs/audits/YYYY-MM-DD-<slug>.md`
 2. Fill in frontmatter:
    - `id`: `audit-<slug>` (slug without date)
    - `status`: `draft` (if in progress) or `completed` (if done)
@@ -870,7 +870,7 @@ In case of conflicting information, read the canonical source.
 
 ### Creating a new audit
 
-1. `cp docs/.runtime/naprolom-docs/documentation/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
+1. `cp docs/.runtime/underboss/documentation/templates/audit.md docs/audits/YYYY-MM-DD-<slug>.md`
 2. Fill in the frontmatter: `id`, `status: draft`, `date`, `scope`, `trigger`, `entity_refs`, `touches`
 3. Fill in the body: `# Audit: <title>`, Summary, Findings, Conflicts (optional), Resolution, Delta
 4. If the audit is complete — `status: completed` (terminal)
@@ -944,7 +944,7 @@ id: backlog-active
 type: backlog
 status: active
 date: YYYY-MM-DD
-owners: [naprolom-team]
+owners: [underboss-team]
 ---
 ```
 
@@ -1057,7 +1057,7 @@ done
 | Duplication in .claude/rules/ | They fall out of sync | Thin pointers → canonical source in docs/ |
 | Runbooks without `kind:` | Cannot distinguish deploy from troubleshoot | `type: runbook` always with `kind:` |
 | ADR body modified when adding FM | Violates immutability | Carve-out rule: FM ≠ body. The body is left byte-for-byte untouched, any update is FM only |
-| Audit without the canonical template | Body structure varies, hard to parse | Always `cp docs/.runtime/naprolom-docs/documentation/templates/audit.md ...` |
+| Audit without the canonical template | Body structure varies, hard to parse | Always `cp docs/.runtime/underboss/documentation/templates/audit.md ...` |
 | Creating .md without a template | FM is not canonical, no `schema:`/`id` | Greenfield invariant: start from `cp <type>/_template.md`, not from an empty file |
 | Deleting completed specs | Loss of decision history | Never delete, store in `implemented/` |
 | `supersedes_adr:` instead of `supersedes:` | Legacy field, breaks the parser | `supersedes: [<id>]` — a list (may have several) |
@@ -1073,9 +1073,9 @@ Check that the system was adopted from day one:
 - [ ] `.context/project.yml` exists and contains the stack
 - [ ] `.context/boundaries.yml` classifies files
 - [ ] `docs/architecture/README.md` exists, has canonical FM, contains invariants and module index
-- [ ] `docs/.runtime/naprolom-docs/documentation/templates/spec.md` exists with the Canonical Schema v1 Base
-- [ ] `docs/.runtime/naprolom-docs/documentation/templates/audit.md` exists with the audit extension (`scope`, `trigger`)
-- [ ] `docs/.runtime/naprolom-docs/documentation/templates/adr.md` exists with the canonical ADR FM
+- [ ] `docs/.runtime/underboss/documentation/templates/spec.md` exists with the Canonical Schema v1 Base
+- [ ] `docs/.runtime/underboss/documentation/templates/audit.md` exists with the audit extension (`scope`, `trigger`)
+- [ ] `docs/.runtime/underboss/documentation/templates/adr.md` exists with the canonical ADR FM
 - [ ] At least 1 ADR in `docs/adr/` with `accepted` status (or proposed)
 - [ ] `docs/README.md` exists, has canonical FM (`type: guide, kind: index`), START HERE section
 - [ ] `.claude/rules/doc-update.md` defines the doc-update protocol
@@ -1136,7 +1136,7 @@ jobs:
           submodules: true
       - name: Validate Canonical Schema v1 frontmatter
         run: |
-          bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+          bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
 ```
 
 

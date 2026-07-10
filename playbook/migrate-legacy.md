@@ -6,7 +6,7 @@ kind: legacy
 status: active
 date: 2026-07-07
 updated: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, lifecycle-spec]
 touches: [docs, .github/workflows]
@@ -33,7 +33,7 @@ This document is a **ready-made prompt** for an AI agent (Claude Code, opencode)
 
 ## Prerequisites
 
-- The `naprolom-docs` submodule is already attached at `docs/.runtime/naprolom-docs/` (see `../../INSTALL.md`).
+- The `underboss` submodule is already attached at `docs/.runtime/underboss/` (see `../../INSTALL.md`).
 - The repository has already run `bootstrap/bootstrap.sh` (`.context/`, `docs/` skeleton, `CLAUDE.md` snippet created).
 - Node.js 18+ is available for `engine/scripts/migrate-legacy.mjs`.
 
@@ -105,13 +105,13 @@ Run the migration script from the Runtime:
 
 ```bash
 # Dry-run: shows what would change, without writing
-node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --dry-run
+node docs/.runtime/underboss/engine/scripts/migrate-legacy.mjs --dry-run
 
 # Real run
-node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --owner <team-name>
+node docs/.runtime/underboss/engine/scripts/migrate-legacy.mjs --owner <team-name>
 
 # Quiet mode (summary only)
-node docs/.runtime/naprolom-docs/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
+node docs/.runtime/underboss/engine/scripts/migrate-legacy.mjs --quiet --owner <team-name>
 ```
 **What the script does:**
 
@@ -180,7 +180,7 @@ In this mode, local validation:
 
 ```bash
 # What warn-only CI reports
-WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
 ```
 
 Warn-only duration: 3–7 days, or until several PRs in a row show no warnings.

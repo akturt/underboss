@@ -6,7 +6,7 @@ kind: onboarding
 status: active
 date: 2026-07-10
 updated: 2026-07-10
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer, schema-v1, canonical-frontmatter]
 touches: [docs, .context, .gitmodules, CLAUDE.md, .github/workflows]
@@ -19,27 +19,27 @@ tags: [install, submodule, consumer, onboarding, v1.9]
 priority: P0
 ---
 
-# INSTALL — Connecting the Documentation System Runtime
+# INSTALL — Connecting the Underboss
 
-> This document is intended for the consumer who has added naprolom-docs as a Git Submodule.
+> This document is intended for the consumer who has added underboss as a Git Submodule.
 > The rest (`playbook/`, `documentation/templates/`, `documentation/validation/`, `documentation/schemas/`, `engine/scripts/`, `engine/reality-engine/`, `bootstrap/`, `agents/`, `knowledge/`, `sops/`, `runtime/`) is the Runtime content, which is pulled in automatically along with the submodule.
 >
-> **v1.9:** The Runtime is mounted **inside `docs/`**, not in `.context/runtime/`. Only `docs/` remains at the consumer repo root — no utility directories at the root. Inside `docs/`, user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) appears, and the system operates locally under `docs/.runtime/naprolom-docs/`. Runtime v1.9 is **Runtime Core + Documentation Module**. See the Two-repo model section below.
+> **v1.9:** The Runtime is mounted **inside `docs/`**, not in `.context/runtime/`. Only `docs/` remains at the consumer repo root — no utility directories at the root. Inside `docs/`, user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) appears, and the system operates locally under `docs/.runtime/underboss/`. Runtime v1.9 is **Runtime Core + Documentation Module**. See the Two-repo model section below.
 
-> **Quick path:** Copy the prompt from [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) and give it to an AI agent — it will perform all the steps below automatically. Or use the one-liner: `bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)`
+> **Quick path:** Copy the prompt from [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) and give it to an AI agent — it will perform all the steps below automatically. Or use the one-liner: `bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)`
 
 ---
 
 ## Two-repo model
 
-`naprolom-docs` exists in **two roles at once** — it is important not to confuse them:
+`underboss` exists in **two roles at once** — it is important not to confuse them:
 
-### A. The `naprolom-docs` repository (product)
+### A. The `underboss` repository (product)
 
 Runtime source code. Here directories at the root are **normal** (this is product development):
 
 ```
-naprolom-docs/
+underboss/
 ├── README.md  INSTALL.md
 ├── runtime/  bootstrap/  engine/                              ← Runtime Core
 ├── documentation/  knowledge/  agents/  sops/  playbook/      ← Documentation Module
@@ -50,7 +50,7 @@ Inside `docs/` lives its own dogfood (audits, specs, ADRs of the project itself)
 
 ### B. Consumer repository (Runtime user)
 
-You connect the Runtime as a **Git Submodule inside `docs/`**. Only `docs/` remains at the consumer repo root. No `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `runtime/` at the root — everything is localized under `docs/.runtime/naprolom-docs/`. Runtime v1.9 includes **Runtime Core** (runtime, bootstrap, engine) and **Documentation Module** (documentation, knowledge, agents, sops, playbook):
+You connect the Runtime as a **Git Submodule inside `docs/`**. Only `docs/` remains at the consumer repo root. No `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `runtime/` at the root — everything is localized under `docs/.runtime/underboss/`. Runtime v1.9 includes **Runtime Core** (runtime, bootstrap, engine) and **Documentation Module** (documentation, knowledge, agents, sops, playbook):
 
 ```
 consumer-project/
@@ -59,7 +59,7 @@ consumer-project/
 └── docs/                                        ← the ONLY root documentation directory
     ├── architecture/  adr/  specs/  audits/  backlog/  api/   ← your content (user-owned)
     └── .runtime/                                              ← System-owned (managed by `git submodule update --remote`)
-        └── naprolom-docs/                                     ← submodule mount point (D-BR)
+        └── underboss/                                     ← submodule mount point (D-BR)
             ├── runtime/  bootstrap/  engine/                              ← Runtime Core
             ├── documentation/  knowledge/  agents/  sops/  playbook/      ← Documentation Module
             ├── INSTALL.md  README.md
@@ -72,7 +72,7 @@ Invariant: **only `docs/` at the consumer repo root**. This is the user's mental
 
 ## What you get
 
-By connecting `naprolom-docs` as a Git Submodule, your project gets:
+By connecting `underboss` as a Git Submodule, your project gets:
 
 - **Canonical Schema v1** — a single frontmatter format for all `.md` in `docs/`.
 - **5-layer architecture** of documentation (architecture → ADR → spec → audit → runbook).
@@ -99,14 +99,14 @@ By connecting `naprolom-docs` as a Git Submodule, your project gets:
 ## Quick start (one-liner)
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)
 ```
 
 Or clone and run:
 
 ```bash
-git clone --depth 1 https://github.com/akturt/naprolom-docs.git /tmp/naprolom-docs
-bash /tmp/naprolom-docs/bootstrap/install.sh
+git clone --depth 1 https://github.com/akturt/underboss.git /tmp/underboss
+bash /tmp/underboss/bootstrap/install.sh
 ```
 
 ---
@@ -120,21 +120,21 @@ From the root of your project:
 mkdir -p docs/.runtime
 
 git submodule add \
-    https://github.com/akturt/naprolom-docs.git \
-    docs/.runtime/naprolom-docs
+    https://github.com/akturt/underboss.git \
+    docs/.runtime/underboss
 
 # Pin the master branch in .gitmodules (so `--remote` pulls master, not detached HEAD)
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+git config -f .gitmodules submodule."docs/.runtime/underboss".branch master
 
-git commit -m "chore: add Documentation System Runtime via submodule"
+git commit -m "chore: add Underboss via submodule"
 ```
 
 After this, `.gitmodules` contains:
 
 ```ini
-[submodule "docs/.runtime/naprolom-docs"]
-    path = docs/.runtime/naprolom-docs
-    url = https://github.com/akturt/naprolom-docs.git
+[submodule "docs/.runtime/underboss"]
+    path = docs/.runtime/underboss
+    url = https://github.com/akturt/underboss.git
     branch = master
 ```
 
@@ -154,15 +154,15 @@ upgrades it in place. Just pull the submodule and re-run bootstrap:
 
 ```bash
 git submodule update --remote --merge
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 ```
 
 If the submodule pull did not work (no remote / submodule missing):
 
 ```bash
-cd docs/.runtime/naprolom-docs && git pull origin master
+cd docs/.runtime/underboss && git pull origin master
 cd ../..
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 ```
 
 ---
@@ -185,10 +185,10 @@ Bootstrap creates the `docs/` skeleton, `.context/` stubs, and `CLAUDE.md` snipp
 
 ```bash
 # Linux / macOS / WSL
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 
 # Windows (PowerShell)
-powershell -File docs\.runtime\naprolom-docs\bootstrap\bootstrap.ps1
+powershell -File docs\.runtime\underboss\bootstrap\bootstrap.ps1
 ```
 
 What bootstrap will create:
@@ -212,9 +212,9 @@ Bootstrap automatically adds this block to `CLAUDE.md` (or creates it):
 ```markdown
 ## Documentation Runtime
 
-Documentation System Runtime is connected as a Git Submodule:
+Underboss is connected as a Git Submodule:
 
-    docs/.runtime/naprolom-docs/
+    docs/.runtime/underboss/
 
 Before any change to `docs/`:
 1. Study `playbook/playbook-v2.md` (target model)
@@ -271,7 +271,7 @@ boundaries:
     - path: vendor/
       reason: "third-party, tracked upstream"
     - path: docs/.runtime/
-      reason: "Documentation System Runtime submodule (managed by git submodule update --remote), NEVER edit in-place"
+      reason: "Underboss submodule (managed by git submodule update --remote), NEVER edit in-place"
 
   editable:
     - path: app/
@@ -293,7 +293,7 @@ boundaries:
       note: "private keys"
 ```
 
-**Critical:** the path `docs/.runtime/naprolom-docs/` MUST be `pristine`. It is a submodule — never edit its contents in-place; only update the submodule as a whole (Step 7).
+**Critical:** the path `docs/.runtime/underboss/` MUST be `pristine`. It is a submodule — never edit its contents in-place; only update the submodule as a whole (Step 7).
 
 ---
 
@@ -303,18 +303,18 @@ Copy a template from the Runtime into your `docs/`:
 
 ```bash
 # ADR (Architecture Decision Record)
-cp docs/.runtime/naprolom-docs/documentation/templates/adr.md docs/adr/001-orchestrator-choice.md
+cp docs/.runtime/underboss/documentation/templates/adr.md docs/adr/001-orchestrator-choice.md
 # Edit the frontmatter (id, status, date, owners) and body
 
 # Spec (uses lifecycle from path)
-cp docs/.runtime/naprolom-docs/documentation/templates/spec.md docs/specs/drafts/$(date +%Y-%m-%d)-new-api.md
+cp docs/.runtime/underboss/documentation/templates/spec.md docs/specs/drafts/$(date +%Y-%m-%d)-new-api.md
 # status: draft → must match the drafts/ directory
 
 # Architecture
-cp docs/.runtime/naprolom-docs/documentation/templates/architecture.md docs/architecture/README.md
+cp docs/.runtime/underboss/documentation/templates/architecture.md docs/architecture/README.md
 
 # Audit
-cp docs/.runtime/naprolom-docs/documentation/templates/audit.md docs/audits/$(date +%Y-%m-%d)-initial.md
+cp docs/.runtime/underboss/documentation/templates/audit.md docs/audits/$(date +%Y-%m-%d)-initial.md
 ```
 
 Details on creating and the lifecycle of documents are in [`playbook/playbook-v2.md`](playbook/playbook-v2.md).
@@ -333,16 +333,16 @@ Before committing `.md` files in `docs/`:
 
 ```bash
 # Strict check (like in CI)
-bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
 
 # Warn-only (if brownfield, but the strict period has not started yet)
-WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+WARN_ONLY=true bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
 
 # Validate knowledge/ (if you use a custom knowledge)
-ROOT=knowledge bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh knowledge
+ROOT=knowledge bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh knowledge
 
 # v1.9: validate the Runtime dependency graph
-bash docs/.runtime/naprolom-docs/documentation/validation/validate-runtime.sh
+bash docs/.runtime/underboss/documentation/validation/validate-runtime.sh
 ```
 
 CI (`docs-validate.yml`) does the same automatically — but local validation gives a faster feedback loop.
@@ -354,12 +354,12 @@ CI (`docs-validate.yml`) does the same automatically — but local validation gi
 ### Option A — manually (recommended at first)
 
 ```bash
-# Pull the latest changes from naprolom-docs master
+# Pull the latest changes from underboss master
 git submodule update --remote --merge
 
 # Record the new SHA in your repo
-git add docs/.runtime/naprolom-docs
-git commit -m "chore: update Documentation System Runtime"
+git add docs/.runtime/underboss
+git commit -m "chore: update Underboss"
 ```
 
 Takes five seconds. By default the `master` branch is pulled (see `branch = master` in `.gitmodules`).
@@ -367,7 +367,7 @@ Takes five seconds. By default the `master` branch is pulled (see `branch = mast
 ### Option B — via bootstrap
 
 ```bash
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
+bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 ```
 
 Bootstrap will automatically detect the version and update the components.
@@ -388,16 +388,16 @@ updates:
       prefix: "chore"
 ```
 
-Dependabot creates a PR with the new submodule SHA on every change to `naprolom-docs/master`. You review and merge it — no automation touches master without your approval.
+Dependabot creates a PR with the new submodule SHA on every change to `underboss/master`. You review and merge it — no automation touches master without your approval.
 
 ### Rollback
 
 ```bash
-# To a specific naprolom-docs SHA
-cd docs/.runtime/naprolom-docs
+# To a specific underboss SHA
+cd docs/.runtime/underboss
 git checkout <commit-sha>
 cd ../..
-git add docs/.runtime/naprolom-docs
+git add docs/.runtime/underboss
 git commit -m "chore: pin Documentation Runtime to <commit-sha>"
 ```
 
@@ -417,13 +417,13 @@ Briefly: run `engine/scripts/migrate-legacy.mjs`, then enable `WARN_ONLY=true` f
 
 | ❌ Don't | ✅ Do this instead |
 |---------------|----------------------|
-| Copy templates into `docs/` and keep duplicates in the repo | Use templates as the source of truth: `cp docs/.runtime/naprolom-docs/documentation/templates/<type>.md docs/<type>/...` once |
-| Edit files in `docs/.runtime/naprolom-docs/` in-place | Update the submodule as a whole; do not touch the contents |
+| Copy templates into `docs/` and keep duplicates in the repo | Use templates as the source of truth: `cp docs/.runtime/underboss/documentation/templates/<type>.md docs/<type>/...` once |
+| Edit files in `docs/.runtime/underboss/` in-place | Update the submodule as a whole; do not touch the contents |
 | Change `WARN_ONLY=true` to `false` before cleanup in brownfield | Follow `[playbook/migrate-legacy.md:Step 5-7]` — warn-only → strict via the checklist |
 | Pin the submodule to a detached HEAD without recording it in `.gitmodules` | Always use `branch = master` in `.gitmodules` so `--remote` works |
-| Create `.md` without `cp docs/.runtime/naprolom-docs/documentation/templates/...` | Canonical frontmatter cannot be written "from scratch" — start from the template and fill in the 6 fields |
+| Create `.md` without `cp docs/.runtime/underboss/documentation/templates/...` | Canonical frontmatter cannot be written "from scratch" — start from the template and fill in the 6 fields |
 | Use legacy fields (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`) | Replace: `author`→`owners`, `title`→body H1, `created`→`date`, `lifecycle`→computed from path |
-| Mount the submodule under `.context/runtime/` (v1.0 path) | v1.9: use `docs/.runtime/naprolom-docs/` (D-BR). For migration: `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
+| Mount the submodule under `.context/runtime/` (v1.0 path) | v1.9: use `docs/.runtime/underboss/` (D-BR). For migration: `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
 
 ---
 
@@ -433,13 +433,13 @@ If you want to follow standard development processes (New Feature / Bugfix / Rel
 
 ```bash
 # List available SOPs
-node docs/.runtime/naprolom-docs/sops/planner.mjs
+node docs/.runtime/underboss/sops/planner.mjs
 
 # Execution plan for new-feature (shows parallel groups, roles, and artifacts)
-node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --platform claude-code
+node docs/.runtime/underboss/sops/planner.mjs new-feature --platform claude-code
 
 # Only AI agent roles (without manual human steps)
-node docs/.runtime/naprolom-docs/sops/planner.mjs new-feature --hide-human
+node docs/.runtime/underboss/sops/planner.mjs new-feature --hide-human
 ```
 
 An SOP is a checklist, not an orchestrator. planner.mjs is a DAG-printer (not an executor). You read the plan, manually invoke roles via slash commands in agents (e.g. `/architecture-reviewer` in Claude Code or `@architecture-reviewer` in opencode), and perform manual steps yourself. There is no runtime scheduler.
@@ -468,15 +468,15 @@ Custom SOPs for your project's specific processes should go in `.context/sops/` 
 Check that `.gitmodules` contains the line `branch = master`. If it is missing, add it:
 
 ```bash
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+git config -f .gitmodules submodule."docs/.runtime/underboss".branch master
 ```
 
 ### Bootstrap warning about the v1.0 path
 
 If you see:
 ```
-⚠ WARNING: .gitmodules references legacy v1.0 path '.context/runtime/naprolom-docs'.
-  v1.9 expects submodule mounted at 'docs/.runtime/naprolom-docs'.
+⚠ WARNING: .gitmodules references legacy v1.0 path '.context/runtime/underboss'.
+  v1.9 expects submodule mounted at 'docs/.runtime/underboss'.
   To migrate: git mv .context/runtime docs/.runtime && git submodule absorbgitdirs
 ```
 
@@ -513,8 +513,8 @@ This is expected for concept entities (`runtime-agentic-layer`, `schema-v1`, etc
 ### v1.1 → v1.9 auto-update does not work
 
 Bootstrap attempts `git pull origin master` in the submodule. If it does not work:
-1. `cd docs/.runtime/naprolom-docs && git pull origin master`
-2. `cd ../.. && bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh`
+1. `cd docs/.runtime/underboss && git pull origin master`
+2. `cd ../.. && bash docs/.runtime/underboss/bootstrap/bootstrap.sh`
 
 ---
 

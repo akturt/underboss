@@ -4,24 +4,24 @@ id: audit-documentation-transformation-kordon
 type: audit
 status: completed
 date: 2026-07-07
-owners: [naprolom-team]
+owners: [underboss-team]
 
 scope: "Transformation of the Kordon/MegaDelta project documentation: chaos of 141 files → canonical 5-layer architecture (40 files)"
-trigger: "Value proof of the Naprolom-Docs methodology (Canonical Schema v1, Greenfield) for management and the community"
+trigger: "Value proof of the underboss methodology (Canonical Schema v1, Greenfield) for management and the community"
 
 entity_refs: [schema-v1, canonical-frontmatter, lifecycle-spec]
 touches: [docs]
 docs: [2026-07-07-documentation-system-playbook-v2.md, docs/guides/legacy-migration.md]
 refs: []
 depends_on: [documentation-system-playbook-v2]
-tags: [audit, transformation, value-proof, naprolom-docs]
+tags: [audit, transformation, value-proof, underboss]
 priority: P1
 ---
 
 # Audit: Documentation as infrastructure — "Before / After" report
 
 > Scope: Transformation of the Kordon/MegaDelta project documentation (141 ad-hoc files → 40 canonical files).
-> Trigger: Demonstrating the value (value proof) of the Naprolom-Docs methodology to management and the community.
+> Trigger: Demonstrating the value (value proof) of the underboss methodology to management and the community.
 
 ## Summary
 
@@ -78,7 +78,7 @@ docs/
 └── README.md # navigation
 ```
 
-The Naprolom-Docs 5-layer architecture:
+The underboss 5-layer architecture:
 
 | Layer | Purpose | Files |
 |---|---|---|
@@ -96,7 +96,7 @@ There are no contradictions between the findings. The "Before" metrics are taken
 
 ## Resolution
 
-The transformation was done following the Naprolom-Docs methodology (Playbook v2, Greenfield). 101 files were moved to `.temp/archive/` (legacy/garbage). The `docs/` structure was created via bootstrap + canonical templates.
+The transformation was done following the underboss methodology (Playbook v2, Greenfield). 101 files were moved to `.temp/archive/` (legacy/garbage). The `docs/` structure was created via bootstrap + canonical templates.
 
 ## Delta
 
@@ -112,7 +112,7 @@ The transformation was done with a **single prompt** in an AI agent (opencode), 
 
 ```
 # Context and task
-I successfully applied the Naprolom-Docs documentation structuring methodology
+I successfully applied the underboss documentation structuring methodology
 (Canonical Schema v1, Greenfield approach) to our repository. From chaos we moved to
 a strict 5-layer architecture.
 Your task — analyze the current state of the repository (structure of docs/

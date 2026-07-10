@@ -6,7 +6,7 @@ kind: index
 status: active
 date: 2026-07-08
 updated: 2026-07-09
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer]
 touches: []
@@ -102,4 +102,4 @@ Human steps are marked with `gate: manual` (D-HG). Existing SOP v1.0 with `role:
 
 ## Extending
 
-For custom roles (e.g., `tf-reviewer.md`), create them in your consumer repo under `.claude/agents/` or `.opencode/agents/`. Once a role becomes generally useful, propose it to `naprolom-docs` via a PR.
+For custom roles (e.g., `tf-reviewer.md`), create them in your consumer repo under `.claude/agents/` or `.opencode/agents/`. Once a role becomes generally useful, propose it to `underboss` via a PR.

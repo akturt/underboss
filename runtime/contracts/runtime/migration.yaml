@@ -11,12 +11,12 @@ migration:
       breaking: true
       changes:
         - description: "Submodule mount point moved"
-          from: ".context/runtime/naprolom-docs/"
-          to: "docs/.runtime/naprolom-docs/"
+          from: ".context/runtime/underboss/"
+          to: "docs/.runtime/underboss/"
           action: "git mv .context/runtime docs/.runtime && git submodule absorbgitdirs"
         - description: "Bootstrap paths updated"
-          from: "bash .context/runtime/naprolom-docs/bootstrap/bootstrap.sh"
-          to: "bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh"
+          from: "bash .context/runtime/underboss/bootstrap/bootstrap.sh"
+          to: "bash docs/.runtime/underboss/bootstrap/bootstrap.sh"
         - description: "Knowledge layer added"
           paths: ["knowledge/"]
         - description: "New agents added"

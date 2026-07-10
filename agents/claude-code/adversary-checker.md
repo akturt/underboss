@@ -4,7 +4,7 @@ id: agent-claude-code-adversary-checker
 type: prompt
 status: active
 date: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer]
 capabilities: [claim-validation, assumption-analysis]

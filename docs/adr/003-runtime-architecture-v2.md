@@ -4,7 +4,7 @@ id: adr-003-runtime-architecture-v2
 type: adr
 status: accepted
 date: 2026-07-09
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [runtime-agentic-layer, adr-002-runtime-v1.2-operating-platform]
 tags: [adr, runtime, v1.6, runtime-api, registry, bootstrap-engine, architecture]
@@ -48,7 +48,7 @@ Adopt five architectural rules that finalize the Runtime v2 topology.
 
 ### 1. Two-layer topology: Runtime Core + Documentation Module
 
-Runtime ships as a Git Submodule mounted at `docs/.runtime/naprolom-docs`. It has two layers:
+Runtime ships as a Git Submodule mounted at `docs/.runtime/underboss`. It has two layers:
 
 - **Runtime Core** (infrastructure): `runtime/`, `bootstrap/`, `engine/`
   — registry, state machine, contracts, reality engine, bootstrap.

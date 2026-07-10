@@ -1,15 +1,15 @@
 #!/bin/bash
 # bootstrap/install.sh
 #
-# One-liner installer for Documentation System Runtime.
+# One-liner installer for Underboss Runtime.
 # Uses the Runtime API (runtime/lib/api.sh) to read all paths and versions
 # from registry.yaml — no grep/sed/awk parsing of the registry.
 #
-# Usage: bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)
+# Usage: bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)
 
 set -eu
 
-REPO_URL="https://github.com/akturt/naprolom-docs.git"
+REPO_URL="https://github.com/akturt/underboss.git"
 
 # Detect project root
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
@@ -21,7 +21,7 @@ fi
 echo "→ Project: $PROJECT_ROOT"
 
 # Candidate locations of the Runtime submodule
-SUBMODULE_CANDIDATES=("docs/.runtime/naprolom-docs" ".context/runtime/naprolom-docs")
+SUBMODULE_CANDIDATES=("docs/.runtime/underboss" ".context/runtime/underboss")
 
 # Load the unified Runtime API for a given runtime root.
 load_api() {
@@ -40,29 +40,29 @@ done
 
 if [ -n "$RUNTIME_DIR" ]; then
   load_api "$RUNTIME_DIR"
-  VERSION=$(registry_version)
+  RUNTIME_NAME=$(registry_name 2>/dev/null || echo "Underboss")
+  VERSION=$(registry_version 2>/dev/null || echo "unknown")
   BOOTSTRAP_PATH=$(registry_entrypoint "bootstrap")
   BOOTSTRAP_PATH="${BOOTSTRAP_PATH:-bootstrap/bootstrap.sh}"
-  echo "→ Runtime v${VERSION:-unknown} already installed. Running bootstrap..."
+  echo "→ ${RUNTIME_NAME} v${VERSION:-unknown} already installed. Running bootstrap..."
   bash "$RUNTIME_DIR/$BOOTSTRAP_PATH" "$PROJECT_ROOT"
   exit 0
 fi
 
-# Check for v1.0 layout
+# Check for legacy v1.0 layout (old underboss path)
 if [ -d "$PROJECT_ROOT/.context/runtime" ]; then
-  echo "→ Legacy v1.0 layout detected. Run migration first:"
-  echo "  bash <(curl -s ...)  # with migration flag"
-  echo "  Or follow: https://github.com/akturt/naprolom-docs/blob/master/bootstrap/DEPLOY-PROMPT.md"
+  echo "→ Legacy v1.0 layout detected. Upgrade to Underboss v2.0 first:"
+  echo " See https://github.com/akturt/underboss/blob/master/bootstrap/DEPLOY-PROMPT.md (Step B or C)"
   exit 1
 fi
 
 # Fresh install
-echo "→ Installing Runtime..."
+echo "→ Installing Underboss Runtime..."
 
 # Ensure docs/.runtime exists
 mkdir -p "$PROJECT_ROOT/docs/.runtime"
 
-SUBMODULE_PATH="docs/.runtime/naprolom-docs"
+SUBMODULE_PATH="docs/.runtime/underboss"
 
 if [ -d "$PROJECT_ROOT/$SUBMODULE_PATH" ]; then
   echo "→ Submodule directory exists. Updating..."
@@ -78,6 +78,8 @@ fi
 # Read bootstrap entrypoint from the freshly installed registry via Runtime API
 if [ -f "$PROJECT_ROOT/$SUBMODULE_PATH/runtime/registry.yaml" ]; then
   load_api "$PROJECT_ROOT/$SUBMODULE_PATH"
+  RUNTIME_NAME=$(registry_name 2>/dev/null || echo "Underboss")
+  VERSION=$(registry_version 2>/dev/null || echo "unknown")
   BOOTSTRAP_PATH=$(registry_entrypoint "bootstrap")
   BOOTSTRAP_PATH="${BOOTSTRAP_PATH:-bootstrap/bootstrap.sh}"
 else
@@ -92,9 +94,9 @@ echo ""
 echo "✅ Installation complete."
 echo ""
 echo "Next steps:"
-echo "  1. Fill .context/project.yml with your project metadata"
-echo "  2. Complete docs/architecture/README.md"
-echo "  3. Create your first ADR"
+echo " 1. Fill .context/project.yml with your project metadata"
+echo " 2. Complete docs/architecture/README.md"
+echo " 3. Create your first ADR"
 echo ""
 echo "Commit with:"
-echo "  git add -A && git commit -m 'docs: install Documentation System Runtime'"
+echo " git add -A && git commit -m 'docs: install Underboss Runtime'"

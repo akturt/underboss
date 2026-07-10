@@ -4,11 +4,11 @@ id: architecture-study-layered-decomposition
 type: spec
 status: approved
 date: 2026-07-09
-owners: [naprolom]
+owners: [underboss]
 entity_refs: [runtime, registry, state-machine, capabilities]
 ---
 
-# Architecture Study: Layered Decomposition of Documentation System Runtime v1.3
+# Architecture Study: Layered Decomposition of Underboss v1.3
 
 ## Status: REJECTED
 
@@ -25,7 +25,7 @@ The proposed layers create abstraction that does not reduce complexity, introduc
 ### 1.1 What Exists (76 files, 11 directories)
 
 ```
-naprolom-docs/
+underboss/
 ├── runtime/              # Infrastructure: registry, state machine, contracts (5 files)
 ├── bootstrap/            # Infrastructure: installer, loader, templates (5 files)
 ├── engine/               # Domain: validators, schemas, templates, reality-engine (13 files)

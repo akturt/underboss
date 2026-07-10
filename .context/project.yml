@@ -3,7 +3,7 @@
 # Universally-valid: no absolute paths, no OS-specific values.
 # Fields left empty are filled in by the bootstrap agent using DEPLOY-PROMPT.
 
-name: naprolom-docs
+name: underboss
 domain: auto
 stack: unknown
 backend: unknown
@@ -14,7 +14,7 @@ maintainer: unknown
 # Git context — bootstrap fills these in automatically
 repository:
   owner: unknown
-  name: naprolom-docs
+  name: underboss
   branch: main
 
 # Paths are always relative to repo root; forward slashes.

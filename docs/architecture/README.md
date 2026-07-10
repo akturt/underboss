@@ -4,14 +4,14 @@ id: architecture-readme
 type: architecture
 status: active
 date: 2026-07-09
-owners: [naprolom-team]
+owners: [underboss-team]
 ---
 
 # Architecture Overview
 
 ## Project Identity
 
-- Name: naprolom-docs
+- Name: underboss
 - Domain: unknown
 - Stack: unknown
 
@@ -26,11 +26,11 @@ owners: [naprolom-team]
 ## Project Layout
 
 ```
-naprolom-docs/
+underboss/
   docs/
     architecture/     # topology, domain model, invariants
     adr/              # Architecture Decision Records
-    specs/            # specifications (draft → review → approved → implemented)
+    specs/            # specifications (draft в†’ review в†’ approved в†’ implemented)
     audits/           # audit reports, reality checks
     backlog/          # backlog, TODO, wishlist
     api/              # API documentation
@@ -43,13 +43,13 @@ naprolom-docs/
 
 See `.context/boundaries.yml` for detailed boundary definitions.
 
-- **Pristine**: naprolom-docs/, src/, tests/, docs/, .context/
+- **Pristine**: underboss/, src/, tests/, docs/, .context/
 - **Editable**: docs/** (except runtime/)
 - **Generated**: docs/.runtime/, node_modules/
 - **Secret**: .env, *.key, *.pem
 
 ## See Also
 
-- [ADR](../adr/) — Architecture Decision Records
-- [Backlog](../backlog/) — TODO, Wishlist, Experiments
-- [Boundaries](../../.context/boundaries.yml) — Boundary definitions
+- [ADR](../adr/) вЂ” Architecture Decision Records
+- [Backlog](../backlog/) вЂ” TODO, Wishlist, Experiments
+- [Boundaries](../../.context/boundaries.yml) вЂ” Boundary definitions

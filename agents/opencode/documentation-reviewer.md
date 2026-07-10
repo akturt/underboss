@@ -4,7 +4,7 @@ id: agent-opencode-documentation-reviewer
 type: prompt
 status: active
 date: 2026-07-08
-owners: [naprolom-team]
+owners: [underboss-team]
 
 entity_refs: [schema-v1, canonical-frontmatter, lifecycle-spec]
 touches: [docs]
@@ -43,7 +43,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
 
 2. **Run Runtime validator** as the primary source of truth:
    ```bash
-   bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+   bash docs/.runtime/underboss/documentation/validation/validate-frontmatter.sh
    ```
    - Exit code `0` → all green. Proceed to manual checks.
    - Non-zero → CI should already fail in strict mode. Surface the validator's specific output in your review, do not duplicate logic.
@@ -54,7 +54,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
    - `schema: 1`
    - `id` (kebab-case, ≥ 2 chars, stable across the document's lifetime)
    - `type` in enum: `spec | adr | audit | runbook | guide | api | architecture | backlog | prompt`
-   - `status` per type (see `docs/.runtime/naprolom-docs/playbook/playbook-v2.md` §Status enum):
+   - `status` per type (see `docs/.runtime/underboss/playbook/playbook-v2.md` §Status enum):
      - spec, api: `draft | review | approved | implemented | superseded`
      - adr: `proposed | accepted | deprecated | superseded`
      - audit: `draft | completed`
@@ -96,7 +96,7 @@ This agent runs on every PR that contains changes to `docs/**/*.md`. Invoked by 
    - Max 10 refs per doc.
 
 4. **For new documents check that author started from template:**
-   - Compare structure to corresponding `docs/.runtime/naprolom-docs/documentation/templates/<type>.md` in Runtime.
+   - Compare structure to corresponding `docs/.runtime/underboss/documentation/templates/<type>.md` in Runtime.
    - Missing canonical sections (`# H1`, `## Goal`, body sections per-type) → flag.
 
 5. **For spec lifecycle transitions** (`git mv` between path-status dirs):
@@ -140,7 +140,7 @@ Evidence: <file path / line / diff snippet>
 - [ ] (only if REQUEST_CHANGES / REJECTED)
 
 ### Read context
-- docs/.runtime/naprolom-docs/playbook/playbook-v2.md: sections reviewed
+- docs/.runtime/underboss/playbook/playbook-v2.md: sections reviewed
 - templates referred: spec.md, adr.md (or whichever types appear in this PR)
 ```
 
@@ -165,5 +165,5 @@ You do NOT rewrite body content unless explicitly instructed by author. Your pri
 - Don't review code quality, tests, or commit message conventions.
 - Don't enforce prose style or grammar.
 - Don't reformat unrelated files.
-- Don't run on files outside `docs/**/*.md` (documentation/templates/, documentation/schemas/, etc. live in Runtime submodule at `docs/.runtime/naprolom-docs/` and are out of scope for consumer PR review).
+- Don't run on files outside `docs/**/*.md` (documentation/templates/, documentation/schemas/, etc. live in Runtime submodule at `docs/.runtime/underboss/` and are out of scope for consumer PR review).
 - Don't over-block: low-severity findings do not warrant REQUEST_CHANGES.
