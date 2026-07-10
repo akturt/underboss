@@ -3,7 +3,7 @@ set -euo pipefail
 trap 'echo "Error on line $LINENO" >&2' ERR
 
 # bootstrap.sh — naprolom Documentation System Runtime bootstrap orchestrator
-# v1.8 — Uses Runtime API (runtime/lib/) for all operations.
+# v1.9 — Uses Runtime API (runtime/lib/) for all operations.
 #         No hardcoded paths, no awk/grep/sed parsing.
 #
 # Usage: ./bootstrap.sh [--target <path>]
@@ -33,7 +33,7 @@ if registry_exists; then MODE="NORMAL"; else MODE="DEGRADED"; fi
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
 echo "║  naprolom Documentation System Runtime           ║"
-echo "║  Runtime API — Bootstrap v1.8                    ║"
+echo "║ Runtime API — Bootstrap v1.9 ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 echo "Target: ${TARGET}"

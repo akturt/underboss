@@ -13,13 +13,13 @@ touches: []
 docs: [../README.md, ../INSTALL.md, ../playbook/playbook-v2.md]
 refs: []
 depends_on: []
-tags: [agents, roles, index, v1.8, capabilities, knowledge]
+tags: [agents, roles, index, v1.9, capabilities, knowledge]
 priority: P1
 ---
 
 # agents/ — Repository of AI agent roles
 
-Runtime v1.8 contains 4 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
+Runtime v1.9 contains 4 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
 
 ## Roles
 

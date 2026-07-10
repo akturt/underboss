@@ -80,18 +80,18 @@ PY
 }
 
 # --- run collectors ---
-INV="$("$COLLECT/architecture-inventory.sh" "$PROJECT_ROOT")"
-DEP="$("$COLLECT/dependency-graph.sh" "$PROJECT_ROOT")"
-ENT="$("$COLLECT/entity-inventory.sh" "$PROJECT_ROOT")"
+INV="$(bash "$COLLECT/architecture-inventory.sh" "$PROJECT_ROOT")"
+DEP="$(bash "$COLLECT/dependency-graph.sh" "$PROJECT_ROOT")"
+ENT="$(bash "$COLLECT/entity-inventory.sh" "$PROJECT_ROOT")"
 INV_F=$(mktemp); DEP_F=$(mktemp); ENT_F=$(mktemp)
 printf '%s\n' "$INV" > "$INV_F"
 printf '%s\n' "$DEP" > "$DEP_F"
 printf '%s\n' "$ENT" > "$ENT_F"
 
 # --- run analyzers ---
-ADR="$("$ANALYZE/adr-drift.sh" "$PROJECT_ROOT" "$INV_F")"
-DOC="$("$ANALYZE/documentation-drift.sh" "$PROJECT_ROOT" "$INV_F")"
-SPEC="$("$ANALYZE/spec-drift.sh" "$PROJECT_ROOT" "$INV_F")"
+ADR="$(bash "$ANALYZE/adr-drift.sh" "$PROJECT_ROOT" "$INV_F")"
+DOC="$(bash "$ANALYZE/documentation-drift.sh" "$PROJECT_ROOT" "$INV_F")"
+SPEC="$(bash "$ANALYZE/spec-drift.sh" "$PROJECT_ROOT" "$INV_F")"
 ADR_F=$(mktemp); DOC_F=$(mktemp); SPEC_F=$(mktemp)
 printf '%s\n' "$ADR" > "$ADR_F"
 printf '%s\n' "$DOC" > "$DOC_F"

@@ -15,7 +15,7 @@ refs: []
 depends_on: []
 implements: []
 supersedes: []
-tags: [install, submodule, consumer, onboarding, v1.8]
+tags: [install, submodule, consumer, onboarding, v1.9]
 priority: P0
 ---
 
@@ -24,7 +24,7 @@ priority: P0
 > This document is intended for the consumer who has added naprolom-docs as a Git Submodule.
 > The rest (`playbook/`, `documentation/templates/`, `documentation/validation/`, `documentation/schemas/`, `engine/scripts/`, `engine/reality-engine/`, `bootstrap/`, `agents/`, `knowledge/`, `sops/`, `runtime/`) is the Runtime content, which is pulled in automatically along with the submodule.
 >
-> **v1.8:** The Runtime is mounted **inside `docs/`**, not in `.context/runtime/`. Only `docs/` remains at the consumer repo root — no utility directories at the root. Inside `docs/`, user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) appears, and the system operates locally under `docs/.runtime/naprolom-docs/`. Runtime v1.8 is **Runtime Core + Documentation Module**. See the Two-repo model section below.
+> **v1.9:** The Runtime is mounted **inside `docs/`**, not in `.context/runtime/`. Only `docs/` remains at the consumer repo root — no utility directories at the root. Inside `docs/`, user-content (`architecture/`, `adr/`, `specs/`, `audits/`, ...) appears, and the system operates locally under `docs/.runtime/naprolom-docs/`. Runtime v1.9 is **Runtime Core + Documentation Module**. See the Two-repo model section below.
 
 > **Quick path:** Copy the prompt from [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md) and give it to an AI agent — it will perform all the steps below automatically. Or use the one-liner: `bash <(curl -s https://raw.githubusercontent.com/akturt/naprolom-docs/master/bootstrap/install.sh)`
 
@@ -50,7 +50,7 @@ Inside `docs/` lives its own dogfood (audits, specs, ADRs of the project itself)
 
 ### B. Consumer repository (Runtime user)
 
-You connect the Runtime as a **Git Submodule inside `docs/`**. Only `docs/` remains at the consumer repo root. No `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `runtime/` at the root — everything is localized under `docs/.runtime/naprolom-docs/`. Runtime v1.8 includes **Runtime Core** (runtime, bootstrap, engine) and **Documentation Module** (documentation, knowledge, agents, sops, playbook):
+You connect the Runtime as a **Git Submodule inside `docs/`**. Only `docs/` remains at the consumer repo root. No `agents/`, `knowledge/`, `sops/`, `engine/`, `bootstrap/`, `playbook/`, `runtime/` at the root — everything is localized under `docs/.runtime/naprolom-docs/`. Runtime v1.9 includes **Runtime Core** (runtime, bootstrap, engine) and **Documentation Module** (documentation, knowledge, agents, sops, playbook):
 
 ```
 consumer-project/
@@ -87,12 +87,12 @@ By connecting `naprolom-docs` as a Git Submodule, your project gets:
 - **Agent roles** — ready-made role configs in `agents/{claude-code,opencode}/`: `architecture-reviewer`, `documentation-reviewer`, `reality-auditor`, `adversary-checker`. Place them in `.claude/agents/` or `.opencode/agents/` (optional).
 - **Knowledge layer** — `knowledge/` with shared principles (architecture-principles, evidence-model, audit-principles, report-formats, capabilities). Roles reference them by short-id.
 - **SOPs** — 10 declarative YAML descriptions of standard processes (`new-feature`, `bugfix`, `new-service`, `architecture-change`, `audit`, `release`, `incident`, `architecture-review`, `forensic-audit`, `reality-audit`). The `sops/planner.mjs` planner prints a DAG of steps with roles and **artifact contracts** (consumes/produces).
-- **Runtime Core** (v1.8) — the Runtime core: `runtime/`, `bootstrap/`, `engine/` — registry, state machine, contracts, reality engine.
-- **Documentation Module** (v1.8) — the documentation module: `documentation/`, `knowledge/`, `agents/`, `sops/`, `playbook/` — templates, validation, knowledge, roles, SOPs.
-- **Registry** (v1.8) — single source of truth for all Runtime components (`runtime/registry.yaml`).
-- **State Machine** (v1.8) — explicit installation states and transitions (`runtime/state-machine.yaml`).
-- **Contracts** (v1.8) — runtime- and consumer-level contracts (`runtime/contracts/`).
-- **Reality Engine** (v1.8) — engine for reconstructing project state and detecting drift (`engine/reality-engine/`).
+- **Runtime Core** (v1.9) — the Runtime core: `runtime/`, `bootstrap/`, `engine/` — registry, state machine, contracts, reality engine.
+- **Documentation Module** (v1.9) — the documentation module: `documentation/`, `knowledge/`, `agents/`, `sops/`, `playbook/` — templates, validation, knowledge, roles, SOPs.
+- **Registry** (v1.9) — single source of truth for all Runtime components (`runtime/registry.yaml`).
+- **State Machine** (v1.9) — explicit installation states and transitions (`runtime/state-machine.yaml`).
+- **Contracts** (v1.9) — runtime- and consumer-level contracts (`runtime/contracts/`).
+- **Reality Engine** (v1.9) — engine for reconstructing project state and detecting drift (`engine/reality-engine/`).
 
 ---
 
@@ -116,7 +116,7 @@ bash /tmp/naprolom-docs/bootstrap/install.sh
 From the root of your project:
 
 ```bash
-# v1.8: mount INSIDE docs/, not in .context/runtime/
+# v1.9: mount INSIDE docs/, not in .context/runtime/
 mkdir -p docs/.runtime
 
 git submodule add \
@@ -147,9 +147,9 @@ git submodule absorbgitdirs
 # (a re-run of the new bootstrap will do this idempotently)
 ```
 
-### Auto-update from v1.1 to v1.8
+### Auto-update from v1.1 to v1.9
 
-Bootstrap automatically detects v1.1 and updates to v1.8:
+Bootstrap automatically detects v1.1 and updates to v1.9:
 
 ```bash
 bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
@@ -199,7 +199,7 @@ What bootstrap will create:
 
 If `docs/` already exists, bootstrap does NOT overwrite existing files — it only creates missing ones. `.gitkeep` for empty directories.
 
-Bootstrap v1.8 also **auto-upgrades** v1.1 to v1.8: it detects the version, pulls the submodule, and checks for the presence of v1.8 components.
+Bootstrap v1.9 also **auto-upgrades** v1.1 to v1.9: it detects the version, pulls the submodule, and checks for the presence of v1.9 components.
 
 ---
 
@@ -339,7 +339,7 @@ WARN_ONLY=true bash docs/.runtime/naprolom-docs/documentation/validation/validat
 # Validate knowledge/ (if you use a custom knowledge)
 ROOT=knowledge bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh knowledge
 
-# v1.8: validate the Runtime dependency graph
+# v1.9: validate the Runtime dependency graph
 bash docs/.runtime/naprolom-docs/documentation/validation/validate-runtime.sh
 ```
 
@@ -421,7 +421,7 @@ Briefly: run `engine/scripts/migrate-legacy.mjs`, then enable `WARN_ONLY=true` f
 | Pin the submodule to a detached HEAD without recording it in `.gitmodules` | Always use `branch = master` in `.gitmodules` so `--remote` works |
 | Create `.md` without `cp docs/.runtime/naprolom-docs/documentation/templates/...` | Canonical frontmatter cannot be written "from scratch" — start from the template and fill in the 6 fields |
 | Use legacy fields (`author`, `title`, `created`, `lifecycle`, `referenced_by`, `supersedes_adr`, `excludes-from-scope`) | Replace: `author`→`owners`, `title`→body H1, `created`→`date`, `lifecycle`→computed from path |
-| Mount the submodule under `.context/runtime/` (v1.0 path) | v1.8: use `docs/.runtime/naprolom-docs/` (D-BR). For migration: `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
+| Mount the submodule under `.context/runtime/` (v1.0 path) | v1.9: use `docs/.runtime/naprolom-docs/` (D-BR). For migration: `git mv .context/runtime docs/.runtime && git submodule absorbgitdirs` |
 
 ---
 
@@ -446,7 +446,7 @@ An SOP is a checklist, not an orchestrator. planner.mjs is a DAG-printer (not an
 
 SOPs use explicit `consumes:` and `produces:` fields — controlling the data-flow between DAG steps (not just control-flow via `depends_on:`). Canonical artifact names: `reality-report`, `architecture-findings`, `documentation-report`, `validated-findings`, `forensic-report`. See `knowledge/report-formats.md` and `sops/architecture-review.yaml` / `sops/forensic-audit.yaml`.
 
-### Reality Audit (v1.8)
+### Reality Audit (v1.9)
 
 The `reality-audit.yaml` SOP uses the Reality Engine to reconstruct project state and detect documentation drift. To run:
 
@@ -474,11 +474,11 @@ git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
 If you see:
 ```
 ⚠ WARNING: .gitmodules references legacy v1.0 path '.context/runtime/naprolom-docs'.
-  v1.8 expects submodule mounted at 'docs/.runtime/naprolom-docs'.
+  v1.9 expects submodule mounted at 'docs/.runtime/naprolom-docs'.
   To migrate: git mv .context/runtime docs/.runtime && git submodule absorbgitdirs
 ```
 
-This is an advisory warning (bootstrap continued). To switch to the v1.8 layout, run the indicated command, then update paths in `.github/workflows/docs-validate.yml`, `CLAUDE.md`, `.context/agent-entry.md`.
+This is an advisory warning (bootstrap continued). To switch to the v1.9 layout, run the indicated command, then update paths in `.github/workflows/docs-validate.yml`, `CLAUDE.md`, `.context/agent-entry.md`.
 
 ### CI fails on legacy fields in prose/code-block
 
@@ -508,7 +508,7 @@ Bootstrap creates `CLAUDE.md`. For opencode, symlink or copy it to `AGENTS.md`. 
 
 This is expected for concept entities (`runtime-agentic-layer`, `schema-v1`, etc.). They resolve via registry components and the concept namespace. If the error is elsewhere, check that `entity-catalog.md` is filled in.
 
-### v1.1 → v1.8 auto-update does not work
+### v1.1 → v1.9 auto-update does not work
 
 Bootstrap attempts `git pull origin master` in the submodule. If it does not work:
 1. `cd docs/.runtime/naprolom-docs && git pull origin master`
@@ -516,7 +516,7 @@ Bootstrap attempts `git pull origin master` in the submodule. If it does not wor
 
 ---
 
-## What is implemented in Runtime v1.8
+## What is implemented in Runtime v1.9
 
 - **Runtime Core** — `runtime/`, `bootstrap/`, `engine/` — the core of the system: registry, state machine, contracts, reality engine, dependency-graph validation.
 - **Documentation Module** — `documentation/`, `knowledge/`, `agents/`, `sops/`, `playbook/` — the documentation module: templates, validation, knowledge, roles, SOPs.
@@ -527,6 +527,6 @@ Bootstrap attempts `git pull origin master` in the submodule. If it does not wor
 - **validate-runtime.sh** — Runtime dependency-graph validation (10 categories).
 - **entity-catalog.md** — the entity catalog template for consumers.
 - **install.sh** — one-liner installer.
-- **Auto-upgrade** v1.1→v1.2→v1.8 in bootstrap.
+- **Auto-upgrade** v1.1→v1.2→v1.9 in bootstrap.
 
 See README → Status and changelog.
