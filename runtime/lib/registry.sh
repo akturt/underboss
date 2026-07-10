@@ -131,11 +131,12 @@ registry_list_directories() {
       gsub(/^"/, "", v); gsub(/"$/, "", v)
       print v; next
     }
-    in_scope && /^[[:space:]]*-[[:space:]]*/ {
-      v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v)
-      gsub(/^"/, "", v); gsub(/"$/, "", v)
-      print v
-    }
+in_scope && /^[[:space:]]*-[[:space:]]*/ {
+    v=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", v)
+    sub(/^path:[[:space:]]*/, "", v)
+    gsub(/^"/, "", v); gsub(/"$/, "", v)
+    print v
+}
   ' "$RUNTIME_REGISTRY"
 }
 
