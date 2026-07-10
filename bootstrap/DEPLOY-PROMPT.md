@@ -58,7 +58,7 @@ Report what you found and pick the path:
 - v1.0 installed (.context/runtime/) → go to Step 1B (Migrate from v1.0)
 - v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (Migrate v1.1→v1.8)
 - v1.2–v1.5 installed (registry.yaml exists, older runtime version) → go to Step 1C (auto-upgrade; registry-driven)
-- v1.8+ already installed (registry.yaml exists, runtime version 1.6) → go to Step 3B (UPDATE, no reinstall)
+- v1.8+ already installed (registry.yaml exists, runtime version >= 1.8) → go to Step 3B (UPDATE, no reinstall)
 
 ## Step 1A — Fresh install
 
