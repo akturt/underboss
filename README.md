@@ -17,14 +17,13 @@ tags: [runtime, index, landing]
 priority: P0
 ---
 
-# Underboss — Runtime для проектов
+# Underboss
 
-**Превращает документацию в инфраструктуру**, а не dump `.md`-файлов.
-Canonical Schema v1, lifecycle from path, 5-layer architecture, CI guard.
+**Documentation Runtime for modern projects with AI coding agents.**
 
-Underboss v2.0.0 architecture: **Runtime Core** (runtime/, bootstrap/, engine/) +
-**Documentation Module** (documentation/, knowledge/, agents/, sops/, playbook/).
-Connected as a Git Submodule — один runtime на весь ecosystem.
+Underboss keeps your project coherent during active development — architecture, ADRs,
+specs, domain knowledge, and engineering context stay aligned with reality as the
+project grows.
 
 > **Proof:** the Kordon/MegaDelta project — 141 chaotic files → 40 canonical in
 > 30 minutes and one prompt. Onboarding reduced from 2–5 days to 5 minutes, LLM context
@@ -32,33 +31,100 @@ Connected as a Git Submodule — один runtime на весь ecosystem.
 
 > **To install:** give your AI agent the link to this repo
 > (`https://github.com/akturt/underboss`) and say:
-> **"Установи Underboss."**
+> **"Install Underboss."**
 > The agent reads `bootstrap/DEPLOY-PROMPT.md` and does everything automatically.
 > Or run the one-liner:
 > `bash <(curl -s https://raw.githubusercontent.com/akturt/underboss/master/bootstrap/install.sh)`
 
 ---
 
-## What this is
+## Why Underboss exists
 
-**Underboss** is a **Project Conciergerie Runtime**: not a set of prompts and
-not a README template. It is a versioned engine that knows your project's architecture,
-rules, processes, invariants, and context. Documentation is one of its modules.
-Any project connects it as a Git Submodule and gets:
+Virtually every documentation system looks great before real development begins.
 
-- **Canonical Schema v1** — a single frontmatter format for all `.md` in `docs/`
-  (6 required fields, zero legacy fields).
-- **Lifecycle from path** — spec/api status is determined by the directory
-  (`drafts/` → `draft`, `approved/` → `approved`), not an editable field.
-- **5-layer architecture** — Entry (`.context/`) → Architecture → ADR → Spec → Operations.
-  Navigation by structure, not by `grep`.
-- **CI guard** — no `.md` without canonical frontmatter will enter the repository.
-- **Runnable migration** — `engine/scripts/migrate-legacy.mjs` converts legacy FM to
-  Schema v1 with `TODO_ENTITY_REF` markers for manual review.
-- **SOPs** — declarative descriptions of standard development processes in `sops/*.yaml`.
-  `sops/planner.mjs` prints an execution DAG by input entity type.
-- **Reality Engine** — reconstructs project state and detects drift (`engine/reality-engine/`).
-- **Registry** — single source of truth for all Runtime components (`runtime/registry.yaml`).
+New requirements appear. Architectural decisions change. Constraints surface. Old
+ideas get scrapped. New dependencies emerge. Within a few weeks, documentation
+drifts from reality.
+
+The result:
+
+- architecture exists only "in people's heads";
+- old decisions are forgotten;
+- context cannot be recovered quickly;
+- AI operates on outdated information;
+- after a long break, the project has to be re-learned from scratch.
+
+The bigger and more complex the project, the worse it gets.
+
+This is especially acute for Infrastructure as Code, DevOps platforms, IDPs,
+backend systems, DaaS/SaaS, complex monorepos, and projects where multiple AI
+coding agents work simultaneously.
+
+## What Underboss does
+
+Underboss makes documentation a living part of the development process — not a
+separate activity that rots.
+
+It holds:
+
+- architecture and invariants;
+- ADRs (Architecture Decision Records);
+- specifications with lifecycle from path;
+- domain model;
+- engineering knowledge and principles;
+- standard operating procedures (SOPs);
+- rules for AI agents.
+
+Every document has a lifecycle, undergoes verification, and lands in the correct
+location after approval. The project stays in a consistent state.
+
+## How work actually flows
+
+Development does not start with a giant prompt. It starts with a specification —
+even a rough one, a few paragraphs in plain language.
+
+From there, Underboss:
+
+- canonicalizes the document (Schema v1 frontmatter);
+- places it in the correct directory by lifecycle;
+- runs validators and checks;
+- invokes specialized AI agents (architecture review, documentation review, adversarial check);
+- verifies invariants;
+- returns the document for revision if needed;
+- after approval, moves it to implementation status.
+
+When work is done, the documentation is automatically part of the project's
+collective knowledge base.
+
+## Why this matters for AI
+
+Most AI coding workflows today revolve around ever-growing `CLAUDE.md`, `AGENTS.md`,
+or system prompts. Over time they consume a huge amount of context — most of which
+the agent doesn't actually need for the current task.
+
+Underboss takes a different approach:
+
+- AI receives **only the engineering context relevant to the current task**;
+- no scanning of hundreds of files;
+- no outdated information;
+- no bloated system prompts.
+
+The agent knows the architecture, invariants, and rules because they are structured
+and queryable — not buried in a growing markdown dump.
+
+## What is included
+
+- **Canonical Schema v1** — single frontmatter format for all `.md` in `docs/`
+- **Lifecycle from path** — document status is computed from its directory
+- **5-layer architecture** — Entry → Architecture → ADR → Spec → Operations
+- **CI guard** — no `.md` without canonical frontmatter enters the repo
+- **Reality Engine** — reconstructs project state, detects drift
+- **Registry** — single source of truth for all Runtime components
+- **SOPs** — declarative process descriptions with DAG planner
+- **AI Agent Roles** — architecture-reviewer, documentation-reviewer, reality-auditor, adversary-checker
+- **Knowledge layer** — architecture-principles, evidence-model, audit-principles, report-formats, capabilities
+- **Bootstrap** — one-command setup, idempotent, POSIX + Windows
+- **Migration tools** — brownfield migration with legacy frontmatter conversion
 
 ---
 
@@ -68,10 +134,10 @@ Any project connects it as a Git Submodule and gets:
 
 Give your AI agent the link to this repo and say:
 
-> **"Установи Underboss ."**
+> **"Install Underboss."**
 
 That's it. The agent reads [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md),
-detects the current state (fresh install / v1.0 migration / v1.1–v2.0.0 auto-upgrade /
+detects the current state (fresh install / v1.0 migration / v1.1–v1.9 auto-upgrade /
 v2.0 update), executes the correct path, runs all verifications, and reports back.
 Works with opencode, Claude Code, Cursor, and any other agent that can run shell commands.
 
@@ -96,9 +162,7 @@ bash docs/.runtime/underboss/bootstrap/bootstrap.sh
 # 3. Fill in .context/project.yml and .context/boundaries.yml
 ```
 
-**Brownfield repo** (already has `docs/` with `.md` files)?
-Follow [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md) — 7-step agent prompt
-with runnable migration script. Don't run `bootstrap.sh` directly on brownfield.
+**Brownfield repo** (already has `docs/` with `.md` files)? Follow [`playbook/migrate-legacy.md`](playbook/migrate-legacy.md) — agent prompt with runnable migration script. Don't run `bootstrap.sh` directly on brownfield.
 
 Full details: [`INSTALL.md`](INSTALL.md).
 
@@ -106,7 +170,7 @@ Full details: [`INSTALL.md`](INSTALL.md).
 
 ## What is included (Runtime layout)
 
-```
+```text
 underboss/ ← product repo
 ├── README.md ← this file
 ├── INSTALL.md ← consumer integration guide
@@ -120,6 +184,7 @@ underboss/ ← product repo
 ├── playbook/ ← Documentation Module: greenfield + brownfield guides
 ├── docs/ ← dogfood: Runtime's own audits, ADRs, specs
 └── .github/workflows/ ← CI guard
+```
 
 > **Note:** In consumer repos only `docs/` appears at the root.
 > Everything else lives inside `docs/.runtime/underboss/` (git submodule).
@@ -146,26 +211,31 @@ Details: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 ---
 
+## For which projects
+
+Underboss is built for projects that live for months or years:
+
+- Infrastructure as Code
+- DevOps platforms
+- Internal Developer Platforms (IDP)
+- Backend systems
+- DaaS / SaaS
+- Complex monorepos
+- Projects with multiple AI coding agents working simultaneously
+
+The longer the project lives, the more valuable Underboss becomes.
+
+---
+
 ## Changelog
 
-- **2026-07-10** — **v2.0.0 — Bash prefix in reality-report.sh + registry bugfix**.
-  Fixed `reality-report.sh` calling collectors/analyzers without `bash` prefix
-  (Permission denied on Linux/macOS). Fixed `registry_list_directories` returning
-  non-path YAML keys, which caused empty dirs in `docs/`. Bootstrap v2.0.0 creates
-  no spurious empty directories.
+- **2026-07-10** — **v2.0.0 — Underboss rebrand + Registry SSOT**. Identity (name, version, codename) centralized in `runtime/registry.yaml`. All components read from registry API — zero hardcoded strings. Submodule path changed to `docs/.runtime/underboss`. Consumer upgrade prompt covers v1.0 → v2.0 migration.
+- **2026-07-10** — **v1.9 — Bash prefix + registry bugfix**. Fixed `reality-report.sh` calling collectors/analyzers without `bash` prefix (Permission denied on Linux/macOS). Fixed `registry_list_directories` returning non-path YAML keys, which caused empty dirs in `docs/`.
 - **2026-07-09** — **v1.8 — Architecture Invariants Support**.
-  Unified architecture invariants document; template + bootstrap generator;
-  informational Reality Report check for `docs/architecture/invariants.md`.
 - **2026-07-09** — **v1.6 — Runtime API & Orchestrator Maturity**.
-  `bootstrap/lib/*` → `runtime/lib/*`, unified `api.sh`, DEGRADED mode,
-  versions decoupled (Runtime 1.6 / Bootstrap Engine 2.0).
 - **2026-07-09** — **v1.5 — Module Decomposition + Registry SSOT**.
-  Bootstrap decomposed into detectors/generators, Registry became the single
-  source of truth for all paths, modules split into Runtime Core + Documentation Module.
 - **2026-07-08** — **v1.2 — Operating Platform**.
-  Registry, state machine, contracts, Reality Engine, self-validation.
 - **2026-07-08** — **v1.1 — Agentic Layer Separation**.
-  Knowledge, Roles, Capabilities, SOPs, Artifacts as first-class entities.
 - **2026-07-07** — initial commit.
 
 ---
@@ -174,7 +244,7 @@ Details: [`bootstrap/DEPLOY-PROMPT.md`](bootstrap/DEPLOY-PROMPT.md).
 
 | Stage | State |
 |------|-------|
-| Runtime v1.0–v2.0.0 | ✅ implemented |
+| Runtime v2.0.0 | ✅ implemented |
 | Playbook v2 (greenfield model) | ✅ implemented |
 | Migration Prompt (brownfield) | ✅ implemented |
 | Bootstrap (idempotent, POSIX + Windows) | ✅ implemented |
