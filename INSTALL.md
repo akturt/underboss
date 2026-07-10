@@ -4,8 +4,8 @@ id: install-runtime
 type: guide
 kind: onboarding
 status: active
-date: 2026-07-09
-updated: 2026-07-09
+date: 2026-07-10
+updated: 2026-07-10
 owners: [naprolom-team]
 
 entity_refs: [runtime-agentic-layer, schema-v1, canonical-frontmatter]
@@ -147,15 +147,17 @@ git submodule absorbgitdirs
 # (a re-run of the new bootstrap will do this idempotently)
 ```
 
-### Auto-update from v1.1 to v1.9
+### Auto-update from any older version to v1.9
 
-Bootstrap automatically detects v1.1 and updates to v1.9:
+Bootstrap v1.9 auto-detects any previously installed version (v1.0–v1.8) and
+upgrades it in place. Just pull the submodule and re-run bootstrap:
 
 ```bash
+git submodule update --remote --merge
 bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 ```
 
-If auto-update did not work:
+If the submodule pull did not work (no remote / submodule missing):
 
 ```bash
 cd docs/.runtime/naprolom-docs && git pull origin master

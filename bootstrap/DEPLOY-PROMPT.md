@@ -4,7 +4,7 @@ id: bootstrap-deploy-prompt
 type: guide
 kind: onboarding
 status: active
-date: 2026-07-09
+date: 2026-07-10
 owners: [naprolom-team]
 
 entity_refs: [runtime-agentic-layer]
@@ -14,251 +14,227 @@ priority: P0
 
 # Deploy Prompt for AI Agent
 
-> Give this prompt to any AI agent (opencode, Claude Code, Cursor, etc.) to install,
-> **update**, or **migrate** Documentation System Runtime v1.9 on any project. The agent
-> auto-detects the project context, handles fresh install, v1.0/v1.1→v1.9 migration, and
-> re-running on an existing install (update). After install it runs a post-install
-> architecture check (Reality Engine drift report) and reports where the architecture breaks.
+> Give this entire document to an AI agent (opencode, Claude Code, Cursor, etc.)
+> and say: **"Установи Documentation System Runtime на этот проект."**
+> The agent auto-detects the current state, runs the correct migration or install,
+> verifies everything, and reports back. No questions asked.
 
 ---
 
 ## Prompt
 
 ```
-You are deploying (or updating) Documentation System Runtime (naprolom-docs v1.9) on the
-current project.
+You are installing Documentation System Runtime (naprolom-docs v1.9) on this project.
+Work autonomously — detect the current state, choose the correct path, execute it,
+verify the result, commit locally, and report. Do NOT ask the user clarifying questions;
+if something is ambiguous, pick the safest path and note it in the report.
 
-## Step 0 — Detect project context
+══════════════════════════════════════════════════════════════
+STEP 0 — Detect current state
+══════════════════════════════════════════════════════════════
 
-Run from the current working directory:
+Run these commands from the current working directory:
 
-```bash
-pwd && git rev-parse --show-toplevel 2>/dev/null && git remote -v | head -2
-```
+    PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "NOT_A_GIT_REPO")
+    echo "Project root: $PROJECT_ROOT"
 
-This tells you:
-- Project root path
-- Which git repo you're in
-- Remote URL
+    echo "=== .gitmodules ==="
+    cat "$PROJECT_ROOT/.gitmodules" 2>/dev/null || echo "none"
 
-Then check for existing Runtime installation:
+    echo "=== existing docs/ ==="
+    ls "$PROJECT_ROOT/docs/" 2>/dev/null | head -10 || echo "no docs/"
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-echo "=== .gitmodules ===" && cat "$PROJECT_ROOT/.gitmodules" 2>/dev/null || echo "none"
-echo "=== existing docs/ ===" && ls "$PROJECT_ROOT/docs/" 2>/dev/null | head -10 || echo "no docs/"
-echo "=== existing .context/runtime ===" && ls "$PROJECT_ROOT/.context/runtime/" 2>/dev/null | head -5 || echo "none"
-echo "=== Runtime version ===" && [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ] && (grep -E 'version:' "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" | head -1) || echo "v1.1 or earlier"
-echo "=== CLAUDE.md ===" && [ -f "$PROJECT_ROOT/CLAUDE.md" ] && echo "exists" || echo "none"
-echo "=== AGENTS.md ===" && [ -f "$PROJECT_ROOT/AGENTS.md" ] && echo "exists" || echo "none"
-```
+    echo "=== existing .context/runtime ==="
+    ls "$PROJECT_ROOT/.context/runtime/" 2>/dev/null | head -5 || echo "none"
 
-Report what you found and pick the path:
-- Fresh project (no Runtime) → go to Step 1A (Fresh install)
-- v1.0 installed (.context/runtime/) → go to Step 1B (Migrate from v1.0)
-- v1.1 installed (docs/.runtime/naprolom-docs/ but no runtime/registry.yaml) → go to Step 1C (Migrate v1.1→v1.9)
-- v1.2–v1.5 installed (registry.yaml exists, older runtime version) → go to Step 1C (auto-upgrade; registry-driven)
-- v1.9+ already installed (registry.yaml exists, runtime version >= 1.9) → go to Step 3B (UPDATE, no reinstall)
+    echo "=== Runtime version ==="
+    if [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ]; then
+      grep -E '^version:' "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" | head -1
+    else
+      echo "v1.1 or earlier / not installed"
+    fi
 
-## Step 1A — Fresh install
+    echo "=== empty dirs in docs/ (pre-existing check) ==="
+    find "$PROJECT_ROOT/docs/" -type d -empty 2>/dev/null | grep -v "^$PROJECT_ROOT/docs/$" | head -20 || echo "none"
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
+Based on the results, automatically choose ONE path:
 
-mkdir -p docs/.runtime
-git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+  ┌─ What you found ──────────────────────────────┬─ Path ──────────────────────────────────────┐
+  │ Nothing — no Runtime at all                   │ Fresh install (Step A)                     │
+  │ .context/runtime/ exists (v1.0 layout)        │ Migrate v1.0 (Step B)                      │
+  │ docs/.runtime/naprolom-docs/ exists,          │ Migrate v1.1 (Step C)                      │
+  │   no runtime/registry.yaml                     │                                             │
+  │ registry.yaml exists, version < 1.9           │ Auto-upgrade (Step C)                      │
+  │ registry.yaml exists, version >= 1.9          │ Update in-place (Step D)                   │
+  └───────────────────────────────────────────────┴─────────────────────────────────────────────┘
 
-git commit -m "chore: add Documentation System Runtime v1.9 via submodule"
-```
+Do NOT ask the user which path to take. Decide and proceed.
 
-## Step 1B — Migrate from v1.0
+══════════════════════════════════════════════════════════════
+STEP A — Fresh install (no prior Runtime)
+══════════════════════════════════════════════════════════════
 
-The old Runtime was mounted at `.context/runtime/naprolom-docs`. v1.9 mounts at `docs/.runtime/naprolom-docs`.
+    cd "$PROJECT_ROOT"
+    mkdir -p docs/.runtime
+    git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+    git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+    git commit -m "chore: add Documentation System Runtime v1.9 via submodule"
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
+══════════════════════════════════════════════════════════════
+STEP B — Migrate from v1.0 (.context/runtime/)
+══════════════════════════════════════════════════════════════
 
-# Remove old submodule
-git submodule deinit -f .context/runtime/naprolom-docs 2>/dev/null
-git rm -f .context/runtime/naprolom-docs 2>/dev/null
-rm -rf .git/modules/.context/runtime/naprolom-docs 2>/dev/null
-rm -rf .context/runtime 2>/dev/null
+    cd "$PROJECT_ROOT"
+    git submodule deinit -f .context/runtime/naprolom-docs 2>/dev/null
+    git rm -f .context/runtime/naprolom-docs 2>/dev/null
+    rm -rf .git/modules/.context/runtime/naprolom-docs 2>/dev/null
+    rm -rf .context/runtime 2>/dev/null
+    mkdir -p docs/.runtime
+    git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
+    git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+    git commit -m "chore: migrate naprolom-docs v1.0→v1.9 (docs/.runtime/ path)"
 
-# Add in v1.8 location
-mkdir -p docs/.runtime
-git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
+══════════════════════════════════════════════════════════════
+STEP C — Auto-upgrade (v1.1–v1.8 → v1.9)
+══════════════════════════════════════════════════════════════
 
-git commit -m "chore: migrate naprolom-docs v1.0→v1.9 (docs/.runtime/ path)"
-```
+Pull the latest submodule and run bootstrap. v1.9 fixes a known v1.8 bug
+where empty directories were created in docs/ from non-path YAML fields —
+no new empty dirs should appear after bootstrap.
 
-## Step 1C — Upgrade / migrate v1.1–v1.5 to v1.9 (AUTO-UPGRADE)
+    cd "$PROJECT_ROOT"
+    git submodule update --remote --merge
 
-Bootstrap auto-upgrades any older installed version (v1.1, v1.2, v1.3, v1.4, v1.5) to v1.9.
-Just pull the latest submodule and run bootstrap — it detects the old version and upgrades.
+    # If the submodule is absent or the update failed, do a fresh add instead:
+    # mkdir -p docs/.runtime && git submodule add ... (same as Step A)
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
+    bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 
-git submodule update --remote --merge
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
-```
+══════════════════════════════════════════════════════════════
+STEP D — Update existing v1.9 installation
+══════════════════════════════════════════════════════════════
 
-If auto-upgrade fails or the submodule is missing:
+Do NOT reinstall. Pull the latest and re-run idempotent bootstrap:
 
-```bash
-cd "$PROJECT_ROOT"
-mkdir -p docs/.runtime
-git submodule add https://github.com/akturt/naprolom-docs.git docs/.runtime/naprolom-docs
-git config -f .gitmodules submodule."docs/.runtime/naprolom-docs".branch master
-git submodule update --init --recursive
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
-```
+    cd "$PROJECT_ROOT"
+    git submodule update --remote --merge
+    bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
 
-## Step 2 — Initialize submodule
+If bootstrap reports DEGRADED mode — stop and surface this as an error.
+Do not continue silently in DEGRADED mode.
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
-git submodule update --init --recursive
+══════════════════════════════════════════════════════════════
+STEP 4 — Post-install verification (ALL paths)
+══════════════════════════════════════════════════════════════
 
-# Verify submodule is present
-ls docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh || { echo "FAIL: submodule not initialized"; exit 1; }
-```
+── 4.1  CRITICAL: Runtime directories must NOT leak to project root ──
 
-## Step 3 — Run bootstrap (fresh / migrated)
+These directories live ONLY inside docs/.runtime/naprolom-docs/.
+If any of them exists at the repo root, the previous install was broken — remove them.
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
-```
+    FAIL=0
+    for d in agents knowledge sops engine documentation bootstrap playbook runtime; do
+      [ -d "$PROJECT_ROOT/$d" ] && echo "FAIL: $PROJECT_ROOT/$d leaked to root" && FAIL=1 || echo "OK: no $PROJECT_ROOT/$d"
+    done
+    [ $FAIL -eq 1 ] && echo "ABORT: fix root leakage before continuing" || echo "PASS"
 
-What bootstrap creates:
-- `docs/{architecture,adr,specs/...,audits,backlog,api}/` — 5-layer documentation structure
-- `docs/architecture/entity-catalog.md` — domain entity catalog template (consumer fills in)
-- `docs/architecture/invariants.md` — architecture invariants template (created by bootstrap on first run)
-- `.context/{project.yml,boundaries.yml,agent-entry.md}` — AI agent entry stubs
-- `CLAUDE.md` — Runtime instructions (PREPEND to existing file, never overwrite)
-- `AGENTS.md` — Runtime instructions (only if file already exists, never create)
-- `.github/workflows/docs-validate.yml` — CI guard (includes Runtime dependency graph validation)
+── 4.2  Required structure ─────────────────────────────────────────
 
-## Step 3B — UPDATE existing v1.9+ installation
+    [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh" ] || { echo "FAIL"; exit 1; }
+    [ -f "$PROJECT_ROOT/docs/.runtime/naprolom-docs/runtime/registry.yaml" ] || { echo "FAIL"; exit 1; }
 
-When v1.9+ is already installed, do NOT reinstall. Updating means pulling the latest
-Runtime submodule and re-running bootstrap (it is idempotent and regenerates stubs):
+── 4.3  Empty-dir check after bootstrap ────────────────────────────
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
+    find "$PROJECT_ROOT/docs/" -type d -empty | grep -v "^$PROJECT_ROOT/docs/$$"
+    # Any output here means there are empty directories in docs/.
+    # v1.9 has a fix for the registry_list_directories bug (v1.8),
+    # so no new empty dirs should be created. Pre-existing empty dirs
+    # are legitimate — do not delete them without verifying against
+    # docs/.runtime/naprolom-docs/runtime/registry.yaml.
 
-# Pull latest Runtime (bugfixes, new generators/detectors, Registry changes)
-git submodule update --remote --merge
+── 4.4  Validators ────────────────────────────────────────────────
 
-# Re-run bootstrap — idempotent: recreates missing stubs, preserves consumer content
-bash docs/.runtime/naprolom-docs/bootstrap/bootstrap.sh
-```
+    cd "$PROJECT_ROOT"
+    bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
+    bash docs/.runtime/naprolom-docs/documentation/validation/validate-runtime.sh
 
-If the Registry schema changed in the new version, bootstrap logs the Runtime mode
-(NORMAL/DEGRADED) — a DEGRADED warning means registry.yaml is missing or unreadable;
-investigate before continuing. After update, always run the post-install architecture
-check (Step 4.5) to catch drift introduced by the upgrade.
+Both must pass. If validate-runtime.sh reports errors — stop and report.
 
-## Step 4 — Verify
+── 4.5  Reality Engine report (post-install drift check) ───────────
 
-### 4.1 Structure check
+Run the Reality Engine to find architecture breakage points:
 
-```bash
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-cd "$PROJECT_ROOT"
+    cd "$PROJECT_ROOT"
+    bash docs/.runtime/naprolom-docs/engine/reality-engine/reporters/reality-report.sh "$PROJECT_ROOT"
 
-echo "=== consumer root directories ==="
-ls -d */ | head -15
+python3 is preferred for full drift parsing; without it the report falls back
+to a limited grep view but still produces useful output.
 
-echo "=== docs/ contents ==="
-ls docs/
+Read the report. Report these to the user explicitly:
 
-echo "=== Runtime submodule ==="
-ls docs/.runtime/naprolom-docs/ | head -10
-```
+  * ADR drift        — docs reference an ADR id that does not exist
+  * Documentation drift — docs missing required frontmatter (schema/id/type)
+  * Spec drift       — spec status does not match its directory
+  * Structure drift  — expected top-level dirs (docs/, .context/) missing
 
-### 4.2 CRITICAL: no Runtime dirs at root
+List each item as "architecture breakage point" with the file path and issue.
+Do NOT silently fix drift items — surface them so the user decides.
 
-These directories must NOT exist at project root (they live inside `docs/.runtime/naprolom-docs/`):
+══════════════════════════════════════════════════════════════
+STEP 5 — Commit and report
+══════════════════════════════════════════════════════════════
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-FAIL=0
-for d in agents knowledge sops engine documentation bootstrap playbook; do
-  [ -d "$d" ] && echo "FAIL: $d/ exists at root" && FAIL=1 || echo "OK: no $d/"
-done
-[ $FAIL -eq 1 ] && echo "ABORT: Runtime directories leaked to root" || echo "PASS: all clean"
-```
+    cd "$PROJECT_ROOT"
+    git add -A
+    git status --short
+    git diff --cached --stat
+    git commit -m "docs: Documentation System Runtime v1.9 installed" || echo "nothing to commit"
 
-### 4.3 Frontmatter + Runtime validation
+Do NOT push.
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-bash docs/.runtime/naprolom-docs/documentation/validation/validate-frontmatter.sh
-bash docs/.runtime/naprolom-docs/documentation/validation/validate-runtime.sh
-```
+Report to the user:
+  1. Project path and git remote
+  2. Action taken (fresh install / migrated v1.0 / auto-upgraded v1.1–v1.8 / updated v1.9+)
+  3. Verification results (4.1 root check, 4.2 structure, 4.4 validators)
+  4. Post-install drift findings (ADR / documentation / spec / structure breakage points)
+  5. Next steps for the user:
+     - Fill in .context/project.yml (project metadata)
+     - Fill in .context/boundaries.yml (boundary definitions)
+     - Create the first ADR from documentation/templates/adr.md
+     - Resolve any reported drift items
 
-### 4.4 CLAUDE.md check
+══════════════════════════════════════════════════════════════
+RULES (hard — do not violate)
+══════════════════════════════════════════════════════════════
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-grep -c "## Documentation Runtime" CLAUDE.md 2>/dev/null && echo "OK: snippet present" || echo "WARN: no Runtime snippet in CLAUDE.md"
-head -10 CLAUDE.md 2>/dev/null || echo "no CLAUDE.md"
-```
+  · NEVER create agents/, knowledge/, sops/, engine/, documentation/,
+    bootstrap/, playbook/, runtime/ at the project root.
+    They live ONLY inside docs/.runtime/naprolom-docs/.
 
-### 4.5 POST-INSTALL ARCHITECTURE CHECK (Reality Engine drift)
+  · NEVER edit files inside docs/.runtime/naprolom-docs/.
+    It is a git submodule (pristine zone). Update it only via
+    `git submodule update --remote --merge` as a whole.
 
-After install/update, run the Reality Engine to find where the architecture actually breaks
-(dangling ADR references, docs missing required frontmatter, specs referencing superseded
-specs, structure drift vs the Registry SSOT):
+  · NEVER copy templates from documentation/templates/ into the consumer
+    project and keep local duplicates. Use `cp` to create a new file
+    from the template once — the template itself is the source of truth
+    and lives in the submodule.
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-bash docs/.runtime/naprolom-docs/engine/reality-engine/reporters/reality-report.sh "$PROJECT_ROOT"
-```
+  · The docs/ directory at the project root is for the CONSUMER'S content.
+    The only system-owned subdirectory is docs/.runtime/naprolom-docs/.
+    Everything else in docs/ (architecture/, adr/, specs/, audits/, etc.)
+    belongs to the project and bootstrap / Reality Engine will never touch it.
 
-Read the report. Report these drift findings to the user explicitly:
-- **ADR drift** — documentation references an ADR id that does not exist (broken `depends_on`).
-- **Documentation drift** — docs missing required frontmatter (schema/id/type) or unknown status.
-- **Spec drift** — a spec's status does not match its directory, or docs still reference a superseded spec.
-- **Structure drift** — expected top-level dirs (docs/, .context/) missing.
+  · All .md files in docs/ must have Canonical Schema v1 frontmatter
+    (6 mandatory fields: schema, id, type, status, date, owners).
 
-If drift items are present, list them as "architecture breakage points" with the file and
-the specific issue. Do not silently fix them — surface them so the user decides. (python3 is
-required for full drift parsing; without it the report falls back to a limited grep view.)
+  · If bootstrap reports DEGRADED mode — STOP immediately and report.
+    DEGRADED means registry.yaml is missing or unreadable; do not guess.
 
-## Step 5 — Commit and report
+  · If anything fails — STOP and report the exact error and the step
+    where it happened. Do not silently skip steps or continue in an
+    unknown state.
 
-```bash
-cd "$(git rev-parse --show-toplevel)"
-git add -A
-git status --short
-git diff --cached --stat
-git commit -m "docs: Documentation System Runtime v1.9 installed" || echo "nothing to commit"
-```
-
-Do NOT push. Report to user:
-1. Project path and repo
-2. Action taken (fresh install / migrated from v1.0 / upgraded v1.1–v1.5→v1.9 / updated v1.9+)
-3. Verification results (structure, root check, validation)
-4. Post-install architecture check results — drift items (ADR / documentation / spec / structure)
-5. Next steps: fill `.context/project.yml`, create first ADR, create `docs/architecture/README.md`,
-   resolve any reported drift
-
-## Rules
-
-- NEVER edit files inside `docs/.runtime/naprolom-docs/` — it's a submodule, pristine zone
-- NEVER create `agents/`, `knowledge/`, `sops/`, `engine/`, `documentation/`, `bootstrap/`, `playbook/` at project root
-- All `.md` files in `docs/` must have Canonical Schema v1 frontmatter (6 mandatory fields)
-- Do NOT copy templates from documentation/templates into the project — reference them via runtime path
-- If anything fails — STOP and report, do not guess
+  · After install, do NOT exit without committing the submodule pointer
+    bump locally. The user must review and push the commit themselves.
 ```
