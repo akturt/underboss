@@ -1,34 +1,47 @@
 ---
+# Project metadata
+# Universally-valid: no absolute paths, no OS-specific values.
+# Fields left empty are filled in by the bootstrap agent using DEPLOY-PROMPT.
+
 name: naprolom-docs
-domain: unknown
+domain: auto
 stack: unknown
-backend: 
-database: 
-infrastructure: 
+backend: unknown
+database: unknown
+infrastructure: unknown
 maintainer: unknown
 
+# Git context — bootstrap fills these in automatically
 repository:
-  owner: owner
+  owner: unknown
   name: naprolom-docs
   branch: main
 
+# Paths are always relative to repo root; forward slashes.
+#扩充ляется bootstrap'ом при установке — не редактировать вручную.
 boundaries:
   pristine:
-    - /mnt/e/Projects/Naprolom/naprolom-docs/
-    - /mnt/e/Projects/Naprolom/naprolom-docs/src/
-    - /mnt/e/Projects/Naprolom/naprolom-docs/tests/
-    - /mnt/e/Projects/Naprolom/naprolom-docs/docs/
+    - /
+    - /src/
+    - /tests/
+    - /docs/
+    - /.context/
   generated:
-    - node_modules/
-    - dist/
-    - docs/.runtime/
+    - /node_modules/
+    - /dist/
+    - /build/
+    - /.next/
+    - /coverage/
+    - /docs/.runtime/
+    - /.claude/
   secrets:
-    - .env
-    - .env.*
-    - *.key
-    - *.pem
-    - secrets/
+    - /.env
+    - /.env.*
+    - /*.key
+    - /*.pem
+    - /secrets/
 
+# Populated by validate-runtime.sh / reality-engine after first full audit.
 reality:
   status: fresh
   lastCheck: null

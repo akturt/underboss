@@ -1,12 +1,12 @@
 #!/bin/bash
-# runtime/lib/registry.sh — Registry API (SSOT reader)
+# runtime/lib/registry.sh вЂ” Registry API (SSOT reader)
 #
 # All Runtime components read from registry through this API.
-# No awk/grep/sed — uses yaml.sh for all parsing.
+# No awk/grep/sed вЂ” uses yaml.sh for all parsing.
 #
 # Requires: runtime/lib/yaml.sh
 
-# Lazy computation — RUNTIME_REGISTRY computed on first use
+# Lazy computation вЂ” RUNTIME_REGISTRY computed on first use
 RUNTIME_REGISTRY=""
 
 _registry_init() {
