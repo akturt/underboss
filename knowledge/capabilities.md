@@ -75,3 +75,18 @@ Produces: validated-findings (artifact)
 Description: Identify and challenge implicit assumptions in architectural proposals.
 Consumes: architecture-findings (artifact)
 Produces: validated-findings (artifact)
+
+## forensic-layer-audit
+Description: End-to-end forensic audit of one layer/section/subsystem — As-Is mapping, drift/God-Object detection, To-Be target model, manifest SSOT, migration sketch, invariant tests, legacy terminology inventory, deploy runbook. Single self-contained executor, layer-agnostic.
+Consumes: subject-layer (parameterized scope: project_path, layer, target_section, hint)
+Produces: forensic-report (artifact), manifest-skeleton (artifact), migration-sketch (artifact), invariant-test-skeletons (artifact), terminology-inventory (artifact)
+
+## manifest-design
+Description: Author a single-source-of-truth manifest module (Python or language-appropriate) seeding the target model — reduced from the drift inventory, never a mirror of production.
+Consumes: drift-inventory (artifact), target-model (artifact)
+Produces: manifest-skeleton (artifact)
+
+## target-model-design
+Description: Design a normalized target model dissolving the God-Object — invariants (INV-<LAYER>-N), normalized entities with multi-level unique identity, orthogonal axes, backward-compat strategy, package roadmap.
+Consumes: drift-inventory (artifact), reality-report (artifact)
+Produces: target-model (artifact), invariants (artifact)

@@ -1,0 +1,163 @@
+name: forensic-layer-audit
+description: 11-phase single-agent forensic audit of any layer/section/subsystem (replaces phantom-subagent forensic-orchestrator)
+triggers:
+  - manual invocation for deep architectural forensic of one layer
+  - after an incident with an architectural root cause
+  - before authoring a spec/ADR for a layer (this SOP IS the spec seed)
+input:
+  required:
+    - type: project-root
+      path: "."
+      artifact: project-root
+      note: "root directory of the project hosting the audited layer"
+    - type: string
+      name: layer
+      note: "stable name of the audited layer/section/subsystem (e.g. control-plane, raw-ingestion, billing)"
+    - type: string
+      name: target_section
+      required: false
+      note: "optional narrower scope within the layer (a package, schema, module, concept)"
+  optional:
+    - type: string
+      name: hint
+      note: "free-form clue from the human (e.g. 'suspect God-Object in X', baseline host/port/db, alembic track locations)"
+    - type: string
+      name: commit_range
+      default: "last 40"
+      note: "commit range to reconstruct from (default: last 40 relevant to the layer)"
+    - type: enum
+      name: depth
+      enum: [shallow, normal, deep]
+      default: normal
+      note: "shallow skips Phases 4-7 (emits stubs); normal executes all 11; deep permits HYPOTHESIS with refutation recipe"
+    - type: string
+      name: output_path
+      note: "default: docs/audits/YYYY-MM-DD-forensic-<layer>-<topic>.md if doc runtime present, else ./forensic-audit-<layer>-<topic>_YYYY-MM-DD.md"
+output:
+  - artifact: forensic-report
+    final_path: docs/audits/YYYY-MM-DD-forensic-<layer>-<topic>.md
+    type: audit
+    status: completed
+  - artifact: terminology-inventory
+    final_path: docs/audits/<layer>-terminology-inventory.md
+    type: audit
+    status: completed
+  - artifact: manifest-skeleton
+    note: "code sketch inside the report; not written to the audited project tree unless human consents"
+  - artifact: migration-sketch
+    note: "code sketch inside the report"
+  - artifact: invariant-test-skeletons
+    note: "names + pseudocode sketches inside the report"
+steps:
+  - id: 0
+    name: Scope & Boundaries
+    capability: forensic-layer-audit
+    role: forensic-auditor
+    platform: any
+    consumes: [project-root, layer, target_section, hint]
+    produces: phase0-scope
+    note: "lock perimeter; baseline data access (yes/no/insufficient); explicit out-of-scope; subject identity written down"
+    depends_on: []
+  - id: 1
+    name: As-Is Mapping
+    capability: state-reconstruction
+    role: forensic-auditor
+    platform: any
+    consumes: [phase0-scope]
+    produces: phase1-as-is
+    note: "reconstruct actual state from code + data + migrations, NOT docs; alignment table docs↔code↔data; every row carries an evidence class"
+    depends_on: [0]
+  - id: 2
+    name: Drift, God-Object, Legacy
+    capability: drift-analysis
+    role: forensic-auditor
+    platform: any
+    consumes: [phase1-as-is]
+    produces: phase2-drift-inventory
+    note: "God-Object signatures; DRIFT_* classification per finding (DRIFT_PLATFORM_NEUTRAL_NAME, DRIFT_ENUM_SKEW, DRIFT_CROSS_LAYER_LEAK, DRIFT_AD_HOC_REMAINS, DRIFT_MULTI_SOURCE_OF_TRUTH, DRIFT_SPEC_LAG, DRIFT_DOC_LAG); origin per finding; legacy terminology inventory seed"
+    depends_on: [1]
+  - id: 3
+    name: To-Be Target Model
+    capability: target-model-design
+    role: forensic-auditor
+    platform: any
+    consumes: [phase2-drift-inventory]
+    produces: phase3-target-model
+    note: "INV-<LAYER>-1..N (description, rationale, verification, affected components); normalized entities with multi-level unique identity; orthogonal axes; SSOT per data class; backward-compat strategy; 4-6 package roadmap with dependency edges"
+    depends_on: [2]
+  - id: 4
+    name: Manifest as single SSOT
+    capability: manifest-design
+    role: forensic-auditor
+    platform: any
+    consumes: [phase2-drift-inventory, phase3-target-model]
+    produces: manifest-skeleton
+    note: "Python (or stack-appropriate) seed module reduced from drift inventory, NEVER mirrored from prod; registry/source/entity/matrix/dependency/schedule/execution-state stubs; enum lists; helper functions (e.g. _ic_for/_ir_for); manifest signature (counts + sorted hashes) — skipped at depth=shallow"
+    depends_on: [2, 3]
+    condition: "depth != shallow"
+  - id: 5
+    name: Models with Constraints
+    capability: target-model-design
+    role: forensic-auditor
+    platform: any
+    consumes: [phase3-target-model, manifest-skeleton]
+    produces: models-sketch
+    note: "ORM classes sketch; column-naming convention (sa_column / <fkfield>_); CHECK constraints chk_<table>_<field> sourced from manifest enum; model registration — skipped at depth=shallow"
+    depends_on: [3, 4]
+    condition: "depth != shallow"
+  - id: 6
+    name: Migration — DDL + seed + in-migration validations
+    capability: target-model-design
+    role: forensic-auditor
+    platform: any
+    consumes: [models-sketch, manifest-skeleton, phase3-target-model]
+    produces: migration-sketch
+    note: "phased upgrade(): tables (FK-order) → indexes → bulk-insert from manifest → sequential invariant-validations (fail-fast, each names its invariant); downgrade(): reverse order, never deletes manifest module — skipped at depth=shallow"
+    depends_on: [3, 4, 5]
+    condition: "depth != shallow"
+  - id: 7
+    name: Invariant Test Coverage
+    capability: claim-validation
+    role: forensic-auditor
+    platform: any
+    consumes: [phase3-target-model, phase2-drift-inventory]
+    produces: invariant-test-skeletons
+    note: "one test file per INV-<LAYER>-N (static + dynamic); one per requirement R1..RN; parameterized coverage meta-test asserting file existence (guards against forgotten invariants); grep-prevention tests for forbidden patterns post-migration — skipped at depth=shallow"
+    depends_on: [3, 6]
+    condition: "depth != shallow"
+  - id: 8
+    name: Legacy Terminology Inventory Document
+    capability: forensic-layer-audit
+    role: forensic-auditor
+    platform: any
+    consumes: [phase2-drift-inventory, phase3-target-model]
+    produces: terminology-inventory
+    note: "legacy→target multi-level identity mapping table; drift origin per row; 3-phase migration plan (coexistence → new-writes → legacy removal); canonical frontmatter type=audit"
+    depends_on: [2, 3]
+  - id: 9
+    name: Invariants Registry & Architecture Doc
+    capability: target-model-design
+    role: forensic-auditor
+    platform: any
+    consumes: [phase3-target-model]
+    produces: arch-doc-sketches
+    note: "fenced sketches of docs/architecture/invariants.md (INV-<LAYER>-1..N entries) + docs/architecture/<layer>.md (textual ER diagram + entity responsibilities + orthogonal axes); canonical frontmatter"
+    depends_on: [3, 7]
+    condition: "depth != shallow"
+  - id: 10
+    name: Commit, Deploy, Validate — Runbook
+    gate: manual
+    consumes: [phase3-target-model, migration-sketch, invariant-test-skeletons]
+    produces: deploy-runbook
+    note: "human-gated checklist: local pytest --collect-only + statics; selective git add (never -A); commit message template; 60s pause; push via project secret wrapper; CI watch; prod SSH (logs + alembic current + row counts vs manifest + status enums); on red CI/prod → new commit, never amend. The agent EMITS the runbook; it does NOT execute any of these commands (bash is read-only)."
+    depends_on: [6, 7, 9]
+    condition: "depth != shallow"
+  - id: 11
+    name: Handoff to the Next Package
+    capability: forensic-layer-audit
+    role: forensic-auditor
+    platform: any
+    consumes: [deploy-runbook]
+    produces: forensic-report
+    note: "state summary (completed / active / blocking / next); dependency check on the next package; if iterating → return to step 1 with new aspect scope (e.g. \"compat view for legacy reader\"). Terminal artifact assembled here from all prior step outputs + Validation Summary table + Open Questions + Metadata."
+    depends_on: [10]

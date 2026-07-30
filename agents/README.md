@@ -19,7 +19,7 @@ priority: P1
 
 # agents/ — Repository of AI agent roles
 
-Runtime v1.9 contains 4 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
+Runtime v1.10 contains 5 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
 
 ## Roles
 
@@ -29,6 +29,7 @@ Runtime v1.9 contains 4 roles, each a ready-to-use prompt configuration for a sp
 | **Documentation Reviewer** | Validates Schema v1 compliance, entity_refs, path-status contract | `validate-frontmatter`, `validate-entity-refs` | claude-code, opencode |
 | **Reality Auditor** | Reconstructs current project state from code, config, docs (read-only) | `state-reconstruction`, `drift-analysis`, `architecture-extraction`, `attribution-analysis` | claude-code, opencode |
 | **Adversary Checker** | Validates architectural claims against evidence, assigns verdicts + confidence | `claim-validation`, `assumption-analysis` | claude-code, opencode |
+| **Forensic Auditor** | End-to-end forensic audit of one layer/section — single self-contained executor (replaces the phantom-subagent forensic-orchestrator) | `forensic-layer-audit`, `state-reconstruction`, `drift-analysis`, `architecture-extraction`, `manifest-design`, `target-model-design`, `claim-validation` | claude-code, opencode |
 
 ## Capabilities
 
@@ -48,6 +49,9 @@ Each role declares `capabilities:` in frontmatter (unidirectional Role→Capabil
 | `attribution-analysis` | signal-inventory, control-objects-matrix | attribution-analysis |
 | `claim-validation` | architecture-findings | validated-findings |
 | `assumption-analysis` | architecture-findings | validated-findings |
+| `forensic-layer-audit` | subject-layer (parameterized scope) | forensic-report, manifest-skeleton, migration-sketch, invariant-test-skeletons, terminology-inventory |
+| `manifest-design` | drift-inventory, target-model | manifest-skeleton |
+| `target-model-design` | drift-inventory, reality-report | target-model, invariants |
 
 Full contracts: `knowledge/capabilities.md`
 
@@ -67,6 +71,7 @@ Runtime resolves `knowledge/<short-id>.md`. Roles never hardcode knowledge paths
 | documentation-reviewer | `report-formats` |
 | reality-auditor | `evidence-model`, `report-formats` |
 | adversary-checker | `audit-principles`, `report-formats` |
+| forensic-auditor | `evidence-model`, `audit-principles`, `report-formats` |
 
 ## Layout
 
@@ -77,12 +82,14 @@ agents/
 │   ├── architecture-reviewer.md
 │   ├── documentation-reviewer.md
 │   ├── reality-auditor.md
-│   └── adversary-checker.md
+│   ├── adversary-checker.md
+│   └── forensic-auditor.md
 └── opencode/          ← opencode configs
     ├── architecture-reviewer.md
     ├── documentation-reviewer.md
     ├── reality-auditor.md
-    └── adversary-checker.md
+    ├── adversary-checker.md
+    └── forensic-auditor.md
 ```
 
 ## Integration
