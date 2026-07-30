@@ -25,22 +25,24 @@ sops/
 ├── release.yaml           ← v1.0
 ├── incident.yaml          ← v1.0
 ├── architecture-review.yaml ← v1.1: sequential review pipeline
-└── forensic-audit.yaml    ← v1.1: 8-step forensic pipeline
+├── forensic-audit.yaml    ← v1.1: 8-step forensic pipeline (domain-specific, legacy)
+└── forensic-layer-audit.yaml ← v1.2: 11-phase single-agent layer-agnostic forensic audit
 ```
 
 ## Available SOPs
 
-| SOP | Purpose | Steps |
-|-----|---------|-------|
-| `new-feature` | New feature lifecycle (spec → implementation → review) | 3 |
-| `bugfix` | Bug fix with documentation update | 3 |
-| `new-service` | New service with ADR + architecture docs | 4 |
-| `architecture-change` | Architecture change with ADR + review | 4 |
-| `audit` | Documentation audit | 2 |
-| `release` | Release with changelog + version bump | 3 |
-| `incident` | Incident response with post-mortem | 8 |
-| **`architecture-review`** | Sequential review: Reality → Arch → Doc → Adversary → Human | 5 |
-| **`forensic-audit`** | 8-step forensic audit pipeline | 8 |
+| SOP | Purpose | Steps | Role |
+|-----|---------|-------|------|
+| `new-feature` | New feature lifecycle (spec → implementation → review) | 3 | mixed |
+| `bugfix` | Bug fix with documentation update | 3 | mixed |
+| `new-service` | New service with ADR + architecture docs | 4 | mixed |
+| `architecture-change` | Architecture change with ADR + review | 4 | mixed |
+| `audit` | Documentation audit | 2 | mixed |
+| `release` | Release with changelog + version bump | 3 | mixed |
+| `incident` | Incident response with post-mortem | 8 | mixed |
+| **`architecture-review`** | Sequential review: Reality → Arch → Doc → Adversary → Human | 5 | multi-role |
+| **`forensic-audit`** | 8-step forensic audit pipeline (domain-specific legacy) | 8 | multi-role |
+| **`forensic-layer-audit`** | 11-phase single-agent forensic audit of any layer/section/subsystem | 11 | `forensic-auditor` only |
 
 ## Artifact Contracts (v1.1)
 
@@ -91,6 +93,33 @@ input:
 ```
 
 The `entities` and `mechanisms` are NOT hardcoded in SOP — consumer provides them at invocation time.
+
+The newer `forensic-layer-audit.yaml` (v1.2) parameterizes differently — by **scope**, not by domain entity list:
+
+```yaml
+input:
+  required:
+    - type: project-root
+      path: "."
+      artifact: project-root
+    - type: string
+      name: layer          # stable name of the audited layer/section/subsystem
+    - type: string
+      name: target_section # optional narrower scope within the layer
+  optional:
+    - type: string
+      name: hint           # free-form clue (suspect God-Object, baseline access, alembic tracks)
+    - type: string
+      name: commit_range
+      default: "last 40"
+    - type: enum
+      name: depth          # shallow | normal | deep (shallow skips Phases 4-7)
+      default: normal
+    - type: string
+      name: output_path
+```
+
+This keeps `forensic-layer-audit` layer-agnostic — the same SOP is reusable across `control-plane`, `raw-ingestion`, `billing`, `frontend-auth`, infra, etc.
 
 ## Usage
 

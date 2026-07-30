@@ -133,3 +133,101 @@ Evidence: <file path / line / diff snippet>
 
 ### Terminal Artifact
 The forensic report is saved as `docs/audits/YYYY-MM-DD-forensic-<topic>.md`.
+
+## Universal Forensic Report
+
+Output format for the `forensic-auditor` role (single-agent, layer-agnostic forensic audit). Save as `docs/audits/YYYY-MM-DD-forensic-<layer>-<topic>.md` with canonical frontmatter: `type: audit`, `status: completed`, `entity_refs: [<layer-id>]`, `scope:` (perimeter), `trigger:` (why audit run), `tags: [forensic, audit, <layer>]`.
+
+```
+# FORENSIC AUDIT REPORT — <layer>
+
+Audit subject:        <layer> / <target_section>
+Project:              <project_path>
+Date:                 <YYYY-MM-DD>
+Depth:                <shallow|normal|deep>
+Baseline data access: <yes|no|insufficient>
+
+---
+
+## 0. Scope & Boundaries
+<perimeter, production baseline, explicit exclusions>
+
+## 1. As-Is Mapping
+<reconstructed entities; alignment table: documentation ↔ code ↔ data;
+
+ every row carries an evidence class OBSERVED|EVIDENCED|INFERRED|CLAIMED|INSUFFICIENT>
+
+## 2. Drift, God-Object, Legacy
+<drift inventory: each finding with {class (DRIFT_* family), origin, code_ref,
+ data_ref (if any), classification token}; legacy terminology inventory seed>
+
+## 3. To-Be Target Model
+<invariants INV-<LAYER>-1..N (description, rationale, verification, affected
+ components); normalized entities with multi-level unique identity; orthogonal axes;
+ single source of truth per data class; backward-compat strategy; package roadmap>
+
+## 4. Manifest (single SSOT)
+<draft path + code sketch of app/seeds/<layer>_manifest.py; helper functions
+ (_ic_for / _ir_for / equivalents); manifest signature (counts + sorted hashes)>
+
+## 5. Models with Constraints
+<ORM classes sketch; column-naming convention (sa_column / <fkfield>_); CHECK
+ constraints chk_<table>_<field> sourced from the manifest enum; model registration>
+
+## 6. Migration: DDL + seed + in-migration validations
+<phased upgrade(): create tables (FK-order) → indexes → bulk-insert from manifest →
+ sequential invariant-validations (each fails-fast naming the invariant);
+ downgrade(): reverse order, never delete the manifest module>
+
+## 7. Invariant Test Coverage
+<one test file per INV-<LAYER>-N (static + dynamic); one per requirement;
+ parameterized coverage meta-test asserting file existence; grep-prevention tests
+ against forbidden patterns post-migration>
+
+## 8. Legacy Terminology Inventory Document
+<legacy → target multi-level identity mapping; drift origin per row;
+ 3-phase migration plan (coexistence → new-writes → legacy removal)>
+
+## 9. Invariants Registry & Architecture Doc
+<fenced sketches of docs/architecture/invariants.md (INV-<LAYER>-1..N entries) and
+ docs/architecture/<layer>.md (textual ER diagram + entity responsibilities + ortho axes)>
+
+## 10. Commit, Deploy, Validate — Runbook
+<human-gated checklist: local pytest --collect-only + statics; selective git add
+ (never -A); commit template; 60s pause; push via project secret wrapper;
+ CI watch (./scripts/run gh run list); prod SSH: logs + alembic current + row counts
+ vs manifest + status enums; on red CI/prod → new commit, never amend>
+
+## 11. Handoff to the Next Package
+<state: completed / active / blocking / next; dependency check on the next package>
+
+## Validation Summary
+| Phase | Status | Evidence class used | Findings | Retries |
+|-------|--------|--------------------|----------|---------|
+| 0     | PASSED | OBSERVED           | —        | 0       |
+| 1     | PASSED | OBSERVED+EVIDENCED | 4 drift  | 0       |
+| 2     | PASSED | OBSERVED+INFERRED  | 12 clsd  | 0       |
+| ...
+
+## Open Questions / INSUFFICIENT_EVIDENCE
+- <item + what evidence would resolve it>
+
+## Metadata
+- Audit timestamp:        <now>
+- Analysis depth:         <depth>
+- Code files examined:    <count>
+- Migrations examined:   <count>
+- Production queries run: <count, 0 if no access>
+- Tool calls made:        <rough estimate>
+- Produced artifacts:     <list of side-artifacts written, if any>
+```
+
+### Anti-hallucination guardrails (self-enforced)
+1. Every `code_ref` resolves to an actual file:line read during the audit.
+2. Counts come from real queries (SQL / git / grep); the query string stated.
+3. `HYPOTHESIS` only at `depth=deep`, explicitly tagged with rationale + refutation recipe.
+4. Every Phase-3 invariant has an index-aligned Phase-7 test sketch.
+5. Every Phase-3 normalized entity has an index-aligned Phase-4 manifest list.
+6. Every Phase-6 migration validation names the invariant it enforces.
+7. If production data access was `INSUFFICIENT`, never report row counts as `OBSERVED`.
+8. No claim without a class; no class without a reference.
