@@ -90,3 +90,33 @@ Produces: manifest-skeleton (artifact)
 Description: Design a normalized target model dissolving the God-Object — invariants (INV-<LAYER>-N), normalized entities with multi-level unique identity, orthogonal axes, backward-compat strategy, package roadmap.
 Consumes: drift-inventory (artifact), reality-report (artifact)
 Produces: target-model (artifact), invariants (artifact)
+
+## ontological-audit
+Description: Domain-agnostic ontological audit of a subject domain — concept extraction, 5-criteria Subject Test, DDD classification, Observation Contract verification, hypothesis validation, Freeze Gate recommendation. Single self-contained executor.
+Consumes: subject-domain (parameterized scope: project_path, domain, target_section, hint)
+Produces: ontological-audit-report (artifact), subject-manifest (artifact), observation-contract (artifact)
+
+## subject-classification
+Description: Classify domain concepts against 5-criteria Subject Test (Domain, Identity, Lifecycle, Observation, User Scenarios). Determines Subject vs non-Subject.
+Consumes: concept-inventory (artifact)
+Produces: subject-manifest (artifact)
+
+## ddd-classification
+Description: Classify non-Subject concepts as Value Object / Child Entity / Relationship / Historical Snapshot per DDD patterns.
+Consumes: concept-inventory (artifact), subject-manifest (artifact)
+Produces: ddd-classification-map (artifact)
+
+## observation-contract
+Description: Verify or design Observation Contract ensuring the Observation model can capture all facts about all Subjects in the domain.
+Consumes: subject-manifest (artifact), domain-sources (artifact)
+Produces: observation-contract (artifact)
+
+## hypothesis-validation
+Description: Formulate and verify key hypotheses about the domain ontology — completeness, correctness, and consistency.
+Consumes: ontological-audit-report (artifact), subject-manifest (artifact)
+Produces: validated-hypotheses (artifact)
+
+## freeze-gate
+Description: Determine if the domain ontology is stable enough to proceed — assess confidence, coverage, and remaining risks.
+Consumes: ontological-audit-report (artifact), validated-hypotheses (artifact)
+Produces: freeze-gate-decision (artifact)
