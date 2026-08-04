@@ -120,3 +120,8 @@ Produces: validated-hypotheses (artifact)
 Description: Determine if the domain ontology is stable enough to proceed — assess confidence, coverage, and remaining risks.
 Consumes: ontological-audit-report (artifact), validated-hypotheses (artifact)
 Produces: freeze-gate-decision (artifact)
+
+## pipeline-topology-audit
+Description: 3-layer progressive forensic reconstruction of a multi-hop data pipeline's runtime reality — Execution Topology (dispatch/orchestration model), Structural Topology (exhaustive node inventory with producer/consumer/ownership/orphan/bypass analysis), Content Topology (per-node payload composition using real captured data, sourcing-tiered confidence) — culminating in a per-node Coverage Matrix. Single self-contained executor, pipeline-agnostic. Exists to prevent coverage/migration plans from being built on code presence alone.
+Consumes: subject-pipeline (parameterized scope: project_path, pipeline, node_hint, real_data_corpus)
+Produces: execution-topology-report (artifact), structural-topology-report (artifact), content-topology-report (artifact), coverage-matrix (artifact)

@@ -19,7 +19,7 @@ priority: P1
 
 # agents/ — Repository of AI agent roles
 
-Runtime v1.10 contains 5 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
+Runtime v1.10 contains 6 roles, each a ready-to-use prompt configuration for a specific platform (Claude Code, opencode).
 
 ## Roles
 
@@ -30,6 +30,7 @@ Runtime v1.10 contains 5 roles, each a ready-to-use prompt configuration for a s
 | **Reality Auditor** | Reconstructs current project state from code, config, docs (read-only) | `state-reconstruction`, `drift-analysis`, `architecture-extraction`, `attribution-analysis` | claude-code, opencode |
 | **Adversary Checker** | Validates architectural claims against evidence, assigns verdicts + confidence | `claim-validation`, `assumption-analysis` | claude-code, opencode |
 | **Forensic Auditor** | End-to-end forensic audit of one layer/section — single self-contained executor (replaces the phantom-subagent forensic-orchestrator) | `forensic-layer-audit`, `state-reconstruction`, `drift-analysis`, `architecture-extraction`, `manifest-design`, `target-model-design`, `claim-validation` | claude-code, opencode |
+| **Pipeline Archaeologist** | Reconstructs the runtime reality of a multi-hop data pipeline through 3 progressive layers (Execution/Structural/Content Topology) before any coverage matrix is built — single self-contained executor. Proposed from real-world use on Kordon's FSA ingestion pipeline (2026-08-03/04) | `pipeline-topology-audit`, `state-reconstruction`, `drift-analysis`, `architecture-extraction` | claude-code, opencode |
 
 ## Capabilities
 
@@ -52,6 +53,7 @@ Each role declares `capabilities:` in frontmatter (unidirectional Role→Capabil
 | `forensic-layer-audit` | subject-layer (parameterized scope) | forensic-report, manifest-skeleton, migration-sketch, invariant-test-skeletons, terminology-inventory |
 | `manifest-design` | drift-inventory, target-model | manifest-skeleton |
 | `target-model-design` | drift-inventory, reality-report | target-model, invariants |
+| `pipeline-topology-audit` | subject-pipeline (parameterized scope) | execution-topology-report, structural-topology-report, content-topology-report, coverage-matrix |
 
 Full contracts: `knowledge/capabilities.md`
 
@@ -72,6 +74,7 @@ Runtime resolves `knowledge/<short-id>.md`. Roles never hardcode knowledge paths
 | reality-auditor | `evidence-model`, `report-formats` |
 | adversary-checker | `audit-principles`, `report-formats` |
 | forensic-auditor | `evidence-model`, `audit-principles`, `report-formats` |
+| pipeline-archaeologist | `evidence-model`, `audit-principles`, `report-formats` |
 
 ## Layout
 
@@ -83,13 +86,15 @@ agents/
 │   ├── documentation-reviewer.md
 │   ├── reality-auditor.md
 │   ├── adversary-checker.md
-│   └── forensic-auditor.md
+│   ├── forensic-auditor.md
+│   └── pipeline-archaeologist.md
 └── opencode/          ← opencode configs
     ├── architecture-reviewer.md
     ├── documentation-reviewer.md
     ├── reality-auditor.md
     ├── adversary-checker.md
-    └── forensic-auditor.md
+    ├── forensic-auditor.md
+    └── pipeline-archaeologist.md
 ```
 
 ## Integration

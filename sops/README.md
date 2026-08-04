@@ -26,7 +26,8 @@ sops/
 ├── incident.yaml          ← v1.0
 ├── architecture-review.yaml ← v1.1: sequential review pipeline
 ├── forensic-audit.yaml    ← v1.1: 8-step forensic pipeline (domain-specific, legacy)
-└── forensic-layer-audit.yaml ← v1.2: 11-phase single-agent layer-agnostic forensic audit
+├── forensic-layer-audit.yaml ← v1.2: 11-phase single-agent layer-agnostic forensic audit
+└── pipeline-topology-audit.yaml ← v1.0: 3-layer progressive pipeline-agnostic forensic audit (Execution/Structural/Content Topology)
 ```
 
 ## Available SOPs
@@ -43,6 +44,7 @@ sops/
 | **`architecture-review`** | Sequential review: Reality → Arch → Doc → Adversary → Human | 5 | multi-role |
 | **`forensic-audit`** | 8-step forensic audit pipeline (domain-specific legacy) | 8 | multi-role |
 | **`forensic-layer-audit`** | 11-phase single-agent forensic audit of any layer/section/subsystem | 11 | `forensic-auditor` only |
+| **`pipeline-topology-audit`** | 3-layer progressive reconstruction of a multi-hop data pipeline's runtime reality (Execution → Structural → Content Topology) before any coverage matrix is built | 6 | `pipeline-archaeologist` only |
 
 ## Artifact Contracts (v1.1)
 

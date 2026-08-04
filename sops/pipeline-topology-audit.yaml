@@ -1,0 +1,105 @@
+name: pipeline-topology-audit
+description: 3-layer progressive forensic reconstruction of a multi-hop data pipeline's runtime reality (Execution Topology -> Structural Topology -> Content Topology) before any coverage matrix or replacement-layer design is allowed to proceed
+triggers:
+  - manual invocation before designing a coverage matrix or migration plan for an existing multi-hop pipeline
+  - suspicion that an existing coverage audit was built from code presence rather than runtime reality
+  - periodic re-drift check for long-lived pipelines with many silent config-driven routing changes
+  - after a router/dispatcher config change, to check for silently orphaned handlers
+input:
+  required:
+    - type: project-root
+      path: "."
+      artifact: project-root
+      note: "root directory of the project hosting the audited pipeline"
+    - type: string
+      name: pipeline
+      note: "stable name of the audited pipeline / data flow (e.g. fsa-ingestion, billing-event-pipeline)"
+  optional:
+    - type: string
+      name: node_hint
+      note: "free-form clue narrowing scope to specific nodes/endpoints, if the whole pipeline isn't in scope"
+    - type: string
+      name: real_data_corpus
+      note: "path to any real captured payloads / production samples / prior research corpus; materially affects Layer 3 confidence if absent"
+    - type: enum
+      name: depth
+      enum: [shallow, normal, deep]
+      default: normal
+      note: "shallow executes Layers 1-2 only, emits a stub for Layer 3 and the Coverage Matrix; normal executes all layers; deep permits cross-pipeline hidden-dependency tracing"
+    - type: string
+      name: output_path
+      note: "default: docs/audits/YYYY-MM-DD-<pipeline>-<layer>-archaeology-audit.md if a doc runtime is present, else ./pipeline-archaeology-<pipeline>-<layer>_YYYY-MM-DD.md"
+output:
+  - artifact: execution-topology-report
+    final_path: docs/audits/YYYY-MM-DD-<pipeline>-execution-topology-archaeology-audit.md
+    type: audit
+    status: completed
+  - artifact: structural-topology-report
+    final_path: docs/audits/YYYY-MM-DD-<pipeline>-structural-topology-archaeology-audit.md
+    type: audit
+    status: completed
+  - artifact: content-topology-report
+    final_path: docs/audits/YYYY-MM-DD-<pipeline>-content-topology-archaeology-audit.md
+    type: audit
+    status: completed
+    condition: "depth != shallow"
+  - artifact: coverage-matrix
+    note: "per-node table embedded in the final report; not written as a standalone file unless the human requests it"
+    condition: "depth != shallow"
+steps:
+  - id: 0
+    name: Scope & Real-Data Corpus
+    capability: pipeline-topology-audit
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [project-root, pipeline, node_hint, real_data_corpus]
+    produces: layer0-scope
+    note: "lock the perimeter; confirm whether a real-data corpus exists (materially affects Layer 3 confidence); read any pre-existing coverage audit for this pipeline as context, not as an independent starting point"
+    depends_on: []
+  - id: 1
+    name: "Layer 1 — Execution Topology"
+    capability: state-reconstruction
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [layer0-scope]
+    produces: layer1-execution-topology
+    note: "dispatch strategies and what selects between them; queue/handoff mechanism and its failure behavior; checkpoint/watermark semantics verified at the read/write site, not trusted by name; dedup/change-detection mechanism; every distinct recovery/re-fetch mechanism verified against its actual code path, not its UI label; whether autonomous/scheduled execution is actually enabled anywhere"
+    depends_on: [0]
+  - id: 2
+    name: "Layer 2 — Structural Topology"
+    capability: architecture-extraction
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [layer1-execution-topology]
+    produces: layer2-structural-topology
+    note: "exhaustive per-node table (node, family/group, strategy, producer, consumer, handler/adapter, legacy fallback, status) from the actual routing/manifest source, not a pre-existing known-list; orphans with specific failure mode per orphan; bypass patterns (nodes skipping the main transform path); ownership matrix per node or bypass-pattern group"
+    depends_on: [1]
+  - id: 3
+    name: "Layer 3 — Content Topology"
+    capability: drift-analysis
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [layer2-structural-topology]
+    produces: layer3-content-topology
+    note: "per node, real captured payloads first wherever they exist; section -> transform (file:line) -> target; what's ignored/dropped/truncated, distinguishing confirmed-empty-in-every-sample from confirmed-populated-and-dropped; field-level dead code; cross-cutting hidden dependencies (mid-transform reads into another subsystem or another node's output); every claim tagged fixture-confirmed / plugin-corroborated / code-only — skipped at depth=shallow"
+    depends_on: [2]
+    condition: "depth != shallow"
+  - id: 4
+    name: Coverage Matrix
+    capability: pipeline-topology-audit
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [layer1-execution-topology, layer2-structural-topology, layer3-content-topology]
+    produces: coverage-matrix
+    note: "built per node (Layer 2's unit), never per family/subsystem; columns: handler exists / wired to runtime / payload composition known / real sample available / parity proven — exists and wired are always separate columns — skipped at depth=shallow"
+    depends_on: [1, 2, 3]
+    condition: "depth != shallow"
+  - id: 5
+    name: Report Synthesis & Open Questions
+    capability: pipeline-topology-audit
+    role: pipeline-archaeologist
+    platform: any
+    consumes: [coverage-matrix]
+    produces: pipeline-archaeology-report
+    note: "state summary of what was reconstructed; every Critical/High finding requiring a human decision listed explicitly with Recommendation (never auto-fixed); nodes/layers left at code-only or INSUFFICIENT confidence listed explicitly; if a finding corrects a prior status:completed audit for this or another pipeline, emit it as a new dated audit with an explicit Conflicts section, never edit the prior document's body"
+    depends_on: [4]

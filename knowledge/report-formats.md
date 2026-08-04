@@ -231,3 +231,66 @@ Baseline data access: <yes|no|insufficient>
 6. Every Phase-6 migration validation names the invariant it enforces.
 7. If production data access was `INSUFFICIENT`, never report row counts as `OBSERVED`.
 8. No claim without a class; no class without a reference.
+
+## Pipeline Archaeology Report
+
+Output format for the `pipeline-archaeologist` role (3-layer progressive
+forensic reconstruction of a multi-hop data pipeline). One report per layer,
+saved as `docs/audits/YYYY-MM-DD-<pipeline>-<layer>-archaeology-audit.md`
+with canonical frontmatter: `type: audit`, `status: completed`,
+`depends_on: [<previous-layer-audit-id>]`, `entity_refs: [<pipeline-related-entities>]`,
+`scope:` (perimeter), `trigger:` (why this audit ran), `tags: [pipeline,
+archaeology, <layer>]`.
+
+```
+# <Layer> Archaeology — <pipeline>
+
+## Summary
+<1-3 sentences: what was reconstructed, what the headline findings are>
+
+## <Layer-specific structural section(s)>
+<Layer 1: prose model of dispatch strategies, checkpoint/watermark, dedup,
+ recovery mechanisms>
+<Layer 2: full node table
+ | node | family/group | strategy | producer | consumer | handler/adapter | legacy fallback | status |
+ + orphan list with evidence + bypass-pattern list + ownership matrix>
+<Layer 3: one subsection per node — sections -> transform (file:line) ->
+ target table; what's ignored/dropped with confidence tier per claim
+ (fixture-confirmed / plugin-corroborated / code-only); field-level dead
+ code; cross-cutting hidden dependencies>
+<Coverage Matrix (only after Layers 1-3, own step but usually embedded in
+ the Layer 3 or a final synthesis report):
+ | node | handler exists | wired to runtime | payload composition known | real sample available | parity proven | ready for downstream work |>
+
+## Findings
+| # | Severity | Finding | Evidence | Recommendation |
+|---|----------|---------|----------|----------------|
+| <layer-prefix>-01 | ... | ... | ... | ... |
+
+## Conflicts
+<explicit corrections to a prior status:completed audit for this or another
+ pipeline — never edit the prior document's body; reference the original
+ finding by id>
+
+## Resolution
+<what's settled; what's an open question requiring a human decision — list
+ every Critical/High finding needing a decision explicitly, never auto-fixed>
+
+## Delta
+<what this layer adds relative to prior layers/audits of the same pipeline>
+```
+
+### Anti-hallucination guardrails (self-enforced)
+1. Every claim resolves to an actual `file:line`, or (Layer 3 payload
+   claims) a pointer to the specific real sample used.
+2. Every Layer 3 claim carries an explicit sourcing tier
+   (`fixture-confirmed` / `plugin-corroborated` / `code-only`) — never state
+   a `code-only` claim in language that reads as `fixture-confirmed`.
+3. "Confirmed empty in every sample checked" is never phrased as "confirmed
+   irrelevant."
+4. The Coverage Matrix is never produced before Layers 1-3 are complete
+   (partial exception: `depth=shallow` runs, which must say so explicitly).
+5. A finding outside the pipeline's own perimeter is flagged
+   cross-cutting/out-of-scope-but-relevant, never silently folded into the
+   pipeline's own findings table.
+6. No claim without a class/tier; no class/tier without a reference.
