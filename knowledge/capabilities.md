@@ -36,6 +36,21 @@ Description: Review of security model (RBAC, authn, authz) for drift and complia
 Consumes: security-model (artifact), reality-report (artifact)
 Produces: architecture-findings (artifact)
 
+## review-responsibility-boundaries
+Description: Verify responsibility boundaries — no duplication of authority, no god-object forming, each decision has exactly one owner.
+Consumes: subject-document (artifact)
+Produces: architecture-findings (artifact)
+
+## review-layering
+Description: Verify layered architecture — downward-only dependencies, no skip-level imports, no infrastructure leak into domain model.
+Consumes: subject-document (artifact)
+Produces: architecture-findings (artifact)
+
+## review-contract-antipatterns
+Description: Verify contract types for God-DTO anti-patterns — no transport/domain field mixing, no linear field growth, single producer per field.
+Consumes: subject-document (artifact)
+Produces: architecture-findings (artifact)
+
 ## validate-frontmatter
 Description: Schema v1 frontmatter validation across all docs/**/*.md files.
 Consumes: changed-files (artifact)
