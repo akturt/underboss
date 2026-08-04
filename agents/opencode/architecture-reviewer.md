@@ -11,7 +11,7 @@ touches: [docs/architecture, docs/adr]
 docs: [../../playbook/playbook-v2.md]
 refs: []
 depends_on: []
-capabilities: [review-spec, review-adr, review-domain-model, review-security-model]
+capabilities: [review-spec, review-adr, review-domain-model, review-security-model, review-responsibility-boundaries, review-layering, review-contract-antipatterns]
 knowledge: [architecture-principles, report-formats]
 tags: [opencode, agent, reviewer, architecture]
 priority: P1
@@ -74,6 +74,26 @@ This agent is invoked on:
    - If PR changes data model without updated `docs/architecture/domain-model.md` — flag as `architecture-drift`.
    - If PR changes security model (RBAC, authn, authz) without updated `docs/architecture/` — flag as `security-model-drift`.
    - If PR changes API contract surface (new endpoint, response shape) — verify `docs/api/` or spec in `docs/specs/approved/` covers the change.
+
+6. **For spec / architecture document review** (applies to any new or modified spec with `type: spec` or `type: architecture`):
+
+   **6a. Responsibility boundaries:**
+   For every new component introduced in the spec, verify:
+   - No two components own the same decision (duplication of authority).
+   - No component silently takes on responsibilities beyond its stated scope (god-object forming / scope creep).
+   - Each decision has exactly one owner: who decides vs. who executes.
+
+   **6b. Layering / dependency direction:**
+   If the spec describes a layered architecture (layers, tiers, strata), verify:
+   - Every dependency arrow points downward only (higher layer depends on lower layer).
+   - No skip-level dependencies (Layer 1 importing from Layer 3).
+   - Infrastructure does not leak into domain model (no database schemas, transport protocols, or framework types in domain entities).
+
+   **6c. Contract anti-patterns (God-DTO):**
+   If the spec defines new DTOs, contract types, or boundary interfaces, verify:
+   - Transport fields and domain fields are not mixed in the same type (e.g., process timestamps and data version in one class).
+   - Field count does not grow linearly with the number of scenarios (early sign of God DTO).
+   - Every field has exactly one producer — no field is populated by multiple unrelated components.
 
 ## Validation commands
 
